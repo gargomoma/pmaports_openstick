@@ -1,0 +1,43 @@
+# Maintainer: Dawid Wróbel <me@dawidwrobel.com>
+pkgname=firmware-xiaomi-enuma
+pkgver=20251028
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Mi Pad 5 Pro 5G"
+subpackages="
+	$pkgname-x55m
+	$pkgname-touchscreen
+	"
+url="https://github.com/wrobelda/xiaomi-enuma-firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="8ea5235b7e237d55c345653f8a4276f2b0011fa7"
+source="
+	https://github.com/wrobelda/xiaomi-enuma-firmware/archive/$_commit/xiaomi-enuma-firmware-$_commit.tar.gz
+"
+builddir="$srcdir/xiaomi-enuma-firmware-$_commit"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+# Xiaomi enuma boots with secure boot, it can only load signed firmwares.
+
+touchscreen() {
+	pkgdesc="Xiaomi enuma touchscreen firmware"
+
+	install -Dm644 "$builddir"/novatek/* -t \
+		"$subpkgdir/lib/firmware/novatek/"
+}
+
+x55m() {
+	pkgdesc="Xiaomi enuma X55m modem firmware"
+
+	install -Dm644 "$builddir"/sdx55m/sbl1.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sdx55m/"
+}
+
+sha512sums="
+6abe17a1602512a2125f16b46eb05f964728819ec03b683b2eef1f637b90a8f5ff1c3496a8bb9ba6d7337223ce1b94f4d847c69c808f0f970469c55166d7042e  xiaomi-enuma-firmware-8ea5235b7e237d55c345653f8a4276f2b0011fa7.tar.gz
+"
