@@ -2,8 +2,8 @@
 # Maintainer: Dawid Wróbel <me@dawidwrobel.com>
 pkgname=device-xiaomi-enuma
 pkgdesc="Xiaomi Mi Pad 5 Pro 5G"
-pkgver=5
-pkgrel=4
+pkgver=1
+pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
 arch="aarch64"
