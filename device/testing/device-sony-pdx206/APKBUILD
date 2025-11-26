@@ -1,0 +1,34 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-pdx206
+pkgdesc="Sony Xperia 5 II"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-sony-edo_adreno
+	linux-sony
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+4aa55acdc718807366c71969e08793581f18c9e1bf50f227f1c00c1e5194977260067ae15a1996c56f8f0a0dfdc579d671cd2c81fc72dc54b85683d41c18c379  deviceinfo
+9ec45dd1e81787efa739e41099db1ebca4ad6b9897709e9b3cb48f6160912de6eb102199353c93e16f891662e8081d07e3715490826b20a6ed1af61a449c9975  modules-initfs
+"

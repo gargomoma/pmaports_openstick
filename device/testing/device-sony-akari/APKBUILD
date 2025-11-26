@@ -1,0 +1,37 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-akari
+pkgdesc="Sony Xperia XZ2"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-sony-tama_adreno
+	firmware-sony-tama_adsp
+	firmware-sony-tama_cdsp
+	firmware-sony-tama_venus
+	linux-sony
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+98b7661d92894f13805e2e9ba39c59cdbf524d31e321ced8fe4924dd554eb54b0d878cf8e1d6b2802da20e9638b834493d56f1549a28cf1c9c3d8a8bde15e048  deviceinfo
+9ec3dae820daea9b26133b21abffc557482132c73e54d45b11019561db7180c58e0fc488d184a7d5127c870fd1b02614dfff9963cafe2725e26fbb910a84c10d  modules-initfs
+"

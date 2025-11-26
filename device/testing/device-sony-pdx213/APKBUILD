@@ -1,0 +1,36 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-pdx213
+pkgdesc="Sony Xperia 10 III"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+# TODO: a619_gmu is now provided via lena_adreno, but should be moved to the
+# linux-firmware-based package when it is added upstream
+depends="
+	firmware-sony-lena_adreno
+	linux-sony
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+917765b99daceec6aa8170984d3cde90f6eb1d30262bebf90fb3d46c70a4ef3cafc2281251f82b04cd3fee618e35c0bc05ad25a988f23e36b0bb9459881ee88f  deviceinfo
+e70bae17df23dcaaaea0e2d3616556f04baa23f8ee1357785c0f539bf97282d8ddff53953e155b72689bb73beb38c2da3d08de2a61e866684edfa10a6593885d  modules-initfs
+"

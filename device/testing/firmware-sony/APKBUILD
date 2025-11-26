@@ -1,4 +1,4 @@
-# Maintainer: Marijn Suijten <marijns95@gmail.com>
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
 pkgname=firmware-sony
 pkgver=20251219
 pkgrel=0
@@ -140,7 +140,7 @@ edo_adreno() {
 
 seine_adreno() {
 	pkgdesc="Sony Xperia 10 II Adreno ZAP firmware"
-	depends="firmware-qcom-adreno-a630-sqe"
+	depends="firmware-qcom-adreno-a610"
 
 	install -Dm644 "$builddir"/seine/a610_zap.mbn -t \
 		"$subpkgdir/lib/firmware/qcom/sm6125/Sony/seine/"
@@ -163,7 +163,8 @@ sagami_ipa() {
 
 lena_adreno() {
 	pkgdesc="Sony Xperia 10 III Adreno ZAP and GMU firmware"
-	depends="firmware-qcom-adreno-a619"
+	# depends="firmware-qcom-adreno-a619"
+	depends="firmware-qcom-adreno-a630-sqe"
 
 	install -Dm644 "$builddir"/lena/a615_zap.mbn -t \
 		"$subpkgdir/lib/firmware/qcom/sm6350/Sony/lena/"

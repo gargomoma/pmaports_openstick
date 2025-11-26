@@ -1,0 +1,83 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/defconfig
+pkgname=linux-sony
+pkgver=6.14
+pkgrel=0
+pkgdesc="Mainline Kernel fork for Sony Xperia devices"
+arch="aarch64"
+_carch="arm64"
+# _flavor="postmarketos-qcom-sm6125"
+_flavor="sony"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community"
+makedepends="
+	bison
+	clang
+	findutils
+	flex
+	installkernel
+	lld
+	llvm
+	openssl-dev
+	perl
+	python3
+	zstd
+"
+
+# Source
+_repository="linux"
+_commit="36782eccb531b0a20150ebb7c742eaca27c2556b"
+_config="config-$_flavor.$arch"
+	# $pkgname-$_commit.tar.gz::https://github.com/SoMainline/$_repository/archive/$_commit.tar.gz
+source="
+	$_config
+"
+giturl="https://github.com/SoMainline/$_repository -b marijn/panel-exclusives"
+builddir="$srcdir/$_repository-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	# mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+		"$pkgdir/boot/vmlinuz"
+
+	# make modules_install dtbs_install \
+
+	make dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-tmp
+
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp "$pkgdir"/boot/dtbs-tmp/qcom/*sony* "$pkgdir"/boot/dtbs/qcom
+	rm -rf "$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+# 246f75d5624b77d883bc9a01605a6ec067bb9cb4a9db4a4792f754d1098faa3f4ed2a2f8ec705a9e962ce08ecff52e90e6aedc18390846f20beebb8f55014bc6  linux-sony-36782eccb531b0a20150ebb7c742eaca27c2556b.tar.gz
+sha512sums="
+8c63d06c94cd2659440098caecf5e6b1015db1dfa61c4795de7771b372cc2ccf4d8a4b0476cf5bdf2b50d656b373ab35160bd7ec40d4687cc90666b86c0139f3  config-sony.aarch64
+"

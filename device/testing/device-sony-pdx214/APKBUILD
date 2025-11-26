@@ -1,0 +1,35 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-pdx214
+pkgdesc="Sony Xperia 5 III"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-sony-sagami_adreno
+	firmware-sony-sagami_ipa
+	linux-sony
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+93ea76669ccede47d69a317fd82813499089169b2d89494c32ece45f01e583c9c099c3839e25ff2b0370b02509b6a8e42b1b332500cc1e4e2b680a3f1f2e6617  deviceinfo
+9ec45dd1e81787efa739e41099db1ebca4ad6b9897709e9b3cb48f6160912de6eb102199353c93e16f891662e8081d07e3715490826b20a6ed1af61a449c9975  modules-initfs
+"

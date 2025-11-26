@@ -1,0 +1,35 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-pdx215
+pkgdesc="Sony Xperia 1 III"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-sony-sagami_adreno
+	firmware-sony-sagami_ipa
+	linux-sony
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+619b0e0ecaa640a3573080563df87a8840793bc439e686d789e9f02bf69efa655976b8170292cfa517e7c40f3e02e5f63be834423f859b3a26d43a2e523c39e5  deviceinfo
+ce59b3e699ad4f83c1f8a33d498f72573a803e68fcbf7c8ba6190f5e1ba8f87a93856382d5d6f6005ef3e6f6a09ff3b7fb8dc1e6760b6b91587a63cbc05bef8c  modules-initfs
+"

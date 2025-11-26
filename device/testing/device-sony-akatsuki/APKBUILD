@@ -1,0 +1,37 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-akatsuki
+pkgdesc="Sony Xperia XZ3"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-sony-tama_adreno
+	firmware-sony-tama_adsp
+	firmware-sony-tama_cdsp
+	firmware-sony-tama_venus
+	linux-sony
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+f1139f95d3d6aa541997fc82e3692e9dc36443e1491591058aa95b008a81bd51cf5d0ef20da3a4249c4ed061610383f2c5d6fee7b0ce65c971d011b78d8b20f5  deviceinfo
+5a726d28623ff1538b7aee894142c4f563f86f5ebb669345e056fdb28000f0ddce43f43643be091d686e01aa3ff0483faad0ba59ee51b2515c1634196f08cc00  modules-initfs
+"

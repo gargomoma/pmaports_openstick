@@ -1,0 +1,35 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-griffin
+pkgdesc="Sony Xperia 1"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-sony-kumano_adreno
+	firmware-sony-kumano_venus
+	linux-sony
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+cd33f1b54498f7c712cb8ee1b10d671b480d02ac1ab382f9c83596fb9bebb68d95dea630cd8f27ad4b9a513fb1a55652877700e4024e3df667a4b2a78f4edca0  deviceinfo
+74a8ce43859692e843116862e3c08e109c8ff2255f321980282a72a95da1e2a42cf5eb0336f1ec84ded756513c280a37f89630d4020ce35868a5f4ccb00bfca0  modules-initfs
+"

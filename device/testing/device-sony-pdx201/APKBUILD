@@ -1,0 +1,34 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-pdx201
+pkgdesc="Sony Xperia 10 II"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-sony-seine_adreno
+	linux-sony
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+47e80c4f18f6db9a5132d8361fa4bc7e64e9dce36dae505871eee8229519b268847916164113839129a129e9e2c0d436266e86fd42c471a8142ae3480e514d40  deviceinfo
+8c8c70de8d8a2046202f8a73a4d06c3276a9a4546dfd0acb0b06a2f91b3dcf448aa66aa497573abd11d5920e05fd62bab0912c7affa97cb27029b83e338a92d0  modules-initfs
+"

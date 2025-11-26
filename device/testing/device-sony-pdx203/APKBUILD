@@ -1,0 +1,34 @@
+# Maintainer: Marijn Suijten <marijn.suijten@somainline.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-sony-pdx203
+pkgdesc="Sony Xperia 1 II"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-sony-edo_adreno
+	linux-sony
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+cf57ef06e6c5d9963c6021af9e272eb4e9680ff147ae01ebb957e559cfe335ea8270350ac15ac14213d2d32d505a07ecc0767febcdcf13ddc49f7b5fac2fdff9  deviceinfo
+74a8ce43859692e843116862e3c08e109c8ff2255f321980282a72a95da1e2a42cf5eb0336f1ec84ded756513c280a37f89630d4020ce35868a5f4ccb00bfca0  modules-initfs
+"
