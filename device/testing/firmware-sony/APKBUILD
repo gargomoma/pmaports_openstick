@@ -1,0 +1,186 @@
+# Maintainer: Marijn Suijten <marijns95@gmail.com>
+pkgname=firmware-sony
+pkgver=20251219
+pkgrel=0
+pkgdesc="Firmware for Sony Xperia"
+# TODO: No point in splitting out per type if we need them all;
+# consider splitting our per board family instead.
+# $pkgname-tama_ipa
+# TODO: Add back hyphens: https://wiki.alpinelinux.org/wiki/APKBUILD_Reference#:~:text=Note%3A%20Split%20function%20names%20cannot%20use%20hyphens%3B%20use%20the%20first%20method%20above%20if%20the%20subpackage%20name%20contains%20a%20hyphen%20(%2D)%20character%2C%20like%20this%3A%20subpkg%2Dname%3Asubpkg_name%2C%20where%20subpkg%2Dname%20is%20the%20name%20of%20the%20subpackage%20and%20subpkg_name%20is%20the%20name%20of%20the%20subpackage%27s%20split%20function.
+subpackages="
+	$pkgname-tama_adreno
+	$pkgname-tama_adsp
+	$pkgname-tama_cdsp
+	$pkgname-tama_venus
+	$pkgname-kumano_adreno
+	$pkgname-kumano_venus
+	$pkgname-edo_adreno
+	$pkgname-seine_adreno
+	$pkgname-sagami_adreno
+	$pkgname-sagami_ipa
+	$pkgname-lena_adreno
+	"
+url="https://github.com/SoMainline/notthereyet"
+arch="aarch64"
+license="proprietary"
+makedepends="pil-squasher"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+# _commit="cb1e77ced667a95ee637964124ff83bb0373838b"
+# source="https://github.com/FairBlobs/FP6-firmware/archive/$_commit/FP6-firmware-$_commit.tar.gz"
+# builddir="$srcdir/FP6-firmware-$_commit"
+
+build() {
+_platforms="
+	tama
+	kumano
+	edo
+	seine
+	sagami
+	lena
+"
+# _platforms="
+# 	sdm845 tama
+# 	sm8350 sagami
+# 	sm6350 lena
+# "
+	for platform in $_platforms; do
+		# p=($p)
+		# read -ra p <<<"$p"
+		# soc=${p[0]}
+		# platform=${p[1]}
+
+		mkdir -p "$builddir/$platform"
+		for i in firmware/qcom/*/Sony/$platform/*.mdt; do
+			pil-squasher "$builddir/$platform/$(basename "$i" .mdt)".mbn "$i"
+		done
+	done
+}
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+tama_adreno() {
+	pkgdesc="Sony Xperia Tama Adreno ZAP firmware"
+	depends="firmware-qcom-adreno-a630"
+
+	install -Dm644 "$builddir"/tama/a630_zap.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/"
+}
+
+tama_adsp() {
+	pkgdesc="Sony Xperia Tama adsp firmware"
+
+	install -Dm644 "$builddir"/tama/adsp*.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/"
+}
+
+# bluetooth() {
+# 	pkgdesc="Sony Xperia Tama bluetooth firmware"
+
+# 	install -Dm644 "$builddir"/tama/msbtfw12.mbn -t \
+# 		"$subpkgdir/lib/firmware/qca/"
+# 	install -Dm644 "$builddir"/tama/msnv12.bin -t \
+# 		"$subpkgdir/lib/firmware/qca/"
+# }
+
+tama_cdsp() {
+	pkgdesc="Sony Xperia Tama cdsp firmware"
+
+	install -Dm644 "$builddir"/tama/cdsp*.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/"
+	# install -Dm644 "$srcdir"/../qcom/sdm845/Sony/tama/cdsp*.jsn -t \
+	# 	"$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/"
+}
+
+# modem() {
+# 	pkgdesc="Sony Xperia Tama modem firmware"
+
+# 	install -Dm644 "$builddir"/tama/modem.mbn -t \
+# 		"$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/"
+# 	install -Dm644 "$builddir"/tama/modem*.jsn -t \
+# 		"$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/"
+
+# 	cp -r "$builddir"/tama/modem_pr/ \
+# 		"$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/"
+# 	find "$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/" \
+# 		-type f -exec chmod 0644 {} \;
+# }
+
+tama_venus() {
+	pkgdesc="Sony Xperia Tama Venus firmware"
+
+	install -Dm644 "$builddir"/tama/venus.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/"
+}
+
+kumano_adreno() {
+	pkgdesc="Sony Xperia 1 / 5 Adreno ZAP and GMU firmware"
+	depends="firmware-qcom-adreno-a640"
+
+	install -Dm644 "$builddir"/kumano/a640_zap.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/Sony/kumano/"
+}
+
+kumano_venus() {
+	pkgdesc="Sony Xperia 1 / 5 Venus firmware"
+
+	install -Dm644 "$builddir"/kumano/venus.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm8150/Sony/kumano/"
+}
+
+edo_adreno() {
+	pkgdesc="Sony Xperia 1 II / 5 II Adreno ZAP firmware"
+	depends="firmware-qcom-adreno-a650"
+
+	install -Dm644 "$builddir"/edo/a650_zap.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm8250/Sony/edo/"
+}
+
+seine_adreno() {
+	pkgdesc="Sony Xperia 10 II Adreno ZAP firmware"
+	depends="firmware-qcom-adreno-a630-sqe"
+
+	install -Dm644 "$builddir"/seine/a610_zap.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm6125/Sony/seine/"
+}
+
+sagami_adreno() {
+	pkgdesc="Sony Xperia 1 III / 5 III Adreno ZAP firmware"
+	depends="firmware-qcom-adreno-a660"
+
+	install -Dm644 "$builddir"/sagami/a660_zap.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm8350/Sony/sagami/"
+}
+
+sagami_ipa() {
+	pkgdesc="Sony Xperia 1 III / 5 III ipa firmware"
+
+	install -Dm644 "$builddir"/sagami/ipa_fws.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm8350/Sony/sagami/"
+}
+
+lena_adreno() {
+	pkgdesc="Sony Xperia 10 III Adreno ZAP and GMU firmware"
+	depends="firmware-qcom-adreno-a619"
+
+	install -Dm644 "$builddir"/lena/a615_zap.mbn -t \
+		"$subpkgdir/lib/firmware/qcom/sm6350/Sony/lena/"
+
+	# TODO: Missing from linux-firmware currently,
+	# remove when firmware-qcom-adreno-a619 contains it
+	install -Dm644 "$srcdir"/../firmware/qcom/a619_gmu.bin -t \
+		"$subpkgdir/lib/firmware/qcom/"
+}
+
+# wpss() {
+# 	pkgdesc="Sony Xperia Tama wpss firmware"
+
+# 	install -Dm644 "$builddir"/wpss.mbn -t \
+# 		"$subpkgdir/lib/firmware/qcom/sdm845/Sony/tama/"
+# }
+
+sha512sums="
+"
+
