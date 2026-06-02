@@ -351,6 +351,40 @@ setup_dynamic_partitions() {
 	done
 }
 
+# Returns 0 if the running kernel is older than 5.0
+needs_legacy_losetup() {
+	local major
+	major="$(uname -r | cut -d. -f1)"
+	[ -z "$major" ] && return 1
+	[ "$major" -lt 5 ] && return 0
+	return 1
+}
+
+# Older kernels (<4.14) cannot set loop-device sector sizes. For disk
+# images with 4K logical sectors, losetup -P may fail to expose loopXpY
+# partition nodes, so perform manual partition discovery as a fallback.
+# Creates loop devices for each partition found in the subpartition image
+# and symlinks them to the expected loopXpY names.
+# $1: the partition device (e.g. /dev/sda18)
+# $2: the loop device created by losetup (e.g. /dev/loop0)
+losetup_partscan_fallback() {
+	local partition="$1"
+	local loop_dev="$2"
+	local offset part_num loop_part
+	# Use parted machine-readable output to get partition offsets
+	# Format: partnum:startB:endB:sizeB:fs:name:flags;
+	parted -s -m "$partition" unit B print 2>/dev/null \
+		| grep -E '^[0-9]+:' \
+		| while IFS=: read -r part_num offset _rest; do
+			# Strip trailing 'B' from offset
+			offset="${offset%B}"
+			loop_part="$(losetup --show -f -o "$offset" "$partition")"
+			if [ -n "$loop_part" ]; then
+				ln -sf "$loop_part" "${loop_dev}p${part_num}"
+			fi
+		done
+}
+
 mount_subpartitions() {
 	# skip if ran already (unmerged -extra)
 	if [ -n "$PMOS_ROOT" ] && [ -n "$PMOS_BOOT" ]; then
@@ -400,11 +434,23 @@ mount_subpartitions() {
 				SUBPARTITION_DEV="$partition"
 				# shellcheck disable=SC2086
 				SUBPARTITION_LOOP="$(losetup $losetup_args "$partition")"
+
+				# Fallback for kernels that do not support --direct-io=on
+				# or --sector-size (kernels older than 4.10)
+				if [ -z "$SUBPARTITION_LOOP" ] && needs_legacy_losetup; then
+					SUBPARTITION_LOOP="$(losetup --show -Pf "$partition")"
+				fi
 				if [ -z "$SUBPARTITION_LOOP" ]; then
 					echo "WARNING: failed to create loop device for $partition"
 					SUBPARTITION_DEV=""
 					continue
 				fi
+				# Fallback for kernels where -P does not create partition
+				# nodes (e.g. 4K sector devices on kernels older than 4.14)
+				if ! ls "${SUBPARTITION_LOOP}p"* > /dev/null 2>&1 && needs_legacy_losetup; then
+					losetup_partscan_fallback "$partition" "$SUBPARTITION_LOOP"
+				fi
+
 				# Ensure that this was the *correct* subpartition
 				# Some devices have mmc partitions that appear to have
 				# subpartitions, but aren't our subpartition.
