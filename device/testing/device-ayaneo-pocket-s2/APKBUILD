@@ -2,7 +2,7 @@
 maintainer="Neil Armstrong <neil.armstrong@linaro.org>"
 pkgname=device-ayaneo-pocket-s2
 pkgdesc="Ayaneo Pocket S2"
-pkgver=5
+pkgver=9
 pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
@@ -24,6 +24,7 @@ depends="
 	postmarketos-base
 	soc-qcom
 	systemd-boot
+	ayaneo-platformd
 "
 makedepends="devicepkg-dev"
 source="
@@ -31,10 +32,47 @@ source="
 	kernel-cmdline.conf
 	firmware.files
 	modules-initfs
+	ayaneo_type9.yaml
+	ayaneo_type10.yaml
+	50-ayaneo_pocket_s2.yaml
+	50-ayaneo.preset
+"
+subpackages="
+	$pkgname-inputplumber:inputplumber:noarch
+	$pkgname-steam
+	$pkgname-systemd
 "
 
 build() {
 	devicepkg_build $startdir $pkgname
+}
+
+steam() {
+	pkgdesc="$pkgname (Steam addons)"
+	install_if="postmarketos-ui-steamos"
+	depends="decky-ayaneo"
+
+	# Set up CPU affinity for games, we use all except the bottom 2 efficiency cores
+	mkdir -p "$subpkgdir"/usr/lib/systemd/user/steam-alongside-.service.d
+	cat <<- EOF > "$subpkgdir"/usr/lib/systemd/user/steam-alongside-.service.d/10-cpu.conf
+	[Service]
+	CPUAffinity=
+	CPUAffinity=4,5,6,7
+	EOF
+
+	# System services get 2 efficiency cores
+	cat <<- EOF > "$subpkgdir"/usr/lib/systemd/system.conf
+	[Service]
+	CPUAffinity=0,1
+	EOF
+
+	# Limit steam to 2 other efficiency cores, these are enough for 60fps UI
+	mkdir -p "$subpkgdir"/usr/lib/systemd/user/gamescope-session-plus@steam.service.d
+	cat <<- EOF > "$subpkgdir"/usr/lib/systemd/user/gamescope-session-plus@steam.service.d/10-cpu.conf
+	[Service]
+	CPUAffinity=
+	CPUAffinity=2,3
+	EOF
 }
 
 package() {
@@ -42,11 +80,37 @@ package() {
 
 	install -Dm644 "$srcdir"/firmware.files \
 		-t "$pkgdir"/usr/share/mkinitfs/files
+
+	install -Dm644 "$srcdir"/50-ayaneo.preset -t "$pkgdir"/usr/lib/systemd/system-preset
+}
+
+systemd() {
+	default_systemd
+
+	# DrKonqi is full of whimsy and crashloops, causing OOM due to all the
+	# coredumps being processed (:
+	mkdir -p "$pkgdir"/etc/systemd/user/
+	ln -sf /dev/null "$pkgdir"/etc/systemd/user/drkonqi-coredump-launcher.socket
+}
+inputplumber() {
+	pkgdesc="$pkgname (inputplumber configs)"
+	depends="inputplumber"
+	install_if="$pkgname=$pkgver-r$pkgrel"
+	install -Dm644 "$srcdir"/50-ayaneo_pocket_s2.yaml \
+		-t "$subpkgdir"/usr/share/inputplumber/devices/
+	install -Dm644 "$srcdir"/ayaneo_type9.yaml \
+		-t "$subpkgdir"/usr/share/inputplumber/capability_maps/
+	install -Dm644 "$srcdir"/ayaneo_type10.yaml \
+		-t "$subpkgdir"/usr/share/inputplumber/capability_maps/
 }
 
 sha512sums="
-012b1b6a9fcdfb6043b6f6992606a59fb347a5dde47c61f47479dccba24e13a88b0e03a64d79786d1152786c593874988deaa487fa7ec1634c4a7a4bcac20c34  deviceinfo
-6c6a1393fd91dbb565e5b09aacf5f18a0911de19074f25548174a2d1a6db6f52f27ea556bfb5f4731085c345c42047fddbacc2a77ffe288728ff96d4c7a2cbed  kernel-cmdline.conf
+fd6f301cf26b6ab94b67ae4086e13b8e3998aada45f26addd087aa163fe5c050979c9410e915d29c6922c6f87bff30c24f473186387e3514070fb0e7916479c3  deviceinfo
+5fc59cf274a4840c5905f93c0f0a7e83f5725a8a85c1815f424544d48f0d5851053b1d78c10d7096078e8ea9b8173dff1bcb72c721bada1e05a93f55eeb73027  kernel-cmdline.conf
 55abca53ab338921f578bb52dde30fb0c3518f0cb772aac8a23eab4900ee05f0f4209aecd9b3d79c79ab4d45270d068c0d2e01881c57bd6cf0c98930956be7f2  firmware.files
 1aa76a0ef8ee0d3a0f0fe819e02fbbba9bc7a990191eaad630700aacc5c44e27d123c016c5b978e5ece08de69f1fea268b5612716feb0b95712f7f8dd015d8be  modules-initfs
+eb29b071e3a4e229dcebfd6d6891dcb27c4659a35d9ff172d016ea4d0660e3f1cca6c7a2e221746cfb780d637947feadcfea81e3fbc143ac5d0c6aca144dd9ff  ayaneo_type9.yaml
+108ccfa5d88224a8a735e92148aeb54379597c6f0d7afa3f3ae41fc6f55fb11701fa680eb9be2e916a2e7380dd117e8d31b937e269e363c62b42dbbffbd7d5cf  ayaneo_type10.yaml
+08a236d6c165a0899c81adf1d06eeaf8cb155684479c30917af52243cdc3fba694aff034de746681cafd679e478be8baf526219a432619ba8b0fac85e8f9e76c  50-ayaneo_pocket_s2.yaml
+b289f0df867fa05f4b036e9fb6d0f2f971d94a7ec8103aca83a36dd15ba4d63b5e06dc7375de7d95fa4f0d42a2c7680572635c0143a42ddd04fdeca6cf727511  50-ayaneo.preset
 "
