@@ -1,0 +1,137 @@
+diff --git a/arch/arm64/boot/dts/qcom/sm8650-ayaneo-pocket-s2.dts b/arch/arm64/boot/dts/qcom/sm8650-ayaneo-pocket-s2.dts
+index 1070bdecb8fd..8f25cdfb2b31 100644
+--- a/arch/arm64/boot/dts/qcom/sm8650-ayaneo-pocket-s2.dts
++++ b/arch/arm64/boot/dts/qcom/sm8650-ayaneo-pocket-s2.dts
+@@ -60,55 +60,22 @@ chosen {
+ 		stdout-path = "serial0:115200n8";
+ 	};
+ 
+-	fan: fan {
++	fan: pwm-fan {
++		status = "okay";
+ 		compatible = "pwm-fan";
+ 
+ 		interrupts-extended = <&tlmm 14 IRQ_TYPE_EDGE_FALLING>;
+ 
+ 		pwms = <&pm8550_pwm 3 50000>;
+ 
+-		fan-supply = <&fan_pwr>;
+-
+ 		#cooling-cells = <2>;
+ 		cooling-levels = <0 16 32 45 60 80 105 130 155 180 205 230 255>;
+ 
+-		pinctrl-0 = <&fan_int>, <&pwm_fan_ctrl_active>;
+-		pinctrl-1 = <&pwm_fan_ctrl_sleep>;
++		pinctrl-0 = <&fan_pwr_active>, <&pwm_fan_ctrl_default>, <&fan_int>;
++		pinctrl-1 = <&fan_pwr_sleep>;
+ 		pinctrl-names = "default", "sleep";
+ 	};
+ 
+-	fan_pwr: fan-pwr-regulator {
+-		compatible = "regulator-fixed";
+-
+-		regulator-name = "fan_pwr";
+-		regulator-min-microvolt = <5000000>;
+-		regulator-max-microvolt = <5000000>;
+-
+-		gpios = <&tlmm 125 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+-
+-		vin-supply = <&fan_vdd>;
+-
+-		pinctrl-0 = <&fan_pwr_pins>;
+-		pinctrl-names = "default";
+-	};
+-
+-	fan_vdd: fan-vdd-regulator {
+-		compatible = "regulator-fixed";
+-
+-		regulator-name = "fan_vdd";
+-		regulator-min-microvolt = <5000000>;
+-		regulator-max-microvolt = <5000000>;
+-
+-		gpios = <&tlmm 124 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+-
+-		vin-supply = <&vph_pwr>;
+-
+-		pinctrl-0 = <&fan_vdd_pins>;
+-		pinctrl-names = "default";
+-	};
+-
+ 	gpio-keys {
+ 		compatible = "gpio-keys";
+ 
+@@ -1293,17 +1260,18 @@ volume_up_n: volume-up-n-state {
+ 		power-source = <1>;
+ 	};
+ 
+-	pwm_fan_ctrl_active: pwm-fan-ctrl-active-state {
++	pwm_fan_ctrl_default: pwm-fan-ctrl-default {
+ 		pins = "gpio9";
+ 		function = "func1";
++		output-low;
+ 		bias-disable;
+ 		power-source = <0>;
+ 		qcom,drive-strength = <PMIC_GPIO_STRENGTH_LOW>;
+ 	};
+ 
+-	pwm_fan_ctrl_sleep: pwm-fan-ctrl-sleep-state {
++	pwm_fan_ctrl_sleep: pwm-fan-ctrl-sleep {
+ 		pins = "gpio9";
+-		function = "normal";
++		function = "func0";
+ 		output-high;
+ 		bias-disable;
+ 		power-source = <0>;
+@@ -1524,25 +1492,28 @@ sw-ctrl-pins {
+ 		};
+ 	};
+ 
+-	fan_pwr_pins: fan-pwr-state {
+-		pins = "gpio125";
++	fan_pwr_active: fan-pwr-active-state {
++		pins = "gpio124","gpio125";
+ 		function = "gpio";
+ 		drive-strength = <2>;
+ 		bias-disable;
++		output-high;
+ 	};
+ 
+-	fan_vdd_pins: fan-vdd-state {
+-		pins = "gpio124";
++	fan_int: fan-int-active-state {
++		pins = "gpio14";
+ 		function = "gpio";
+ 		drive-strength = <2>;
+-		bias-disable;
++		bias-pull-pull;
++		input-enable;
+ 	};
+ 
+-	fan_int: fan-int-state {
+-		pins = "gpio14";
++	fan_pwr_sleep: fan-pwr-sleep-state {
++		pins = "gpio124", "gpio125";
+ 		function = "gpio";
+ 		drive-strength = <2>;
+-		bias-pull-up;
++		bias-disable;
++		output-low;
+ 	};
+ 
+ 	panel_pwr_active: panel-pwr-active-state {
+diff --git a/arch/arm64/boot/dts/qcom/sm8650-ayaneo-pocket-s2.dts b/arch/arm64/boot/dts/qcom/sm8650-ayaneo-pocket-s2.dts
+index e1a47bc49752..940cfef90ed6 100644
+--- a/arch/arm64/boot/dts/qcom/sm8650-ayaneo-pocket-s2.dts
++++ b/arch/arm64/boot/dts/qcom/sm8650-ayaneo-pocket-s2.dts
+@@ -1604,8 +1604,9 @@ spkr_23_sd_n_active: spkr-23-sd-n-active-state {
+		pins = "gpio77";
+		function = "gpio";
+		drive-strength = <16>;
+		bias-disable;
++		output-high;
+	};
+ 
+	spkr_01_sd_n_active: spkr-01-sd-n-active-state {
+		pins = "gpio21";
