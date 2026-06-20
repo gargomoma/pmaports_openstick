@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rc-update add usb-moded-developer-mode default
+rc-update add usb-signaller default
