@@ -207,6 +207,15 @@ datatype = "enumeration"
 enum_values = ["true", "sign", "false"]
 default_value = "false"
 
+[variable.flash.bootimg_cmdline_prepend]
+description = """
+Prepend one or more params to the beginning of kernel cmdline; needed on a few devices.
+
+Some stock bootloaders are picky about the order of cmdline params and expect one or more of them at the front, otherwise the boot fails on the device. So it's critical to guarantee they are always the first ones.
+
+*Usually, this should not be set. In all other cases custom params should be handled by **generate-kernel-cmdline**, which has not control over the order of kernel cmdline arguments (it's always possible for users to add params that sort/parse before any others installed by a device pkg).*
+"""
+
 [variable.flash.bootimg_qcdt]
 description = "Append dtb file to boot.img"
 datatype = "boolean"
@@ -263,6 +272,11 @@ default_value = false
 
 [variable.flash.bootimg_custom_args]
 description = "Additional custom arguments to pass to mkbootimg. Caution: adding contents to this variable removes the `--header-version` and `--dtb` arguments, which need to be added manually in that case"
+
+[variable.flash.bootimg_zimage64]
+description = "For devices with the stock bootloader expecting only 32-bit or uncompressed images. When setting this variable to `true`, a shimmed 64-bit kernel image will be generated (through zimage64 tool), to make the device booting."
+datatype = "boolean"
+default_value = false
 
 [variable.flash.header_version]
 description = "Header version of boot image as defined by Android documentation."
