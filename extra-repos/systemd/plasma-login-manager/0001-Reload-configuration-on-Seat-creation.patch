@@ -1,0 +1,41 @@
+From 302027734d3d968726d6b27b0c87f4d820fd3433 Mon Sep 17 00:00:00 2001
+From: David Edmundson <kde@davidedmundson.co.uk>
+Date: Fri, 26 Jun 2026 15:12:06 +0100
+Subject: [PATCH] Reload configuration on Seat creation
+
+This was a behavioural change by accident in
+ba9b457bbae9d4ede8111a6ed9fd494247938612 previously every time we
+created a display which implicitly includes a logout we reparsed the
+configuration.
+
+BUG: 522181
+---
+ src/daemon/Seat.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/daemon/Seat.cpp b/src/daemon/Seat.cpp
+index 2ed32a8f..f00a9cb8 100644
+--- a/src/daemon/Seat.cpp
++++ b/src/daemon/Seat.cpp
+@@ -18,8 +18,8 @@
+ #include "Seat.h"
+ 
+ #include "DaemonApp.h"
++#include "MainConfigLoader.h"
+ #include "VirtualTerminal.h"
+-#include "mainconfig.h"
+ 
+ #include <QDebug>
+ #include <QFile>
+@@ -54,6 +54,8 @@ const QString &Seat::name() const
+ 
+ void Seat::createDisplay()
+ {
++    PlasmaLogin::config()->load();
++
+     // create a new display
+     qDebug() << "Adding new display...";
+     Display *display = new Display(this);
+-- 
+GitLab
+
