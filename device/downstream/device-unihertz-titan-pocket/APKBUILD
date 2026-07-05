@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Konya Tamas <thomas.konya@gmail.com>"
+pkgname=device-unihertz-titan-pocket
+pkgdesc="unihertz Titan Pocket"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-unihertz-titan-pocket
+	linux-unihertz-titan-pocket
+	postmarketos-base
+	postmarketos-base-downstream
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+4ff067da76b084878db7f986b10e7b0fb124b36e41759085145426bf67fce656c92d1ccdcce8208faedbb3475b4212978259b23a26fcce05e5f19af52817bb14  deviceinfo
+d89b08ef9888faae6cb96a378421669e6119023307a3b5a109e18b7f9e2c70e1f8b240ba8f9b9d22d319fa28e416565d06074d34382f482c9b037b7ab3f4861c  kernel-cmdline.conf
+"

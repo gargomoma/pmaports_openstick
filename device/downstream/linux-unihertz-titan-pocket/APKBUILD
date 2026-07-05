@@ -1,0 +1,73 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/titanpocket
+maintainer="Konya Tamas <thomas.konya@gmail.com>"
+pkgname=linux-unihertz-titan-pocket
+pkgver=4.14.186
+pkgrel=0
+pkgdesc="Unihertz Titan Pocket kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="unihertz-titan-pocket"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	dtc
+	cpio
+	xz
+"
+
+# Source
+_repository="some00/$pkgname"
+_commit="4348b016b9ed41d2a8e4a77e08be72b24cc269ad"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::http://github.com/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$pkgname-$_commit"
+_outdir="out"
+
+prepare() {
+	rm -f "$builddir"/scripts/dtc/dtc_overlay
+	ln -s /usr/bin/dtc "$builddir"/scripts/dtc/dtc_overlay
+
+	rm -f "$builddir"/tools/build/cpio
+	ln -s /usr/bin/cpio "$builddir"/tools/build/cpio
+
+	export REPLACE_GCCH=0
+	default_prepare
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" modules
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	make O="$_outdir" INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
+		modules_install
+
+	mkdir -p "$pkgdir"/boot/dtbs/mediatek/
+	install -Dm644 TitanPocket-mt6771.dtb "$pkgdir"/boot/dtbs/mediatek/
+}
+
+sha512sums="
+b23ca5318d7a3bc47c9ada144a42e9014f6738a2b00bc760bcce626c9ebd9fed0b00920ea5a01b81458bad16e0641754d2bb592ba2cf4026e78e967944f5b896  linux-unihertz-titan-pocket-4348b016b9ed41d2a8e4a77e08be72b24cc269ad.tar.gz
+95e8c6b346f70491e777b23f5ea71bcb79988b97c40c32b49349e85208e2f444ee8470112233e9cb3af008278e3ff53e5921861b3ddcd4f105998e6376679cce  config-unihertz-titan-pocket.aarch64
+"
