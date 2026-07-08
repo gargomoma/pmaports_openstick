@@ -1,0 +1,42 @@
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=gamescope-session-plus
+pkgver=0.0.0
+pkgrel=1
+pkgdesc="Gamescope session plus based on Valve's gamescope"
+url="https://github.com/ChimeraOS/gamescope-session"
+arch="noarch"
+license="MIT"
+depends="
+	bash
+	systemd
+	dbus
+	gamescope
+"
+options="!check" # no tests
+subpackages="$pkgname-systemd"
+_commit=73d2da84ace7f41006a0f85bd2fdb19ef593a464
+source="
+	gamescope-session-$_commit.zip::https://github.com/ChimeraOS/gamescope-session/archive/$_commit.zip
+	0001-add-pocket-s2.patch
+	0002-fix-shell.patch
+"
+builddir="$srcdir/gamescope-session-$_commit"
+
+package() {
+	install -Dm755 "$builddir"/usr/bin/gamescope-session-plus -t "$pkgdir"/usr/bin/
+	install -Dm755 "$builddir"/usr/bin/export-gpu -t "$pkgdir"/usr/bin/
+	install -Dm644 "$builddir"/usr/lib/systemd/user/gamescope-session-plus@.service -t "$pkgdir"/usr/lib/systemd/user/
+	install -Dm644 "$builddir"/usr/share/gamescope-session-plus/device-quirks -t "$pkgdir"/usr/share/gamescope-session-plus/
+	install -Dm755 "$builddir"/usr/share/gamescope-session-plus/gamescope-session-plus -t "$pkgdir"/usr/share/gamescope-session-plus/
+	install -Dm644 "$builddir"/usr/share/gamescope/scripts/50-custom/50-disable-explicit-sync.lua -t "$pkgdir"/usr/share/gamescope/scripts/50-custom/
+}
+
+systemd() {
+	default_systemd
+}
+
+sha512sums="
+134e75483f638d4445df77669368fcaa49b479b29cd67d1253fe379ffe45228c40a47e9f88f8a6b214e02f6f7bb84018f374b93423af61e7b9ee827f84d5b61c  gamescope-session-73d2da84ace7f41006a0f85bd2fdb19ef593a464.zip
+b76bd969e192536b1658dd4ba8fc460c318de333861ca12ed32df41a2b292ce2a4993465af215f2983885766ab8c66df9e9939d902c6b209def13934d2a0290d  0001-add-pocket-s2.patch
+78e7248358a63a73388cb6de1c9e0c824c727d93439840127091b7bf8ea692e3d744cab102e9681df59cae3cffb811a32af96fbb2503fd6354ce1e01352964e2  0002-fix-shell.patch
+"
