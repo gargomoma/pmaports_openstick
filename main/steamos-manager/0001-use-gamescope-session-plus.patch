@@ -1,0 +1,22 @@
+diff --git a/steamos-manager/src/session.rs b/steamos-manager/src/session.rs
+index c727d1d..dda63c0 100644
+--- a/steamos-manager/src/session.rs
++++ b/steamos-manager/src/session.rs
+@@ -193,7 +193,7 @@ impl SessionManager {
+     }
+ 
+     pub(crate) async fn current_login_mode(&self) -> Result<LoginMode> {
+-        if self.unit_is_active("gamescope-session.service").await? {
++        if self.unit_is_active("gamescope-session-plus@steam.service").await? {
+             return Ok(LoginMode::Game);
+         }
+         Ok(LoginMode::Desktop)
+@@ -270,7 +270,7 @@ impl SessionManager {
+ 
+     pub(crate) async fn session_for_mode(&self, mode: LoginMode) -> Result<String> {
+         match mode {
+-            LoginMode::Game => Ok(String::from("gamescope-wayland.desktop")),
++            LoginMode::Game => Ok(String::from("gamescope-session-steam.desktop")),
+             LoginMode::Desktop => self.default_desktop_session().await,
+         }
+     }
