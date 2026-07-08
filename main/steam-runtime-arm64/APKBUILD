@@ -1,0 +1,97 @@
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=steam-runtime-arm64
+pkgver=2026.07.14
+pkgrel=0
+pkgdesc="Valve's Steam digital software delivery system"
+url="https://store.steampowered.com"
+arch="aarch64"
+provides="steam-runtime=$pkgver-r$pkgrel"
+depends="
+	bubblewrap
+	steam-devices
+"
+makedepends="xz gzip"
+license="MIT"
+options="!check textrels !strip !archcheck !tracedeps !dbg pmb:cross-native"
+
+_tag=$pkgver
+_job=1621592
+_steamver=4.0.20260608.242786
+source="
+	com.valvesoftware.SteamRuntime.Platform-arm64-steamrt4-sysroot.tar.gz::https://repo.steampowered.com/steamrt4/images/$_steamver/com.valvesoftware.SteamRuntime.Platform-arm64-steamrt4-sysroot.tar.gz
+	com.valvesoftware.SteamRuntime.Platform-amd64-i386-steamrt4-sysroot.tar.gz::https://repo.steampowered.com/steamrt4/images/$_steamver/com.valvesoftware.SteamRuntime.Platform-amd64,i386-steamrt4-sysroot.tar.gz
+	steam-runtime-$_tag.tar.gz::https://gitlab.postmarketos.org/condenser/steam-fex-runtime/-/archive/$_tag/steam-fex-runtime-$_tag.tar.gz
+	runtime-arm64-$_job.tar.xz::https://gitlab.postmarketos.org/condenser/steam-fex-runtime/-/jobs/$_job/artifacts/raw/runtime-arm64.tar.xz
+	runtime-x86-64-$_job.tar.xz::https://gitlab.postmarketos.org/condenser/steam-fex-runtime/-/jobs/$_job/artifacts/raw/runtime-x86-64.tar.xz
+	fex-x86-64-$_job.tar.xz::https://gitlab.postmarketos.org/condenser/steam-fex-runtime/-/jobs/$_job/artifacts/raw/fex-x86-64.tar.xz
+	steam_subscriber_agreement.txt.gz
+	steam.desktop
+	16x16.png
+	24x24.png
+	32x32.png
+	48x48.png
+	256x256.png
+"
+subpackages="
+	$pkgname-doc
+	$pkgname-systemd
+"
+builddir="$srcdir/steam-runtime-$_tag/"
+
+unpack() {
+	cd "$srcdir"
+	tar xf steam-runtime-$_tag.tar.gz
+}
+
+package() {
+	# data
+	install -Dm755 "$srcdir"/steam-fex-runtime-"$_tag"/mkosi.images/base/arm64/data/steam "$pkgdir"/usr/bin/steam
+	install -Dm755 "$srcdir"/steam-fex-runtime-"$_tag"/mkosi.images/base/arm64/data/steam-alongside-amd64 "$pkgdir"/usr/libexec/steam-alongside-amd64
+	install -Dm644 "$srcdir"/steam-fex-runtime-"$_tag"/mkosi.images/base/arm64/data/steam-alongside-amd64.service "$pkgdir"/usr/lib/systemd/user/steam-alongside-amd64.service
+	install -Dm755 "$srcdir"/steam-fex-runtime-"$_tag"/mkosi.images/base/arm64/data/steam-alongside-arm64 "$pkgdir"/usr/libexec/steam-alongside-arm64
+	install -Dm644 "$srcdir"/steam-fex-runtime-"$_tag"/mkosi.images/base/arm64/data/steam-alongside-arm64.service "$pkgdir"/usr/lib/systemd/user/steam-alongside-arm64.service
+
+	# runtime
+	mkdir -p "$pkgdir"/usr/share/steam-runtime/rt-arm64
+	mkdir -p "$pkgdir"/usr/share/steam-runtime/rt-amd64
+	mkdir -p "$pkgdir"/usr/share/steam-runtime/pmos-arm64
+	mkdir -p "$pkgdir"/usr/share/steam-runtime/pmos-amd64
+	mkdir -p "$pkgdir"/usr/share/steam-runtime/fex-amd64
+	tar xf "$srcdir"/com.valvesoftware.SteamRuntime.Platform-arm64-steamrt4-sysroot.tar.gz -C "$pkgdir"/usr/share/steam-runtime/rt-arm64
+	tar xf "$srcdir"/com.valvesoftware.SteamRuntime.Platform-amd64-i386-steamrt4-sysroot.tar.gz -C "$pkgdir"/usr/share/steam-runtime/rt-amd64
+	find "$pkgdir"/usr/share/steam-runtime/rt-arm64 -perm /6000 -exec chmod -s {} \;
+	find "$pkgdir"/usr/share/steam-runtime/rt-amd64 -perm /6000 -exec chmod -s {} \;
+	tar xf "$srcdir"/runtime-arm64-$_job.tar.xz -C "$pkgdir"/usr/share/steam-runtime/pmos-arm64
+	tar xf "$srcdir"/runtime-x86-64-$_job.tar.xz -C "$pkgdir"/usr/share/steam-runtime/pmos-amd64
+	tar xf "$srcdir"/fex-x86-64-$_job.tar.xz -C "$pkgdir"/usr/share/steam-runtime/fex-amd64
+
+	# supporting
+	install -Dm644 "$srcdir"/steam.desktop "$pkgdir"/usr/share/applications/steam.desktop
+	install -Dm644 "$srcdir"/steam_subscriber_agreement.txt.gz "$pkgdir"/usr/share/doc/steam/steam_subscriber_agreement.txt.gz
+	install -Dm644 "$srcdir"/16x16.png "$pkgdir"/usr/share/icons/hicolor/16x16/apps/steam.png
+	install -Dm644 "$srcdir"/24x24.png "$pkgdir"/usr/share/icons/hicolor/24x24/apps/steam.png
+	install -Dm644 "$srcdir"/32x32.png "$pkgdir"/usr/share/icons/hicolor/32x32/apps/steam.png
+	install -Dm644 "$srcdir"/48x48.png "$pkgdir"/usr/share/icons/hicolor/48x48/apps/steam.png
+	install -Dm644 "$srcdir"/256x256.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps/steam.png
+}
+
+doc() {
+	provides="steam-runtime-doc=$pkgver-r$pkgrel"
+	default_doc
+}
+
+sha512sums="
+3a0501ed50aab31ab56023effa1064dcd19d46d2c09eb7342af0603b782ab5d7c52383c1617e27f124e1eb6e3a075d56273085209b877bd643fb02a137ffe0f4  com.valvesoftware.SteamRuntime.Platform-arm64-steamrt4-sysroot.tar.gz
+fe6fccb696b2a5308cefa7b6ba391efa2d4e82cdaf9cf234cd3ac6284c6a66824121bac6f1bc06eb36ebb33cea8368e5e12abedca3e87b93a9ef65e6daaef3c0  com.valvesoftware.SteamRuntime.Platform-amd64-i386-steamrt4-sysroot.tar.gz
+1c76e1226ae699968d018b58a4484ae877e885fb7023180acbfb6404f868cc0a6a6a26ed5c0b76138f9251a6dc05b4d6ee380e137e56a55a54f83742c929550d  steam-runtime-2026.07.14.tar.gz
+89e622cd2447666d89f03f751f0717e06ab7aa29e00739576008865cd70ed33fc306cb5033c21162b55ddf878a7526b4ebe88a5e74e73d7a10bd98ebd761f665  runtime-arm64-1621592.tar.xz
+6bf22dda7293b2a0f29f24a9cfc0899ea0c4fbb7a6fd7b34c474c10f2cd41453e4f89375a4021ef7b50e0db10ec425e9467828063b04f30560b466b5324f2bba  runtime-x86-64-1621592.tar.xz
+68a73241d5483334b5c054de44add0a60419fde5114f8186442a351ad500df3078f494a8ea374f5b8c4226bb75666d238c61d4650c9f672087cbbe8c447f3c5e  fex-x86-64-1621592.tar.xz
+f6564fa85cb12f2e4aa894d3f408cf2b002daf2079a97ae21d0842eef736325961dd113bfb57a9fb6725f1504b70f3d749aee510a39f4ff690f871d23f35a301  steam_subscriber_agreement.txt.gz
+5fd710acac289322d69f68008aba42d60d1f8bce88c7cbd201cc2ff5eb22703ae21db808c80077cebbe10e39f2e2e4989f34628b64bc08c8e35b04f7fedcc20d  steam.desktop
+520221683ce101ddb90b0a4a88d2e7682fc8322880648e24fd690d7a0d16a6b1f89100a9f64150b8ef704e034aa3c43289dd45d1c6594d2c01cdaa66b19205a3  16x16.png
+f1e9e34738d0d137baaef1309105dc37f94148b4a64f0d5900c4a4c7a9d957fb01d4c377ba64e5eddb1b37e891b0e99075aa9e51fdcf35909128389a832d63d5  24x24.png
+63bb79ef865c5dfd3d7e55df64a26095119892ef5006458b69ef3209de6ed0cebf1aa68ba410bc7783bd3e70c8656f07305d99a5e81caa212f9763119503a431  32x32.png
+9234cbfb0d80a3712d9ccd705efb42ff48dbfe657c7c91a1841e17556cde6fe094cd52aec8555011b46626614a48527856a92c105dd7564a66d643c72ac3588c  48x48.png
+63326b0121557715b4f3d473391aba9ec54f1f11a36e0d36643ec4308a44ccadf631c08d2b6ce473f6d8e9c087c41d188671cc81ba0e58b19dfb2342f5d50054  256x256.png
+"
