@@ -1,0 +1,45 @@
+maintainer="Victoria Brekenfeld <github@drakulix.de>"
+pkgname=steamos-powerbuttond
+pkgver=1.0.0
+pkgrel=3
+pkgdesc="Power button daemon"
+url="https://gitlab.steamos.cloud/holo/powerbuttond"
+arch="all"
+license="BSD-2-Clause"
+makedepends="libevdev-dev eudev-dev systemd-dev"
+_commit=7fab55a46708787f9c80268163c2fd1e6fcd267a
+source="
+	https://gitlab.steamos.cloud/holo/powerbuttond/-/archive/$_commit/powerbuttond-$_commit.tar.gz
+	0001-run-steam-from-PATH.patch
+	0002-Skip-processing-events-during-resume.patch
+	0003-bind-to-gamescope-session-plus.patch
+"
+options="!check" # no tests
+builddir="$srcdir/powerbuttond-$_commit"
+
+subpackages="
+	$pkgname-udev
+	$pkgname-systemd
+"
+
+build() {
+	LDFLAGS="-lc /usr/lib/crt1.o --dynamic-linker=/lib/ld-musl-aarch64.so.1" make
+}
+
+package() {
+	make install DESTDIR="$pkgdir"
+}
+
+systemd() {
+	default_systemd
+
+	rm "$subpkgdir/usr/lib/systemd/user/gamescope-session.service.wants/steamos-powerbuttond.service"
+	rmdir "$subpkgdir/usr/lib/systemd/user/gamescope-session.service.wants"
+}
+
+sha512sums="
+eff0ea7fd850aa10bebeb16edf108f21c4e8961f3e43402e2686f3d3295a8644369331b30c0d857960ba7c1efdd965277251efc1e768b92964337920b48dfeed  powerbuttond-7fab55a46708787f9c80268163c2fd1e6fcd267a.tar.gz
+1e1b48600f54c0bf4656976e4052b995fd0c6300009f26e0972edeed07a2972875b2a26770f5512141fcaf68838078b6219b78d3fc427b3b2e452c1fc31524c7  0001-run-steam-from-PATH.patch
+d7ad6cc7cbbc1f758f6d33e55f20f90b846b5c25f4b1067cfe8c2bf165fa7e4159c40f83e5a832c124d15a9a13d7d49b18889f277738cd43b18c10201a860e7f  0002-Skip-processing-events-during-resume.patch
+25f8730c70d57fe848324598c56b13c27573d8b71b623dedc3a9c6e2222c61500959c933e948510b74ded4b36b29f28b06ff2c9881c10cbbcf9645200d2cacfa  0003-bind-to-gamescope-session-plus.patch
+"
