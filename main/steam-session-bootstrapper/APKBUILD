@@ -1,0 +1,50 @@
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=steam-session-bootstrapper
+pkgver=1.1.10
+pkgrel=0
+pkgdesc="Bootstrapping tool for gamescope-session-steam"
+url="https://gitlab.postmarketos.org/condenser/steam-bootstrapper"
+arch="all"
+depends="
+	steamos-manager
+	inputplumber
+	kwin
+	steam-runtime-doc
+"
+makedepends="
+	sccache
+	rust
+	cargo
+	openssl-dev
+	eudev-dev
+"
+license="GPL-3"
+options="!check !pmb:crossdirect"
+
+source="steam-session-bootstrapper-v$pkgver.tar.gz::https://gitlab.postmarketos.org/condenser/steam-bootstrapper/-/archive/v$pkgver/steam-bootstrapper-v$pkgver.tar.gz"
+builddir="$srcdir/steam-bootstrapper-v$pkgver"
+
+subpackages="
+	$pkgname-systemd:systemd:noarch
+"
+
+prepare() {
+	default_prepare
+	cargo fetch --locked
+}
+
+build() {
+	make build
+}
+
+package() {
+	make install PREFIX="$pkgdir"/usr
+}
+
+systemd() {
+	default_systemd
+}
+
+sha512sums="
+23dffb2da6ac4bdf074a9cc03ffa0887dc8ba17799b29c6ba2c9937dec63b74e1189d6291ea691a14deec5d61fa8ec10631bd7b0784cccea846c082dac0715b0  steam-session-bootstrapper-v1.1.10.tar.gz
+"
