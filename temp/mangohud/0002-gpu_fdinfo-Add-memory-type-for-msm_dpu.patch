@@ -1,0 +1,26 @@
+From eba872f90383a229617bab2c97ec8336d3a3b43b Mon Sep 17 00:00:00 2001
+From: Victoria Brekenfeld <github@drakulix.de>
+Date: Sun, 14 Jun 2026 22:23:53 +0200
+Subject: [PATCH 2/3] gpu_fdinfo: Add memory-type for msm_dpu
+
+---
+ src/gpu_fdinfo.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/gpu_fdinfo.h b/src/gpu_fdinfo.h
+index 97e62e5..877b8b9 100644
+--- a/src/gpu_fdinfo.h
++++ b/src/gpu_fdinfo.h
+@@ -144,8 +144,8 @@ public:
+             drm_engine_type = "drm-engine-gfx";
+             drm_memory_type = "drm-memory-vram";
+         } else if (module == "msm_dpu") {
+-            // msm driver does not report vram usage
+             drm_engine_type = "drm-engine-gpu";
++            drm_memory_type = "drm-resident-memory";
+         } else if (module == "msm_drm") {
+             init_kgsl();
+         } else if (module == "panfrost") {
+-- 
+2.51.0
+
