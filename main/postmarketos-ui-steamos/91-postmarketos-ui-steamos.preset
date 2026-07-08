@@ -1,0 +1,2 @@
+enable firstboot-autologin.service
+enable steam-session-bootstrapper.service
