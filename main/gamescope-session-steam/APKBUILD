@@ -1,0 +1,33 @@
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=gamescope-session-steam
+pkgver=1.0.1
+pkgrel=0
+pkgdesc="Gamescope session + Steam based on Valve's gamescope"
+url="https://https://gitlab.postmarketos.org/condenser/gamescope-session-steam"
+arch="noarch"
+license="MIT"
+depends="
+	gamescope-session-plus
+	steam-runtime
+	jq
+	steam-session-bootstrapper
+	mangohud
+"
+options="!check" # no tests
+
+source="https://gitlab.postmarketos.org/condenser/gamescope-session-steam/-/archive/v$pkgver/gamescope-session-steam-v$pkgver.tar.gz"
+builddir="$srcdir/gamescope-session-steam-v$pkgver"
+
+package() {
+	install -Dm755 "$builddir"/usr/bin/steam-http-loader -t "$pkgdir"/usr/bin/
+	install -Dm644 "$builddir"/usr/share/applications/gamescope-mimeapps.list -t "$pkgdir"/usr/share/applications/
+	install -Dm644 "$builddir"/usr/share/applications/steam_http_loader.desktop -t "$pkgdir"/usr/share/applications/
+	install -Dm755 "$builddir"/usr/share/gamescope-session-plus/sessions.d/steam -t "$pkgdir"/usr/share/gamescope-session-plus/sessions.d/
+	install -Dm644 "$builddir"/usr/share/wayland-sessions/gamescope-session-steam.desktop -t "$pkgdir"/usr/share/wayland-sessions/
+	install -Dm644 "$builddir"/usr/share/polkit-1/rules.d/30-gamescope-session.rules -t "$pkgdir"/usr/share/polkit-1/rules.d/30-gamescope-session.rules
+	install -Dm644 "$builddir"/usr/lib/udev/rules.d/99-steamos-brightness.rules -t "$pkgdir"/usr/lib/udev/rules.d/
+}
+
+sha512sums="
+a78cd28749ed8b6e1a36af7ca7a1ca06177b18b7c47dcb76b0c4808739e845edc09d94a0f2e804b4377c306b96c501b3cb9cb6c70f63dc78e7415eb5834662e8  gamescope-session-steam-v1.0.1.tar.gz
+"
