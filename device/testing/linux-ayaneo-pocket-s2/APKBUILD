@@ -56,6 +56,7 @@ source="
 	0005-fan-node.patch
 	0007-fix-touchscreen-misconfig.patch
 	0001-WIP-try-to-avoid-panic-on-adsp-crash.patch
+	0001-linux7.0-resolve_btfids-preserve-tag-and-parameter-names-when.patch
 "
 builddir="$srcdir/$_repository-$_commit"
 
@@ -98,4 +99,5 @@ f7712cb52ab2abae02deb3f90d0bdba83bcdf1af9b5f4fdb97963d729d1a0161301ecb3b5948dcd7
 8c5f4da8f4c69aa427864729797a1b3168d1ef38c055d6b9d69638483be61bf0d86ccb0f347c8fc937c88fcf3eefb06203e611b11fa675f2528ffbc7417c9452  0005-fan-node.patch
 fc1e7dd6cc5be46825d0a3a42aae4a751c4fa5c194855df396881ba10b2fc7255917ec45fb2d61702b34f8b64b79a0d4450904ebcd93777494f2f4fc34c83602  0007-fix-touchscreen-misconfig.patch
 0d8b71e593c8164d5c5437fc56e956bea88f7ba5e28b3d889bb5ea561b48a73e2a52ad9539a3ccd19838b3ff4da05e0285d44a81b51a0ac278552a6468e89340  0001-WIP-try-to-avoid-panic-on-adsp-crash.patch
+4e705e038a91466a86fc5317b0028c2220aa1e7a4807e5d86db2f9ac815a927c59666a8f21ed50c4632147d3ce183d8042378a76f95341dbcd3db1047faf39e3  0001-linux7.0-resolve_btfids-preserve-tag-and-parameter-names-when.patch
 "
