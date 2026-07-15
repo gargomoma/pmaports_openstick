@@ -91,7 +91,7 @@ diff -Naur a/arch/arm64/boot/dts/qcom/sm6115-xiaomi-lime.dts b/arch/arm64/boot/d
 +	status = "okay";
 +
 +	panel: panel@0 {
-+		compatible = "boe,bf060y8m-aj0";
++		compatible = "xiaomi,lime-ft8719-truly";
 +		reg = <0>;
 +
 +		reset-gpios = <&tlmm 82 GPIO_ACTIVE_LOW>;

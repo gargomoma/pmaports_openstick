@@ -28,6 +28,7 @@ source="
 	$pkgname-$_commit.tar.gz::https://github.com/sm6115-mainline/$_repository/archive/$_commit.tar.gz
 	$_config
 	0001-arm64-dts-qcom-add-xiaomi-lime.patch
+	0002-drm-panel-add-xiaomi-lime-ft8719-truly.patch
 "
 builddir="$srcdir/$_repository-$_commit"
 
@@ -64,6 +65,7 @@ package() {
 
 sha512sums="
 67cf8499a17a18bbeec08eb7729b7dcec05661433dfb37684320ed806bedf105499a3f38dd8662ec1e443ae979d4050094a266fe250b6e6869ddd0eda2b14053  linux-postmarketos-qcom-sm6115-42b61ea7cdb9f531dd53f9e2c844a056db8978c1.tar.gz
-3d2947e1f13df313d05d926c4dc5e8ce20f13240af2ed951a4f8d1157177f01c68e4370da6ef44eeecce234933c4f08d5f868b17c771aecffe255adfec8c55b1  config-postmarketos-qcom-sm6115.aarch64
-5d5d9915031d0c6d4e88879c745c582f675783f67e83e3e78464fd4dc565f8014439381195e2689800e53eb8ea2ec59c2da92df2c909534f467c2205a3ce380f  0001-arm64-dts-qcom-add-xiaomi-lime.patch
+84caa7d55dd361710a45347ee87e3ee311f79565b07e68755917c95a81521bbd317fe9d95d49bf1dffc9a7af80b0cf57cc04c91f76d6a2e0098dd23b4f6f9672  config-postmarketos-qcom-sm6115.aarch64
+09729fb67b1be41d62505d293b4f0c1de390d4e84e01b327437f9d348c4f256f5e9a21d6f4e23368263004c91bed7c7e18067fe785cc0df3d662d053b6492cdb  0001-arm64-dts-qcom-add-xiaomi-lime.patch
+ebb2442a5092bfc84d01e47039ae717a6a0f60dc223d72fb2619d348d0c822f501bbe4f94ad4097b52580dc301f10362aeb66d633a6829b43ca211039e77ed6e  0002-drm-panel-add-xiaomi-lime-ft8719-truly.patch
 "
