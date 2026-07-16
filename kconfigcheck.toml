@@ -15,7 +15,6 @@ community = [
 	"category:accessibility",
 	"category:community_various",
 	"category:containers",
-	"category:debug",
 	"category:filesystems",
 	"category:hardening",
 	"category:immutable",
@@ -637,12 +636,6 @@ HW_RANDOM_VIRTIO = "m"
 ["category:virt".">=0.0.0"."aarch64 loongarch64 ppc64le riscv64 s390x x86 x86_64"]
 KVM = "y"
 VIRTUALIZATION = "y"
-
-["category:debug".">=0.0.0"."all"]
-FTRACE = "y" # Required by DEBUG_FTRACE
-FUNCTION_TRACER = "y" # Required by DEBUG_FTRACE
-DYNAMIC_DEBUG = "y"  # Enable debug dynamically
-DYNAMIC_FTRACE = "y"  # Enable function tracing dynamically
 
 # Device specific settings to prevent regressions
 ["category:librem5".">=0.0.0"."aarch64"]
