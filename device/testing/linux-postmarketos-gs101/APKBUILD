@@ -1,6 +1,6 @@
 maintainer="Ingo Reitz <9l@9lo.re>"
 pkgname=linux-postmarketos-gs101
-pkgver=7.0.6
+pkgver=7.2_rc3
 pkgrel=0
 pkgdesc="Google gs101 (Pixel 6 Series) close-to-mainline kernel"
 arch="aarch64"
@@ -12,18 +12,22 @@ options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
 makedepends="
 	bison
 	clang
+	elfutils-dev
 	findutils
 	flex
+	linux-headers
 	lld
 	llvm
 	lz4
 	openssl-dev
+	pahole
 	perl
+	python3
 	zstd
 "
 
 # Source
-_commit="d28cfa4275b95e93f4b7a1e743de31b723bd21b8"
+_commit="26a2cbd938ff1ed9800444cc6682b8b5a3d0bcdd"
 _config="config-$_flavor.$arch"
 source="
 	$pkgname-$_commit.tar.gz::https://github.com/gs101-mainline/linux/archive/$_commit.tar.gz
@@ -53,7 +57,7 @@ package() {
 		INSTALL_MOD_PATH="$pkgdir"/usr \
 		INSTALL_MOD_STRIP=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
-	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
 
 	install -D "$builddir"/include/config/kernel.release \
 		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
@@ -63,6 +67,6 @@ package() {
 }
 
 sha512sums="
-4d4a5568d3cc4c6ee957893a1168dd72274715e2491a19fcf314dcdf2fd5a466a088f2c4ca5d54578c68677f3899724643e07ac3f8fb1ee5fbe97f0c4c12dc91  linux-postmarketos-gs101-d28cfa4275b95e93f4b7a1e743de31b723bd21b8.tar.gz
-d8444741931ca26cdca20c959a3563eea777f6e3d2d378aeba9851fdb98adab8de2dd6b1466b61e49a9d89712ba7b066fb21a1b9e0a56e171507993b656ef6f6  config-postmarketos-gs101.aarch64
+eafa1a5629a708a9e55bd79652b25548ed0437b7383a1973df474e727c0566a28ca250c037f1307ee42add641ec3b9b0a1c793d9a97d9a90a6c9a791d16a4446  linux-postmarketos-gs101-26a2cbd938ff1ed9800444cc6682b8b5a3d0bcdd.tar.gz
+25f71dde2b914e9f804eee7e00e79e569740df6f9792e43dffcc381a1864fca43f2415c73e563f3eb35b9252e7c652b4f663b3a19032230ca99f89716007b5e5  config-postmarketos-gs101.aarch64
 "
