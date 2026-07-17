@@ -1,6 +1,6 @@
 maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
 pkgname=gamescope-session-steam
-pkgver=1.0.1
+pkgver=1.0.2
 pkgrel=0
 pkgdesc="Gamescope session + Steam based on Valve's gamescope"
 url="https://https://gitlab.postmarketos.org/condenser/gamescope-session-steam"
@@ -29,5 +29,5 @@ package() {
 }
 
 sha512sums="
-a78cd28749ed8b6e1a36af7ca7a1ca06177b18b7c47dcb76b0c4808739e845edc09d94a0f2e804b4377c306b96c501b3cb9cb6c70f63dc78e7415eb5834662e8  gamescope-session-steam-v1.0.1.tar.gz
+05c3f3fbed3075936ae150e38033ff9a1ad15785ee2d41aa070b7841e8800e7d3bdefa7b0b863266e9fdc4581b01567e0da002d4627626de09641c593a900b55  gamescope-session-steam-v1.0.2.tar.gz
 "
