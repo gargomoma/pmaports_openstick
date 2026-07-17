@@ -1,0 +1,17 @@
+external/board/h700/patches/linux/0005-rg35xx-enable-HDMI-LCD.patch
+external/board/h700/patches/linux/0006-Update-sun8i_tcon_top.c.patch
+external/board/h700/patches/linux/0007-rg35xx-add-GPU-opp.patch
+external/board/h700/patches/linux/0008-sun20i-add-pwm-driver.patch
+external/board/h700/patches/linux/0009-h616-add-pwm-node.patch
+external/board/h700/patches/linux/0010-rg35xx-enable-pwm-backlight.patch
+external/board/h700/patches/linux/0011-Revert-usb-musb-Fix-hardware-lockup-on-first-Rx-endp.patch
+external/board/h700/patches/linux/0013-rg35xx-2024-use-panel-mipi-dpi-spi-driver.patch
+external/board/h700/patches/linux/0015-20241018_macroalpha82_rg35xx_add_additional_hardware_support.patch
+external/board/h700/patches/linux/0016-enable-mmc1-for-RG35XX-2024.patch
+external/board/h700/patches/linux/0017-phy-fix-OTG-host-mode.patch
+external/board/h700/patches/linux/0018-rg35xx-2024-enable-usb-otg.patch
+external/board/h700/patches/linux/0019-enable-rgb-leds.patch
+external/board/h700/patches/linux/0021-sun4i-set-rgb-connector-as-DSI.patch
+external/board/h700/patches/linux/0022-h700-update-opps.patch
+external/board/h700/patches/linux/0023-dts-Enable-hdmi-sound.patch
+external/board/h700/patches/linux/0024-dts-rg35xx-2024-fix-led-1-color.patch

@@ -1,0 +1,100 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: https://github.com/ROCKNIX/distribution/blob/ca50938cbc2762d77203e1f63b8b8aa85a75f4a4/projects/ROCKNIX/devices/H700/linux/linux.aarch64.conf
+maintainer="Kevin Widjaja <kevinwidjaja_dev@proton.me>"
+pkgname=linux-anbernic-rgxxxx
+pkgver=7.1.3
+pkgrel=0
+pkgdesc="Close-to-mainline kernel fork for Anbernic RGXXXX H700 devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="anbernic-rgxxxx"
+url="https://kernel.org"
+license="GPL-2.0-only"
+makedepends="
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+	"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	"
+
+# Source
+_repository="linux"
+_patches_repo="minime"
+_commit="90be143be6834e5b5fb93c3f734c98259f7f3b9c"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$pkgver.tar.gz::https://www.kernel.org/pub/${_repository}/kernel/v${pkgver/.*/}.x/linux-${pkgver}.tar.gz
+	$_patches_repo-$_commit.tar.gz::https://github.com/minime-os/$_patches_repo/archive/$_commit.tar.gz
+	patch.files
+	01-remove-rocknix-dt-id.patch
+	02-v2_20250226_kikuchan98_drm_panel_add_generic_mipi_panel_driver.patch
+	$_config
+"
+builddir="$srcdir/$_repository-$pkgver"
+
+prepare() {
+	# Apply select patches to the mainline kernel.
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		patch -p1 < "$srcdir/$_patches_repo-$_commit/$_i"
+	done < "$srcdir/patch.files"
+
+	makefile="$builddir/arch/arm64/boot/dts/allwinner/Makefile"
+
+	for dts in "$srcdir/$_patches_repo"-*/external/board/h700/dts/*dts*; do
+		dtb="$(basename "$dts" | sed 's/\.dts$/.dtb/')"
+
+		# Move the devicetree sources in the kernel tree.
+		cp "$dts" "arch/arm64/boot/dts/allwinner/"
+
+		# Mention the devicetree blobs in the Makefile for
+		# compilation if they're absent.
+		if ! grep -q "$dtb" "$makefile"; then
+			echo "dtb-\$(CONFIG_ARCH_SUNXI) += $dtb" >> "$makefile"
+		fi
+	done
+
+	default_prepare
+	cp "$srcdir"/config-$_flavor.$arch .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 HOSTLDFLAGS="-fuse-ld=lld" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	make LLVM=1 zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir/boot" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+f516ca327f467c459b833f8dcf46829e4bcb4377e45c672140981ff628b8efa7ce8b727ed056a0e8c0b8106cda37a67665992d93e03e2a608dde9bb96f8f4b29  linux-anbernic-rgxxxx-7.1.3.tar.gz
+40d520344afcffd59c1c882857d9afb24221e6f77c756c15284595a37c0c804d86276cc1e1e338b763d981f2a97d5d7f910d0d9f74838f6b575fa628fac17f4f  minime-90be143be6834e5b5fb93c3f734c98259f7f3b9c.tar.gz
+6f8bf6b1ea0fe2c276161a15462610e6a32f1156799019712dc88b5a462863eaea603821e0a8be31e7a9203b0965cb43f713d35f82f10db87772519d87143b98  patch.files
+ee9a0c247a8128301fabc4709543f78b1146eb05ebedd2927c4bdae100f128dc41e22e2ff013ee46c1dbe5e14ff725624cac71284f27e849f3f454738c57afac  01-remove-rocknix-dt-id.patch
+4efea4396371dd8b83e26af91e90344dfcd111af59a2a537e3e4463789b20aa8ccc5b3934123253e2d5a11c54e8d12333e8f9e0bea23625f6c3f30fccc0e9867  02-v2_20250226_kikuchan98_drm_panel_add_generic_mipi_panel_driver.patch
+9b84181330eb734089c318b31912babcb568b727ef4a03799db1539cfde6435831a0bbb69dce2686a74416cd2b39baae39f069b3ab68dd30950fe1c93c9901c4  config-anbernic-rgxxxx.aarch64
+"
