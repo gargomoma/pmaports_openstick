@@ -13,7 +13,7 @@ deviceinfo_arch="aarch64"
 deviceinfo_chassis="handset"
 deviceinfo_external_storage="true"
 deviceinfo_drm="true"
-deviceinfo_keymaps="us/us-key2"
+deviceinfo_keymaps="us/us-key2 de/de-key2"
 
 # Bootloader related
 deviceinfo_flash_method="fastboot"

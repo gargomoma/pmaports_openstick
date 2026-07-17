@@ -1,0 +1,25 @@
+diff --git a/rules/rules.in b/rules/rules.in
+index ccb207dc..1e94925b 100644
+--- a/rules/rules.in
++++ b/rules/rules.in
+@@ -224,6 +224,7 @@
+   ataritt	 *			=	xfree68_vndr/ataritt(us)+%l%(v)
+   amiga		 *			=	xfree68_vndr/amiga(usa1)+%l%(v)
+   blackberry-key2	us	        =	pc+blackberry_vndr/key2/us
++  blackberry-key2	de	        =	pc+blackberry_vndr/key2/de
+   empty		 *			=	empty(basic)
+   *		 empty			=	empty(basic)
+   jollasbj	 *			=	jolla_vndr/sbj(common)+%l%(v)
+diff --git a/symbols/blackberry_vndr/key2/de b/symbols/blackberry_vndr/key2/de
+new file mode 100644
+index 00000000..a6ad7de9
+--- /dev/null
++++ b/symbols/blackberry_vndr/key2/de
+@@ -0,0 +1,7 @@
++xkb_symbols "default" {
++    include "blackberry_vndr/key2/us(key2)"
++	// 1st row
++	key <AD06>	{ [	z,		Z,		parenright,	none,		bracketright] };
++	// 3rd row
++	key <AB01>	{ [	y,		Y,		7,		none,		U00AB] };
++};
