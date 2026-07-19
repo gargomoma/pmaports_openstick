@@ -13,7 +13,6 @@
 community = [
 	"category:default",
 	"category:accessibility",
-	"category:community_various",
 	"category:containers",
 	"category:debug",
 	"category:filesystems",
@@ -24,6 +23,7 @@ community = [
 	"category:netboot",
 	"category:netmount",
 	"category:nftables",
+	"category:scheduler",
 	"category:usb",
 	"category:usb_gadgets",
 	"category:waydroid",
@@ -132,6 +132,8 @@ DEBUG_INFO_REDUCED = "n"
 DYNAMIC_FTRACE_WITH_DIRECT_CALLS = "y"
 
 ["category:netmount".">=0.0.0"."all"]
+NETWORK_FILESYSTEMS = "y"  # Required by CIFS
+CIFS = "m"  # mount SMB shares
 CACHEFILES = "m"
 CRYPTO_CAMELLIA = "m"
 CRYPTO_CMAC = "m"
@@ -366,6 +368,12 @@ BLK_DEV_UBLK = "m"
 
 # wireguard: VPN software, also includes options for wg-quick
 ["category:wireguard".">=0.0.0"."all"]
+NETFILTER_ADVANCED = "y" # Required by NETFILTER_XT_MATCH_MARK
+NETFILTER_XT_MATCH_MARK = "m"  # e.g. HashiCorp Nomad
+NETFILTER_XT_MATCH_MULTIPORT = "m"  # e.g. HashiCorp Nomad
+NETFILTER_XT_MATCH_STATISTIC = "m"  # kube-proxy
+NETFILTER_XT_MATCH_TCPMSS = "m"  # change MTU e.g. for Wireguard
+NETFILTER_XT_TARGET_TCPMSS = "m"  # change MTU e.g. for Wireguard
 WIREGUARD = "m"
 IP_ADVANCED_ROUTER = "y"
 IP_MULTIPLE_TABLES = "y"
@@ -386,6 +394,7 @@ NF_CONNTRACK_MARK = "y"
 # See: https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/7136#note_505237
 BTRFS_FS = "m"
 BTRFS_FS_POSIX_ACL = "y"
+DM_INTEGRITY = "m"  # Device-mapper integrity target
 EXFAT_FS = "m"
 EXT4_FS = "y"
 F2FS_FS = "m"
@@ -416,30 +425,13 @@ USB_CONFIGFS_NCM = "y"  # USB networking via NCM
 USB_CONFIGFS_RNDIS = "y"  # USB networking via RNDIS (legacy)
 USB_CONFIGFS_F_FS = "y"  # FunctionFS support in ConfigFS
 
-# community_various: Various options that were not categorized properly due to
-# inflexibility of previous kconfigcheck related code. We should move these to
-# proper categories above and/or invent new categories with meaningful names.
-# >> Do not add more here!! <<
-["category:community_various".">=0.0.0"."all"]
-BINFMT_MISC = "m"  # register binary formats
-NETWORK_FILESYSTEMS = "y"  # Required by CIFS
-CIFS = "m"  # mount SMB shares
-LEDS_TRIGGER_PATTERN = "m"  # feedbackd
-LEDS_TRIGGER_TIMER = "m"  # hfd-service
-NETFILTER_ADVANCED = "y" # Required by NETFILTER_XT_MATCH_MARK
-NETFILTER_XT_MATCH_MARK = "m"  # e.g. HashiCorp Nomad
-NETFILTER_XT_MATCH_MULTIPORT = "m"  # e.g. HashiCorp Nomad
-NETFILTER_XT_MATCH_STATISTIC = "m"  # kube-proxy
-NETFILTER_XT_MATCH_TCPMSS = "m"  # change MTU e.g. for Wireguard
-NETFILTER_XT_TARGET_TCPMSS = "m"  # change MTU e.g. for Wireguard
-# TODO = Depends on SUSPEND which is not enabled for some devices
-# PM_WAKELOCKS = "y"  # Sxmo
+# scheduler: modify scheduler
+["category:scheduler".">=0.0.0"."all"]
 CPU_FREQ = "y"
 CPU_FREQ_GOV_SCHEDUTIL = "y" # Required by UCLAMP_TASK
 UCLAMP_TASK = "y"  # Scheduler hints
 UCLAMP_TASK_GROUP = "y"  # Scheduler hints
 RT_GROUP_SCHED = "n"  # https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/2652
-DM_INTEGRITY = "m"  # Device-mapper integrity target
 
 # uefi: proper modern booting
 ["category:uefi".">=0.0.0"."aarch64 armv7 armhf loongarch64 riscv64 x86 x86_64"]
@@ -468,6 +460,8 @@ NTFS3_FS = "m"
 NTFS_FS = "m"
 
 ["category:input".">=0.0.0"."all"]
+LEDS_TRIGGER_PATTERN = "m"  # feedbackd
+LEDS_TRIGGER_TIMER = "m"  # hfd-service
 BT = "m" # Required by BT_HIDP
 BT_HIDP = "m"  # Bluetooth HID
 GPIOLIB = "y" # Required by a couple of HID configs
@@ -633,6 +627,7 @@ USB_RTL8152 = "m"  # USB Ethernet
 USB_NET_RNDIS_HOST = "m"  # USB Ethernet via RNDIS
 
 ["category:virt".">=0.0.0"."all"]
+BINFMT_MISC = "m"  # register binary formats
 HW_RANDOM_VIRTIO = "m"
 ["category:virt".">=0.0.0"."aarch64 loongarch64 ppc64le riscv64 s390x x86 x86_64"]
 KVM = "y"
