@@ -20,17 +20,18 @@ Maintainers are identified by the maintainer variable in the `APKBUILD` of the
 package like:
 
 ```sh
-maintainer="Jane Doe <jane@example.org>"
+maintainer="Jane Doe (@Jane) <jane@example.org>"
 ```
 
 The email should be added to the gitlab user of the maintainer, to make it
 possible for the user to be pinged when doing changes. The name can be any
-identifier the maintainer uses online or in person.
+identifier the maintainer uses online or in person. The name in braces should
+be the user's GitLab username.
 
 Packages can also have Co-Maintainers, which are identified by a comment like:
 
 ```sh
-# Co-Maintainer: John Doe <john@example.org>
+# Co-Maintainer: John Doe (@John) <john@example.org>
 ```
 
 Maintainers and Co-Maintainers will be pinged whenever changes to their packages
