@@ -169,8 +169,11 @@ if __name__ == "__main__":
     archs = ArchTagSet()
     devices_under_test = set()
     packages_modified = set()
+    systemd_repo_modified = False
     # Get and print modified packages
     for file in common.get_changed_files():
+        if "extra-repos/systemd/" in file:
+            systemd_repo_modified = True
         path = Path(file)
 
         # Check if the modified's file parent folder is one of a supported dev
@@ -213,7 +216,12 @@ if __name__ == "__main__":
                 Arch.x86: "x86",
                 Arch.aarch64: "aarch64",
                 Arch.armv7: "armv7",
-                Arch.riscv64: "qemu",
+                # The riscv64 native runner is faster than the QEMU runner if
+                # cross compilation is not in use. This is mostly the case for
+                # the systemd repo, but not for packages in device/. Therefore
+                # we use the native runner if the systemd repo is modified and
+                # the QEMU runner in all other cases.
+                Arch.riscv64: "riscv64" if systemd_repo_modified else "qemu",
                 Arch.ppc64le: "ppc64le",
                 Arch.loongarch64: "loongarch64",
             },
