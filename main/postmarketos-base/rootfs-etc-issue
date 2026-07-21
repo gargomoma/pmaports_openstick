@@ -1,2 +1,3 @@
 Welcome to postmarketOS
 Kernel \r on an \m (\l)
+setterm -cursor on

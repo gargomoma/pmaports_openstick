@@ -209,6 +209,12 @@ setup_log() {
 	console="$(cat /sys/devices/virtual/tty/console/active)"
 	log_targets="/pmOS_init.log"
 
+	if [ "$nosplash" == "y" ]; then
+		# Set loglevel to the default if not using Plymouth because we don't care
+		# about hiding logs without it
+		echo 4 > /proc/sys/kernel/printk
+	fi
+
 	# If we have an active console, the kernel will be logging there.
 	if [ -n "$console" ] ; then
 		exec 3>&1 4>&2

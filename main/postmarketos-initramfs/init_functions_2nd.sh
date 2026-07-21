@@ -13,6 +13,9 @@ splash_start() {
 		return
 	fi
 	plymouthd --mode=boot --attach-to-session
+	# Set loglevel to the default. This has to be done after Plymouth is
+	# started to not show logs before it can hide them.
+	echo 4 > /proc/sys/kernel/printk
 }
 
 # Stop the Plymouth daemon
