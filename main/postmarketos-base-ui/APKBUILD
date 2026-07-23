@@ -11,6 +11,7 @@ depends="
 	chrony
 	dbus
 	haveged
+	kunifiedpush
 	nftables
 	pipewire
 	pipewire-spa-libcamera
