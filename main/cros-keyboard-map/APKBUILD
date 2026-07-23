@@ -2,7 +2,7 @@ maintainer="WeirdTreeThing <bradyn127@protonmail.com>"
 pkgname=cros-keyboard-map
 pkgdesc="Keyboard mapping for Chrome OS devices"
 pkgver=0_git20251218
-pkgrel=1
+pkgrel=2
 url="https://github.com/WeirdTreeThing/cros-keyboard-map"
 license="BSD-3-Clause"
 arch="aarch64 armv7 x86_64" # there are no cros devices of other arches
@@ -38,6 +38,10 @@ package() {
 	install -Dm644 "$srcdir"/$pkgname.confd \
 		"$pkgdir/etc/conf.d/$pkgname"
 
+	# Tmpfiles to create the config directory
+	install -Dm644 "$srcdir/$pkgname.tmpfiles" \
+		"$pkgdir/usr/lib/tmpfiles.d/$pkgname.conf"
+
 	# We generate config in runtime with a service, thus make a symlink for
 	# keyd config to a file in /tmp that will be generated with the service
 	_dir="$pkgdir/etc/keyd"
@@ -53,9 +57,6 @@ systemd() {
 	# Config file for systemd use (environment file)
 	install -Dm644 "$srcdir/$pkgname.env" \
 		"$subpkgdir/etc/$pkgname"
-	# Tmpfiles to create the config directory
-	install -Dm644 "$srcdir/$pkgname.tmpfiles" \
-		"$subpkgdir/usr/lib/tmpfiles.d/$pkgname.conf"
 
 	default_systemd
 }
