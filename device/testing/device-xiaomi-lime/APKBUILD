@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-xiaomi-lime
+pkgdesc="Xiaomi Redmi 9T (lime)"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-sm6115
+	firmware-xiaomi-lime-adreno
+	firmware-xiaomi-lime-adsp
+	firmware-xiaomi-lime-cdsp
+	firmware-xiaomi-lime-ipa
+	firmware-xiaomi-lime-radio
+	firmware-xiaomi-lime-rproc
+	firmware-xiaomi-lime-venus
+	iw
+	mkbootimg
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+093322e615df09912f3fa416f555c9c80b65cdbdc11cd3778cade02ce61ec11a180e1903b38e3479a59631cd2eecbae0a8b0b636d8bd42c4b31fd8c1627c2eb5  deviceinfo
+"
