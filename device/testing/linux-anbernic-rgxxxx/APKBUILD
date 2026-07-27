@@ -2,63 +2,66 @@
 # Kernel config based on: https://github.com/ROCKNIX/distribution/blob/ca50938cbc2762d77203e1f63b8b8aa85a75f4a4/projects/ROCKNIX/devices/H700/linux/linux.aarch64.conf
 maintainer="Kevin Widjaja <kevinwidjaja_dev@proton.me>"
 pkgname=linux-anbernic-rgxxxx
-pkgver=7.1.3
+pkgver=7.1.4
 pkgrel=0
+_commit="90be143be6834e5b5fb93c3f734c98259f7f3b9c"
 pkgdesc="Close-to-mainline kernel fork for Anbernic RGXXXX H700 devices"
+url="https://kernel.org"
 arch="aarch64"
 _carch="arm64"
-_flavor="anbernic-rgxxxx"
-url="https://kernel.org"
 license="GPL-2.0-only"
 makedepends="
-	bison
-	clang
-	elfutils-dev
-	findutils
-	flex
-	linux-headers
-	lld
-	llvm
-	openssl-dev
-	pahole
-	perl
-	postmarketos-installkernel
-	python3
-	zstd
+		bison
+		clang
+		elfutils-dev
+		findutils
+		flex
+		linux-headers
+		lld
+		llvm
+		openssl-dev
+		pahole
+		perl
+		postmarketos-installkernel
+		python3
+		zstd
 	"
-options="!strip !check !tracedeps
-	pmb:cross-native
-	pmb:kconfigcheck-community
+options="
+		!check
+		!strip
+		!tracedeps
+		pmb:cross-native
+		pmb:kconfigcheck-community
 	"
 
+_flavor="${pkgname#linux-}"
+
 # Source
-_repository="linux"
-_patches_repo="minime"
-_commit="90be143be6834e5b5fb93c3f734c98259f7f3b9c"
-_config="config-$_flavor.$arch"
 source="
-	$pkgname-$pkgver.tar.gz::https://www.kernel.org/pub/${_repository}/kernel/v${pkgver/.*/}.x/linux-${pkgver}.tar.gz
-	$_patches_repo-$_commit.tar.gz::https://github.com/minime-os/$_patches_repo/archive/$_commit.tar.gz
-	patch.files
 	01-remove-rocknix-dt-id.patch
 	02-v2_20250226_kikuchan98_drm_panel_add_generic_mipi_panel_driver.patch
-	$_config
+	03-libbpf-Fix-UAF-in-strset__add_str.patch
+	config-$_flavor.$arch
+	minime-$_commit.tar.gz::https://github.com/minime-os/minime/archive/$_commit.tar.gz
+	patch.files
+	$pkgname-$pkgver.tar.gz::https://www.kernel.org/pub/linux/kernel/v${pkgver/.*/}.x/linux-${pkgver}.tar.gz
 "
-builddir="$srcdir/$_repository-$pkgver"
+builddir="$srcdir"/linux-"$pkgver"
 
 prepare() {
 	# Apply select patches to the mainline kernel.
+	local _i
 	while IFS="" read -r _i || [ -n "$_i" ]; do
-		patch -p1 < "$srcdir/$_patches_repo-$_commit/$_i"
-	done < "$srcdir/patch.files"
+		patch -p1 < "$srcdir"/minime-"$_commit"/"$_i"
+	done < "$srcdir"/patch.files
 
-	makefile="$builddir/arch/arm64/boot/dts/allwinner/Makefile"
+	makefile="$builddir"/arch/arm64/boot/dts/allwinner/Makefile
 
-	for dts in "$srcdir/$_patches_repo"-*/external/board/h700/dts/*dts*; do
+	for dts in "$srcdir"/minime-*/external/board/h700/dts/*dts*; do
 		dtb="$(basename "$dts" | sed 's/\.dts$/.dtb/')"
 
 		# Move the devicetree sources in the kernel tree.
-		cp "$dts" "arch/arm64/boot/dts/allwinner/"
+		install -D -m644 "$dts" -t "$builddir"/arch/arm64/boot/dts/allwinner
 
 		# Mention the devicetree blobs in the Makefile for
 		# compilation if they're absent.
@@ -78,23 +81,26 @@ build() {
 }
 
 package() {
-	make LLVM=1 zinstall modules_install dtbs_install \
+	make dtbs_install modules_install zinstall \
 		ARCH="$_carch" \
 		LLVM=1 \
-		INSTALL_PATH="$pkgdir/boot" \
+		INSTALL_PATH="$pkgdir"/boot \
 		INSTALL_MOD_STRIP=1 \
 		INSTALL_MOD_PATH="$pkgdir"/usr \
-		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
 
 	install -D "$builddir"/include/config/kernel.release \
 		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
 }
 
 sha512sums="
-f516ca327f467c459b833f8dcf46829e4bcb4377e45c672140981ff628b8efa7ce8b727ed056a0e8c0b8106cda37a67665992d93e03e2a608dde9bb96f8f4b29  linux-anbernic-rgxxxx-7.1.3.tar.gz
-40d520344afcffd59c1c882857d9afb24221e6f77c756c15284595a37c0c804d86276cc1e1e338b763d981f2a97d5d7f910d0d9f74838f6b575fa628fac17f4f  minime-90be143be6834e5b5fb93c3f734c98259f7f3b9c.tar.gz
-6f8bf6b1ea0fe2c276161a15462610e6a32f1156799019712dc88b5a462863eaea603821e0a8be31e7a9203b0965cb43f713d35f82f10db87772519d87143b98  patch.files
 ee9a0c247a8128301fabc4709543f78b1146eb05ebedd2927c4bdae100f128dc41e22e2ff013ee46c1dbe5e14ff725624cac71284f27e849f3f454738c57afac  01-remove-rocknix-dt-id.patch
 4efea4396371dd8b83e26af91e90344dfcd111af59a2a537e3e4463789b20aa8ccc5b3934123253e2d5a11c54e8d12333e8f9e0bea23625f6c3f30fccc0e9867  02-v2_20250226_kikuchan98_drm_panel_add_generic_mipi_panel_driver.patch
-9b84181330eb734089c318b31912babcb568b727ef4a03799db1539cfde6435831a0bbb69dce2686a74416cd2b39baae39f069b3ab68dd30950fe1c93c9901c4  config-anbernic-rgxxxx.aarch64
+e2555390d48cbbdc32a7d3f0c27599ff88f2fe3e786d1d0086caaa5b092cc3edcb6e95e2fb07034edb3793f6dc954da0662c723202eb7e2c4956c99b50919b12  03-libbpf-Fix-UAF-in-strset__add_str.patch
+a4179708eea0c2d7958c03fb620ffbdf8d13d7c0c731ac81a394a3fe4b3d8f27bb36600d03e668e945cef4db0d8b817c393d4919c8f508f7d308c9793c7ece89  config-anbernic-rgxxxx.aarch64
+40d520344afcffd59c1c882857d9afb24221e6f77c756c15284595a37c0c804d86276cc1e1e338b763d981f2a97d5d7f910d0d9f74838f6b575fa628fac17f4f  minime-90be143be6834e5b5fb93c3f734c98259f7f3b9c.tar.gz
+fd43554ece899c883c28dc0d038c7c375300be4c9b50b75dd48dfc6a44417d5c4ce19f1f77af98c8133ad9d3ba7c659f9a0c70480c4a827bc0cd88d9fadd7631  patch.files
+08769707314ed114aabf2b8057e09f46ee07371cde29748378f646a125d392b14ad4b678380d76ad214b74fae7f5bc28505b8ca371156c4f5bd8d05d7e531fb8  linux-anbernic-rgxxxx-7.1.4.tar.gz
 "
