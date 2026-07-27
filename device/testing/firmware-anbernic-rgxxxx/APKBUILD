@@ -2,30 +2,30 @@ maintainer="Kevin Widjaja <kevinwidjaja_dev@proton.me>"
 pkgname=firmware-anbernic-rgxxxx
 pkgver=1
 pkgrel=0
+_commit="0e1acd9e3f4a293d3f498c79780879805d22660d"
 pkgdesc="Firmware for Anbernic RGXXXX series devices"
 url="https://github.com/kevinwidjaja21/knulli-extra_firmwares"
-_repository="knulli-extra_firmwares"
-_commit="0e1acd9e3f4a293d3f498c79780879805d22660d"
 arch="aarch64"
 license="proprietary"
-options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
-
+options="
+	!archcheck
+	!check
+	!spdx
+	!strip
+	!tracedeps
+	pmb:cross-native
+"
 source="
-	$_repository-$_commit.tar.gz::https://github.com/kevinwidjaja21/$_repository/archive/$_commit.tar.gz
-	panel.files
+	knulli-extra_firmwares-$_commit.tar.gz::https://github.com/kevinwidjaja21/knulli-extra_firmwares/archive/$_commit.tar.gz
 "
 
 package() {
-	cd "$srcdir/$_repository-$_commit/"
-	while IFS="" read -r _i || [ -n "$_i" ]; do
-		_filename=$(basename "$_i")
-		_destdir="$pkgdir/lib/firmware/panels"
-		[ ! -d "$_destdir" ] && mkdir -p "$_destdir"
-		install -Dm644 "$_i" "$_destdir/$_filename"
-	done < "$srcdir/panel.files"
+	local _i
+	for _i in "$srcdir"/knulli-extra_firmwares-"$_commit"/panels/anbernic,rg*; do
+		install -Dm644 "$_i" -t "$pkgdir"/usr/lib/firmware/panels
+	done
 }
 
 sha512sums="
 119a423f07f29f306b357393cf0c3b647082ebce1f9556ae14fa5811a6cd04e24606eee93913b2a585da98e87930ee75ef79d1b78f831b105e8b8b1376a864b1  knulli-extra_firmwares-0e1acd9e3f4a293d3f498c79780879805d22660d.tar.gz
-df789b2d00df31aba55f00f222cc5ee24e34647bb45c222bad9b2d4325e4b719db24df2c96f59616d3fdaa0c109d3a9ca1325a696651cc0cdbbc3f4581ad46b7  panel.files
 "

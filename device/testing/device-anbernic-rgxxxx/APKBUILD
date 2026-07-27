@@ -5,39 +5,39 @@ pkgdesc="Anbernic RGXXXX"
 pkgver=1
 pkgrel=0
 url="https://postmarketos.org"
-license="MIT"
 arch="aarch64"
-options="!check !archcheck"
+license="MIT"
+options="!archcheck !check"
 depends="
-	u-boot-anbernic-rgxxxx
-	u-boot-tools
-	py3-evdev
 	firmware-anbernic-rgxxxx
 	postmarketos-base
+	py3-evdev
+	u-boot-anbernic-rgxxxx
+	u-boot-tools
 "
 makedepends="devicepkg-dev"
 subpackages="
-	$pkgname-kernel-rg35xx_plus:kernel_rg35xx_plus
-	$pkgname-kernel-rg35xx_plus_rev6_panel:kernel_rg35xx_plus_rev6_panel
-	$pkgname-kernel-rg35xx_pro:kernel_rg35xx_pro
-	$pkgname-kernel-rg35xx_h:kernel_rg35xx_h
-	$pkgname-kernel-rg35xx_h_rev6_panel:kernel_rg35xx_h_rev6_panel
-	$pkgname-kernel-rg35xx_sp:kernel_rg35xx_sp
-	$pkgname-kernel-rg35xx_sp_v2_panel:kernel_rg35xx_sp_v2_panel
-	$pkgname-kernel-rg35xx_2024:kernel_rg35xx_2024
-	$pkgname-kernel-rg35xx_2024_rev6_panel:kernel_rg35xx_2024_rev6_panel
-	$pkgname-kernel-rg40xx_h:kernel_rg40xx_h
-	$pkgname-kernel-rg40xx_h_v2_panel:kernel_rg40xx_h_v2_panel
-	$pkgname-kernel-rg40xx_v:kernel_rg40xx_v
-	$pkgname-kernel-rg40xx_v_v2_panel:kernel_rg40xx_v_v2_panel
-	$pkgname-kernel-rgcubexx:kernel_rgcubexx
 	$pkgname-kernel-rg28xx:kernel_rg28xx
-	$pkgname-kernel-rg34xx:kernel_rg34xx
 	$pkgname-kernel-rg34xx_sp:kernel_rg34xx_sp
+	$pkgname-kernel-rg34xx:kernel_rg34xx
+	$pkgname-kernel-rg35xx_2024_rev6_panel:kernel_rg35xx_2024_rev6_panel
+	$pkgname-kernel-rg35xx_2024:kernel_rg35xx_2024
+	$pkgname-kernel-rg35xx_h_rev6_panel:kernel_rg35xx_h_rev6_panel
+	$pkgname-kernel-rg35xx_h:kernel_rg35xx_h
+	$pkgname-kernel-rg35xx_plus_rev6_panel:kernel_rg35xx_plus_rev6_panel
+	$pkgname-kernel-rg35xx_plus:kernel_rg35xx_plus
+	$pkgname-kernel-rg35xx_pro:kernel_rg35xx_pro
+	$pkgname-kernel-rg35xx_sp_v2_panel:kernel_rg35xx_sp_v2_panel
+	$pkgname-kernel-rg35xx_sp:kernel_rg35xx_sp
+	$pkgname-kernel-rg40xx_h_v2_panel:kernel_rg40xx_h_v2_panel
+	$pkgname-kernel-rg40xx_h:kernel_rg40xx_h
+	$pkgname-kernel-rg40xx_v_v2_panel:kernel_rg40xx_v_v2_panel
+	$pkgname-kernel-rg40xx_v:kernel_rg40xx_v
+	$pkgname-kernel-rgcubexx:kernel_rgcubexx
 "
 source="
-	deviceinfo
 	30-device-firmware.files
+	deviceinfo
 "
 _pmb_recommends="mapper-anbernic-rgxxxx"
 
@@ -45,99 +45,14 @@ build() {
 	devicepkg_build $startdir $pkgname
 }
 
-kernel_rg35xx_plus() {
-	pkgdesc="RG35XX plus DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg35xx_plus_rev6_panel() {
-	pkgdesc="RG35XX plus rev6 panel DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg35xx_pro() {
-	pkgdesc="RG35XX pro DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg35xx_h() {
-	pkgdesc="RG35XX H DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg35xx_h_rev6_panel() {
-	pkgdesc="RG35XX H rev6 panel DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-
-kernel_rg35xx_sp() {
-	pkgdesc="RG35XX SP DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg35xx_sp_v2_panel() {
-	pkgdesc="RG35XX SP v2 panel DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg35xx_2024() {
-	pkgdesc="RG35XX 2024 DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg35xx_2024_rev6_panel() {
-	pkgdesc="RG35XX 2024 rev6 panel DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg40xx_h() {
-	pkgdesc="RG40XX H DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg40xx_h_v2_panel() {
-	pkgdesc="RG40XX H v2 panel DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg40xx_v() {
-	pkgdesc="RG40XX V DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg40xx_v_v2_panel() {
-	pkgdesc="RG40XX V v2 panel DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rgcubexx() {
-	pkgdesc="RG35XX cubexx DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/30-device-firmware.files \
+		-t "$pkgdir"/usr/share/mkinitfs/files
 }
 
 kernel_rg28xx() {
 	pkgdesc="RG28XX DTB"
-	depends="linux-anbernic-rgxxxx linux-firmware"
-	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
-}
-
-kernel_rg34xx() {
-	pkgdesc="RG34XX DTB"
 	depends="linux-anbernic-rgxxxx linux-firmware"
 	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
 }
@@ -148,13 +63,97 @@ kernel_rg34xx_sp() {
 	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
 }
 
+kernel_rg34xx() {
+	pkgdesc="RG34XX DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
 
-package() {
-	devicepkg_package $startdir $pkgname
-	install -Dm644 "$srcdir"/30-device-firmware.files "$pkgdir/usr/share/mkinitfs/files/30-device-firmware.files"
+kernel_rg35xx_2024_rev6_panel() {
+	pkgdesc="RG35XX 2024 rev6 panel DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg35xx_2024() {
+	pkgdesc="RG35XX 2024 DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg35xx_h_rev6_panel() {
+	pkgdesc="RG35XX H rev6 panel DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg35xx_h() {
+	pkgdesc="RG35XX H DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg35xx_plus_rev6_panel() {
+	pkgdesc="RG35XX plus rev6 panel DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg35xx_plus() {
+	pkgdesc="RG35XX plus DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg35xx_pro() {
+	pkgdesc="RG35XX pro DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg35xx_sp_v2_panel() {
+	pkgdesc="RG35XX SP v2 panel DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg35xx_sp() {
+	pkgdesc="RG35XX SP DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg40xx_h_v2_panel() {
+	pkgdesc="RG40XX H v2 panel DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg40xx_h() {
+	pkgdesc="RG40XX H DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg40xx_v_v2_panel() {
+	pkgdesc="RG40XX V v2 panel DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rg40xx_v() {
+	pkgdesc="RG40XX V DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_rgcubexx() {
+	pkgdesc="RG35XX cubexx DTB"
+	depends="linux-anbernic-rgxxxx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
 }
 
 sha512sums="
-009c86724f3176dce97438b827183fbd1d43379ae0088a99543ce333fae6418fadf2cfef32116878ca050adb3f248668f48467550041c2d7a04b7aac934a123e  deviceinfo
-332e2305ec5f6f2d5a316774dcd37608893569419bfffbcbd4a3dcf40fd5e00323a17e185a2655dc94cf756592a189d9b82b664755f785e5346492475b67727c  30-device-firmware.files
+01b395315336f5a25ff6e30c85e2091f9ce143197b9af7dbb5e11963e7603c9000c4dad79688ad88c481e952b812e0b9d84f4fbc3ecd62925d472e080dad239c  30-device-firmware.files
+299d7295aabfa47dcd83fb20cfe18471ddb27b2bbc0572c1ab8ea5fc204117e27f54e57c3ab8aacab654ee955684ae22d16881cc5f2639f7042ab8207a46ea98  deviceinfo
 "
