@@ -5,7 +5,7 @@ maintainer="Paul Sajna <sajattack@postmarketos.org>"
 pkgname=xkeyboard-config
 _pkgver=2.48
 pkgver=9999$_pkgver
-pkgrel=0
+pkgrel=1
 pkgdesc="X keyboard configuration files"
 url="https://gitlab.freedesktop.org/xkeyboard-config/xkeyboard-config"
 arch="aarch64 armv7"
@@ -18,6 +18,7 @@ source="
 	https://gitlab.freedesktop.org/xkeyboard-config/xkeyboard-config/-/archive/xkeyboard-config-$_pkgver/xkeyboard-config-xkeyboard-config-$_pkgver.tar.gz
 	0001-re-nokia.patch
 	0002-add-symbols-for-BlackBerry-KEY2-keypad.patch
+	0003-feat-add-basic-german-keyboard-layout-without-umlaut.patch
 	"
 builddir="$srcdir"/xkeyboard-config-xkeyboard-config-$_pkgver
 
@@ -44,4 +45,5 @@ sha512sums="
 7fc550af99b66c5032a2162e60c86519e3a2cca67966c9b3264d046d827436a248293946408d61fde590e915c621f1db4a533b7529908946f420c22a719a6b23  xkeyboard-config-xkeyboard-config-2.48.tar.gz
 99042ebe47474a6125f992d0f7d4624ce28100b556192772ab541b21b76826a235c26160b128eb0e087ebee551dbcade1436f1469f56d3affcc48488b43aa005  0001-re-nokia.patch
 8c999e1a056cfa7cef97153a5ddd55c30dcb4ec51c521d8120e734828fdf17fe4e4185d9f46e1eea187d21b026df6f257fea4571bfbdd64b3c496799bcf9e75c  0002-add-symbols-for-BlackBerry-KEY2-keypad.patch
+95aec8b2f93d3248c9ef7c142341c9054f0c34e0867d3fcb2a543e87baae299814ae1fe7fe313ef81d47dd700b670c3869375d17378d6ece86757f0448262f1a  0003-feat-add-basic-german-keyboard-layout-without-umlaut.patch
 "
