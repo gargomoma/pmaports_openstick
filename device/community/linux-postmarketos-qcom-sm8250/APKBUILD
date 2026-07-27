@@ -4,7 +4,7 @@ maintainer="Jianhua Lu <lujianhua000@gmail.com>"
 _flavor="postmarketos-qcom-sm8250"
 pkgname=linux-$_flavor
 pkgver=7.1.0
-pkgrel=100
+pkgrel=101
 pkgdesc="Mainline kernel fork for SM8250"
 arch="aarch64"
 _carch="arm64"
@@ -30,7 +30,7 @@ makedepends="
 "
 
 # Source
-_tag="enuma-7.1_1"
+_tag="enuma-7.1_2"
 _config="config-$_flavor.$arch"
 source="
 	$pkgname-$_tag.tar.gz::https://gitlab.postmarketos.org/wrobelda/linux/-/archive/$_tag/linux-$_tag.tar.gz
