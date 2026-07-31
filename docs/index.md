@@ -17,4 +17,5 @@ in pmaports and the processes around device categorization.
    merge-requests
    ci
    packaging
+   maintainership
 ```
