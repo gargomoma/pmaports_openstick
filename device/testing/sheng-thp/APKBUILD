@@ -1,0 +1,36 @@
+# Contributor: Your Name <your.email@example.com>
+# Maintainer: Your Name <your.email@example.com>
+pkgname=sheng-thp
+pkgver=0.3.9
+pkgrel=0
+pkgdesc="NT36532E userspace touch processor for Xiaomi Sheng"
+url="https://github.com/ianchb/xiaomi-sheng-thp"
+arch="aarch64"
+license="Apache-2.0"
+depends="bluez" # Also recommends xiaomi-pen-status
+makedepends="glib-dev pkgconf sheng-sensors-dev"
+_commit="34046210932d654a4c0df0121ecc31c008f8148c"
+source="$pkgname-$_commit.tar.gz::https://github.com/ianchb/xiaomi-sheng-thp/archive/$_commit.tar.gz"
+builddir="$srcdir/xiaomi-$pkgname-$_commit"
+options="!check"
+
+prepare() {
+	default_prepare
+	
+	# Remove -Werror to avoid build failures with newer compilers
+	sed -i 's/-Werror//g' Makefile
+	
+	# Remove -s from install so abuild can generate debug packages properly
+	sed -i 's/install -Dm755 -s/install -Dm755/g' Makefile
+}
+
+build() {
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+sha512sums="
+3ecc3db8f76be1e20ac889cbc555cf4e92b4cfe96616fb3985870474e66c15df8875528b33b25d41d23102eae5efeaa4cfb66b9e7252a9010e932c7779033271  sheng-thp-34046210932d654a4c0df0121ecc31c008f8148c.tar.gz
+"

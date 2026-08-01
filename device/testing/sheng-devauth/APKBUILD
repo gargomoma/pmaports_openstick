@@ -1,10 +1,10 @@
 pkgname="sheng-devauth"
-_commit=8235e2ab34894178e03e86165318b364aa57b064
+_commit=bac03b5bcfefa1467ebad490edd910a6cef8a207
 pkgver=1.0
 pkgdesc="Service used in pair with kernel driver to authenticate Xiaomi Keyboard"
 pkgrel=1
 arch="aarch64"
-url="https://github.com/map220v/sheng_devauth"
+url="https://github.com/ianchb/sheng_devauth"
 license="BSD-3-Clause"
 makedepends="
 	git
@@ -13,7 +13,7 @@ makedepends="
 	linux-headers
 "
 source="
-	https://github.com/map220v/sheng_devauth/archive/$_commit.zip
+	https://github.com/ianchb/sheng_devauth/archive/$_commit.zip
     	sheng-devauth.service
 "
 
@@ -37,8 +37,7 @@ package() {
     ln -s /usr/lib/systemd/system/sheng-devauth.service \
     "$pkgdir/etc/systemd/system/sysinit.target.wants/sheng-devauth.service"
 }
-
 sha512sums="
-fe6dfbad541e9f8dd27ca42c8694fe6335febba59cf56af45a7d4d1e93ccf6c5ca57fc1d2eb5271c41568727418b0263e357465c7113378dd793ab3a6e7adeb5  8235e2ab34894178e03e86165318b364aa57b064.zip
+fc8d37f216ad14915ad0000e716467db806e3bbdae99ffc19cd705f89ab83dd3da580f67978943e8048c5f9bd27be5f6f16ef782168ec79a6f75a4df8aa1caa0  bac03b5bcfefa1467ebad490edd910a6cef8a207.zip
 9cc26db981620a17e728c33df9fd8e1a0fb063a7e07b943d8728ac11a5c6bac22abc760f5ada21b5623e7a503309163b7ee9f4701cebf052145a81ee69606219  sheng-devauth.service
 "

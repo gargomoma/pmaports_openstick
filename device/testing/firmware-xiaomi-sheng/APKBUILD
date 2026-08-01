@@ -1,13 +1,13 @@
 # Maintainer: alghiffaryfa19 <alghiffaryfa19@gmail.com>
 pkgname=firmware-xiaomi-sheng
-pkgver=20240917
+pkgver=20260621
 pkgrel=1
 pkgdesc="Firmware for Xiaomi Mi Pad 6s Pro"
 url="https://github.com/alghiffaryfa19/sheng-firmware"
 arch="aarch64"
 license="proprietary"
 options="!check !strip !archcheck !tracedeps pmb:cross-native"
-_commit="de3c36fc1564ce383294e470d3c00185a3f7f39b"
+_commit="2c1e2729a085c7f0470c855d236e49455c4601f0"
 source="
 	$pkgname-$_commit.tar.gz::https://github.com/alghiffaryfa19/sheng-firmware/archive/$_commit.tar.gz
 	30-gpu-firmware.files
@@ -31,3 +31,7 @@ package() {
 	install -Dm644 "$srcdir/30-gpu-firmware.files" -t \
 		"$pkgdir"/usr/share/mkinitfs/files
 }
+sha512sums="
+d7f189d615e4944801151592950571823ad3adb68cc76fdf0a663ea619341b690483a0e991ed49b1e42ec7ff595273d9f8a87c98be97e5353c665be6102995e8  firmware-xiaomi-sheng-2c1e2729a085c7f0470c855d236e49455c4601f0.tar.gz
+7d3d0dce00bede0c41f904669b2f48365281c06527ba88b0b82ffeed6261229616713111fb5fa5620bd21e35e738d8192003e4d3625cbf81d1356ec5b5255f88  30-gpu-firmware.files
+"

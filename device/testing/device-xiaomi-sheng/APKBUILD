@@ -26,6 +26,10 @@ depends="
 	soc-qcom-qbootctl
 	sheng-sensors
 	sheng-fastrpc
+	sheng-fingerprint
+	sheng-keyboard-helper
+	sheng-thp
+	sheng-pen-status
 "
 makedepends="devicepkg-dev"
 source="
@@ -65,11 +69,9 @@ openrc() {
 		"
 	mkdir -p "$subpkgdir"
 }
-
 sha512sums="
 cc19101a967b6b3b689b6730c35cc7f1980630e923a159f480a104835e148de80b4ff68b7f4aeab766dd16517b174e0f1cd23b95fad373e6f62a7d66e5310308  deviceinfo
-33309cf731e482d584a8f0a6565e4decdb6f1c61a1ce4191e4e5eb6d78e897987d0ef90375d806fa1c859b083bff244f507414cb0e5344350158f9075299e906  HiFi.conf
-f8d44dc9c360f39926030e1b15db973458418f4376739afdf8ef1d9bf0e2b21bef66ebe73197aa30dd9c31e8c00ca5784ce8caae7fa94df48546cf1961fbaa22  Xiaomi-Pad6SPro.conf
+66768dd7e7b3209eb0391b4ca9379a3525ae3b97af7f661b7c392adc1063e80990dad17b69467f73c7904a20dcb5d5c2fdaaf135449a3b9cfd157342896c924e  HiFi.conf
+7d353085d242c08c8b388585b3a4ba8c77160431c5700026c4da2e1d7c868d483d9a7d0b7671e8c453cc64bcd990d6e871f1e698fc6e354e7f8c2d5ea7471402  Xiaomi-Pad6SPro.conf
 dcf908c335e862c1dd9ec583d3c87a6a291e94e8b3f163aafee1a5d011d4db0a649f5be525c18c8cc3ec91fe4b411df7e6b19233ce44c1a8bc199779ff492956  XiaomiPad6SPro.conf
 "
-
