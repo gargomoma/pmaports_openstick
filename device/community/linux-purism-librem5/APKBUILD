@@ -1,13 +1,12 @@
 # Reference: <https://postmarketos.org/vendorkernel>
 # Co-Maintainer: Stefan Hansson <newbyte@postmarketos.org>
-# Contributor: Clayton Craft <clayton@craftyguy.net>
 maintainer="Alistair Francis <alistair@alistair23.me>"
 pkgname=linux-purism-librem5
-pkgver=6.6.139
-pkgrel=0
-# NOTE: Don't forget to rebase the config! See prepare() for instructions.
+pkgver=6.12.94
+pkgrel=2
 _purismrel=1
 _purismver=${pkgver}pureos$_purismrel
+_commit=db350fb91e60d12fde6bc7b1ece03836b215e444
 pkgdesc="Purism Librem 5 phone kernel fork"
 arch="aarch64"
 _carch="arm64"
@@ -17,58 +16,37 @@ license="GPL-2.0-only"
 options="!strip !check !tracedeps
 	pmb:cross-native
 	pmb:kconfigcheck-community
-	pmb:kconfigcheck-librem5
 	"
 makedepends="
 	bison
 	clang
+	elfutils-dev
 	findutils
 	flex
 	linux-headers
 	lld
 	llvm
 	openssl-dev
+	pahole
 	perl
 	postmarketos-installkernel
 	python3
 	zstd
 	"
-install="$pkgname.post-upgrade"
 
-# kconfig generated with: ARCH=arm64 make defconfig KBUILD_DEFCONFIG=librem5_defconfig
+_defconfig="librem5_defconfig"
 _config="config-$_flavor.$arch"
 
 
 source="
-	$pkgname-$_purismver.tar.gz::https://source.puri.sm/Librem5/linux/-/archive/pureos/$_purismver/linux-pureos-$_purismver.tar.gz
+	$pkgname-$_purismver.tar.gz::https://source.puri.sm/Librem5/linux/-/archive/pureos/$_purismver/linux-pureos$_purismver.tar.gz
 	$_config
-	treewide-remove-unnecessary-linux-version.h-inclusion.patch
 "
-builddir="$srcdir/linux-pureos-$_purismver"
+builddir="$srcdir/linux-pureos-$_purismver-$_commit"
 
 prepare() {
 	default_prepare
 	cp "$srcdir/config-$_flavor.$arch" .config
-
-	####### Rebase config
-	# The kernel config needs to be periodically rebased to enable new
-	# modules/features that Purism has enabled in their defconfig. This is done
-	# by: 1) generate .config using librem5_defconfig, 2) diff that .config
-	# with the config in this package, 3) carefully going over the diff and
-	# selecting new things enabled in their config.
-	#
-	# This can be uncommented to help generate the defconfig using "pmbootstrap
-	# build linux-purism-librem5". The build will fail (exit 1) to let you grab
-	# the config before it starts building the kernel:
-	#    make ARCH="$_carch" LLVM=1 \
-	#       defconfig KBUILD_DEFCONFIG=librem5_defconfig
-	#    exit 1
-	#
-	# After that run the following
-	#    cp <chroot_native/home/pmos/build/src/linux-pureos-6.6.83pureos2_cri1/.config> \
-	#       device/community/linux-purism-librem5/config-purism-librem5.aarch64
-	#    pmbootstrap kconfig edit linux-purism-librem5
-	#    pmbootstrap kconfig check linux-purism-librem5
 }
 
 build() {
@@ -90,12 +68,9 @@ package() {
 
 	install -D "$builddir"/include/config/kernel.release \
 		"$pkgdir"/usr/share/kernel/"$_flavor"/kernel.release
-
-
 }
 
 sha512sums="
-d51709ee85ac8ebe271fc57ba60e2ab5f90225bd045b813a281553b0f76ae4c227317201fbb509e59af9813ea3e49947e83ac7d82b97cede15212cadd90fc372  linux-purism-librem5-6.6.139pureos1.tar.gz
-92837e9d725d2f6e6aebfc10e79007dc671cbc57ddb10c9af91b0b666131275f0897e355c77705f2b57c4c87472f4f8264d32060765582878fde04891c49f997  config-purism-librem5.aarch64
-76c1e07b5479fe7be0d1e4a74a8f4a2cd8fc25fbeb3a4efcaf8300e27817a320c0c1340ea6c00ad1c3dd86cc2cb192280de8a91360bad80665115701ba11632d  treewide-remove-unnecessary-linux-version.h-inclusion.patch
+94050892d45a94c9e518d380e16523ada1b4af6c321cfccd42255297b06ad891eb6b3fe30235b59cd7f45401b7d7d50a11eb93d130c2f4bba38af3bd85c92d7e  linux-purism-librem5-6.12.94pureos1.tar.gz
+1b0003a702872899a3a588806caa70eb3e1030a1d7daa3134c669ba0657e6c8c211c22f25f08d7f56eed4c2419782050b3ee4dbf9db6549d9c4b6b5b81ca2942  config-purism-librem5.aarch64
 "

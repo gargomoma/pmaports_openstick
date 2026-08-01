@@ -12,15 +12,30 @@
 
 # audio devices and codecs
 ["category:audio".">=0.0.0"."all"]
+SND_DESIGNWARE_I2S = "m"
+SND_DESIGNWARE_PCM = "y"
+SND_DMAENGINE_PCM = "m"
 SND_SEQUENCER = "m"
 SND_SOC = "m"
 SND_SOC_AW88261 = "m"
 SND_SOC_CS35L36 = "m"
 SND_SOC_CS35L41_I2C = "m"
 SND_SOC_CS35L41_SPI = "m"
+SND_SOC_GENERIC_DMAENGINE_PCM = "y"
+SND_SOC_SOF_PCI = "m"
+SND_SOC_SOF_TOPLEVEL = "y"
 SND_SOC_TFA989X = "m"
 ["category:audio".">=0.0.0"."aarch64"]
 SND_SOC_WCD938X_SDW = "m"
+["category:audio".">=0.0.0"."x86_64"]
+SND_SOC_AMD_ACP5x = "m"
+SND_SOC_AMD_VANGOGH_MACH = "m"
+SND_SOC_SOF_AMD_TOPLEVEL = "m"
+SND_SOC_SOF_AMD_VANGOGH = "m"
+
+["category:bluetooth".">=0.0.0"."all"]
+BT_HCIBTUSB = "m"
+BT_RFCOMM = "m"
 
 # clock controllers
 ["category:clocks".">=0.0.0"."all"]
@@ -36,7 +51,18 @@ SC_VIDEOCC_7180 = "m"
 SM_VIDEOCC_8250 = "m"
 SM_VIDEOCC_8350 = "m"
 
+# cryptography codecs and interfaces
+["category:crypto".">=0.0.0"."x86 x86_64"]
+CRYPTO_AES_NI_INTEL = "m"
+CRYPTO_DEV_CCP = "y"
+CRYPTO_DEV_CCP_DD = "y"
+["category:crypto"."<7.1.0"."x86_64"]
+CRYPTO_GHASH_CLMUL_NI_INTEL = "m"
+
 # ethernet controllers, etc.
+["category:ethernet".">=0.0.0"."all"]
+BT_BNEP = "m"
+IGB = "m"
 ["category:ethernet".">=7.0_rc1"."loongarch64"]
 DWMAC_MOTORCOMM = "y"
 
@@ -46,6 +72,12 @@ BACKLIGHT_PWM = "y"
 BACKLIGHT_CLASS_DEVICE = "y"
 BACKLIGHT_GPIO = "y"
 DRM_AMDGPU = "m"
+# Linux 7.2+ has an issue where the AMDGPU driver results in too large stack
+# frames on x86_64. In order to be able to compile the kernel, we raise the
+# limit.
+# See https://github.com/ClangBuiltLinux/linux/issues/2161
+["category:graphics".">=7.2_rc1"."x86_64"]
+FRAME_WARN = 4096
 ["category:graphics".">=0.0.0"."aarch64 armv7"]
 EXYNOS_IOMMU = "y"
 NOUVEAU_PLATFORM_DRIVER = "y"
@@ -91,6 +123,8 @@ TOUCHSCREEN_MELFAS_MIP4 = "m"
 TOUCHSCREEN_NOVATEK_NVT_TS = "m"
 TOUCHSCREEN_S6SY761 = "m"
 TOUCHSCREEN_ZINITIX = "m"
+["category:input".">=0.0.0"."ppc64le x86 x86_64"]
+INPUT_PCSPKR = "m"
 ["category:input".">=0.0.0"."aarch64"]
 INPUT_MAX77693_HAPTIC = "m"
 SURFACE_HID = "m"
@@ -98,10 +132,15 @@ SURFACE_KBD = "m"
 ["category:input".">=0.0.0"."aarch64 armv7"]
 HID_GOOGLE_HAMMER = "m"
 I2C_HID_OF_GOODIX = "m"
+["category:input".">=0.0.0"."aarch64 loongarch64 riscv64 x86 x86_64"]
+I2C_HID_ACPI = "m"
+["category:input".">=0.0.0"."x86_64"]
+STEAM_FF = "y"
 
 # led and light devices
 ["category:led".">=0.0.0"."all"]
 LEDS_MAX77705 = "m"
+LTRF216A = "m"
 
 # localversion
 ["category:localversion".">=0.0.0"."all"]
@@ -116,6 +155,8 @@ SENSORS_SURFACE_TEMP = "m"
 SURFACE_AGGREGATOR = "m"
 SURFACE_AGGREGATOR_REGISTRY = "m"
 SWP_EMULATION = "y"
+["category:misc".">=7.2_rc1"."riscv64"]
+SPACEMIT_K1_TSENSOR = "m"
 
 # useful ppc64le configs, taken from Alpine
 ["category:misc".">=0.0.0"."ppc64le"]
@@ -139,12 +180,38 @@ RT61PCI = "m"
 RT73USB = "m"
 RTL8187 = "m"
 RTL8723BS = "m"
+["category:network".">=0.0.0"."all"]
+AQTION = "m"
+CFG80211 = "m"
+IGC = "m"
+IWLDVM = "m"
+IWLMLD = "m"
+IWLMVM = "m"
+IWLWIFI = "m"
+MAC80211 = "m"
+NET_VENDOR_AQUANTIA = "y"
+RTW88 = "m"
+RTW88_8822C = "m"
+RTW88_8822CE = "m"
+RTW88_PCI = "m"
+
+# platform/bus
+["category:platform".">=0.0.0"."all"]
+I2C_DESIGNWARE_CORE = "y"
+I2C_DESIGNWARE_PLATFORM = "y"
+PINCTRL = "y"
+SPI_MEM = "y"
+["category:platform".">=0.0.0"."x86_64"]
+I2C_DESIGNWARE_AMDPSP = "y"
+PINCTRL_AMD = "y"
+SPI_AMD = "m"
 
 # power supplies, fuel gauges, etc.
 ["category:power".">=0.0.0"."all"]
 CHARGER_MAX77705 = "m"
 MFD_MAX77693 = "m"
 MFD_MAX77705 = "m"
+POWERCAP = "y"
 REGULATOR = "y"
 SPMI = "y"
 ["category:power".">=0.0.0"."aarch64"]
@@ -160,18 +227,33 @@ REGULATOR_QCOM_LABIBB = "m"
 REGULATOR_S2DOS05 = "m"
 ["category:power"."<6.19"."aarch64"]
 EC_LENOVO_YOGA_C630 = "m"
+["category:power".">=0.0.0"."x86 x86_64"]
+I2C_PIIX4 = "m"
+INTEL_RAPL = "m"
 
 # remoteproc support
 ["category:remoteproc".">=0.0.0"."all"]
 REMOTEPROC = "y"
 REMOTEPROC_CDEV = "y"
 
+# sensor hardware
+["category:sensors".">=0.0.0"."x86 x86_64"]
+GIGABYTE_WMI = "m"
+SENSORS_K10TEMP = "m"
+["category:sensors".">=0.0.0"."x86_64"]
+INTEL_ISH_HID = "m"
+
 # storage devices
 ["category:storage".">=0.0.0"."all"]
 BLK_DEV_NVME = "m"
 NVME_CORE = "m"
+["category:storage".">=0.0.0"."x86_64"]
+VMD = "y"
 
 # Trusted Platform Modules
+["category:tpm".">=0.0.0"."all"]
+TCG_TIS = "m"
+TCG_TPM = "y"
 ["category:tpm".">=0.0.0"."aarch64 armv7"]
 TCG_TIS_I2C = "m"
 
@@ -183,11 +265,15 @@ FB_EFI = "y"
 # usb drivers, type-c role switching, etc.
 ["category:usb".">=0.0.0"."aarch64"]
 UCSI_LENOVO_YOGA_C630 = "m"
-QCOM_GSBI = "y"
 ["category:usb".">=0.0.0"."aarch64 armv7"]
 CHARGER_CROS_USBPD = "m"
 ["category:usb".">=0.0.0"."all"]
+USB_ACM = "m"
 USB_SERIAL_CH341 = "m"
+["category:usb".">=0.0.0"."riscv64"]
+USB_DWC3 = "y"
+["category:usb".">=7.0_rc1"."riscv64"]
+PHY_SPACEMIT_K1_USB2 = "y"
 
 # vhost acceleration
 ["category:vhost".">=0.0.0"."all"]
@@ -230,3 +316,6 @@ VIRTIO_PCI = "y"
 VSOCKETS = "m"
 ["category:virtio".">=0.0.0"."aarch64 x86 x86_64"]
 VIRTIO_IOMMU = "m"
+
+["category:watchdog".">=0.0.0"."x86 x86_64"]
+SP5100_TCO = "m"

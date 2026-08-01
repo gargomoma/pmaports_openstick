@@ -119,6 +119,30 @@ if grep -qr '/etc/local.d' --exclude-dir='archived' -- *; then
 	exit_code=1
 fi
 
+# Disallow installation of files to /etc/phoc.ini
+if grep -qr '/etc/phoc.ini' --exclude-dir='archived' -- *; then
+	echo "ERROR: Please replace '/etc/phoc.ini' with '/usr/share/phosh/phoc.ini'"
+	echo "and add 'replaces=phosh' in the following files:"
+	grep --color=always -r '/etc/phoc.ini' --exclude-dir='archived' -- *
+	exit_code=1
+fi
+
+# Disallow contributor comments
+if grep -qr '# Contributor:' --exclude-dir='docs' -- *; then
+	echo 'ERROR: Please remove the contributor comment(s).'
+	echo "See https://docs.postmarketos.org/pmaports/main/packaging.html"
+	grep --color=always -r '# Contributor:' --exclude-dir='docs' -- *
+	exit_code=1
+fi
+
+	# Disallow non-free firmware subpackages
+if grep -qr 'pkgname-nonfree-firmware' --exclude-dir='archived' -- *; then
+	echo "ERROR: Please remove the nonfree-firmware subpackage(s) and move the firmware to depends in the following APKBUILDs."
+	echo "See https://docs.postmarketos.org/pmaports/main/packaging/firmware-packages.html"
+	grep --color=always -r 'pkgname-nonfree-firmware' --exclude-dir='archived' -- *
+	exit_code=1
+fi
+
 if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
 	# Find all added, modified or renamed kernel APKBUILDs in main, community or testing
 	MODIFIED_MAINLINE_KERNEL_PACKAGES=$(git show --pretty="" --name-only --diff-filter=AMR "$CI_MERGE_REQUEST_DIFF_BASE_SHA"..HEAD | grep "device/\(main\|community\|testing\)/linux-.*/APKBUILD" || true)
@@ -167,18 +191,6 @@ if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
 		if [ -n "$(grep -L '^maintainer="[^"]\+"$' $NEW_APKBUILDS || true)" ]; then
 			echo "ERROR: A new package does not have a maintainer set."
 			grep --color=always -L '^maintainer="[^"]\+"$' $NEW_APKBUILDS
-			exit_code=1
-		fi
-	fi
-
-	# Disallow non-free firmware subpackages
-	CHANGED_APKBUILDS=$(git show --pretty="" --name-only --diff-filter=AMR "$CI_MERGE_REQUEST_DIFF_BASE_SHA"..HEAD | grep APKBUILD || true)
-
-	if [ -n "$CHANGED_APKBUILDS" ]; then
-		if [ -n "$(grep -r 'pkgname-nonfree-firmware' $CHANGED_APKBUILDS || true)" ]; then
-			echo "ERROR: Please remove the nonfree-firmware subpackage(s) and move the firmware to depends in the following APKBUILDs."
-			echo "See https://docs.postmarketos.org/pmaports/main/packaging/firmware-packages.html"
-			grep --color=always -l 'pkgname-nonfree-firmware' $CHANGED_APKBUILDS
 			exit_code=1
 		fi
 	fi

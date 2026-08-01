@@ -1,10 +1,9 @@
 # Reference: <https://postmarketos.org/devicepkg>
-# Contributor: Jenneron <jenneron@protonmail.com>
 maintainer="Sebastian Fleer <dev@dwurp.de>"
 pkgname=device-google-gru
 pkgdesc="Google Gru Chromebooks"
-pkgver=12
-pkgrel=1
+pkgver=14
+pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
 arch="aarch64"
@@ -12,17 +11,17 @@ options="!check !archcheck"
 depends="
 	alsa-ucm-conf
 	depthcharge-tools
+	linux-firmware-ath10k
+	linux-firmware-mrvl
+	linux-firmware-qca
+	linux-firmware-rockchip
 	linux-postmarketos-rockchip
 	postmarketos-base
 	postmarketos-cros-common
 	soc-rockchip-rk3399
 "
 makedepends="devicepkg-dev"
-subpackages="
-	$pkgname-nonfree-firmware:nonfree_firmware
-	$pkgname-openrc
-	$pkgname-systemd
-"
+subpackages="$pkgname-systemd"
 source="
 	deviceinfo
 	modules-initfs
@@ -54,18 +53,6 @@ package() {
 
 	install -Dm644 "$srcdir"/systemd-gru-watchdog.conf \
 	  "$pkgdir"/usr/lib/systemd/system.conf.d/90-gru-watchdog.conf
-}
-
-nonfree_firmware() {
-	pkgdesc="WiFi/BT and DP firmware"
-	depends="linux-firmware-ath10k linux-firmware-qca linux-firmware-mrvl linux-firmware-rockchip"
-	mkdir "$subpkgdir"
-}
-
-openrc() {
-	install_if="$pkgname=$pkgver-r$pkgrel openrc"
-	depends="eudev-hwids>=3.2.12-r0"
-	mkdir "$subpkgdir"
 }
 
 sha512sums="

@@ -1,8 +1,8 @@
 # Generic Kernels
 
 postmarketOS includes a couple of generic kernel packages in the `main` device
-category: `linux-postmarketos-mainline`, `linux-postmarketos-stable` and
-`linux-postmarketos-lts`.
+category: `linux-postmarketos-mainline`, `linux-postmarketos-stable`,
+`linux-postmarketos-lts` and `linux-next`.
 
 These are kernels intended to work on a wide variety of devices and are the
 postmarketOS equivalents to Alpine kernels such as `linux-stable` or
@@ -51,8 +51,7 @@ only exist for grouping things together, no filtering is performed, so don't
 think too much about it.
 
 If this configuration option was only added recently, find out since when it
-exists in Linux. Also, make sure to check whether it can be enabled on all
-architectures or only on select few.
+exists in Linux.
 
 You can then add to `kconfig-generic.toml`:
 
@@ -64,11 +63,35 @@ VIDEO_OV8856 = "m"
 This would result in `CONFIG_VIDEO_OV8856=m` being set for all generic kernels
 newer than 6.12-rc1 and enable it on all architectures.
 
-You can submit your change in a GitLab MR for the generic kernel maintainers to
-review. Please do **not** regenerate the kernel configurations; your change
-will be included as part of the next kernel upgrade. Rebuilds of the kernel
-packages take a long time and they get updated regularly, so you'll only need
-to wait a few days until your change makes it into the released binaries.
+Before submitting your change in a GitLab MR for the generic kernel maintainers
+to review, make sure:
+
+- Architecture scoping is as broad as possible. The default should be `"all"`
+  unless there is a specific reason to restrict it to one architecture. For
+  example, `CONFIG_PINCTRL_AMD` only makes sense on `x86_64`, but a config
+  option like `CONFIG_I2C_DESIGNWARE_CORE` is not architecture-specific and
+  should use `"all"`. When in doubt, prefer `"all"`.
+- Each option is not already enabled or pulled in by a dependency in the
+  existing config. Check the Kconfig dependency chain in the Linux kernel
+  source. If an option you are already enabling selects another option via
+  `select` in Kconfig, adding the selected option explicitly is redundant. You
+  can check dependencies using `make menuconfig` or by reading the relevant
+  `Kconfig` files.
+- Device drivers are set to `"m"` (built as modules). Subsystem infrastructure
+  and platform or bus dependencies that are prerequisites for drivers (for
+  example, `I2C_DESIGNWARE_CORE` or `PINCTRL`) should be set to `"y"` instead.
+- Categories in the file are sorted alphabetically.
+- Unrelated config changes are split into separate MRs. For example, don't
+  combine enabling a WiFi driver for a device with also enabling generic
+  cryptography configs. A single MR with multiple configs is fine as long as
+  they are related, for example all the drivers needed for one device.
+- You have run `pmbootstrap kconfig generate` for all supported architectures
+  and verified that your options appear in the generated configs.
+
+Please do **not** regenerate the kernel configurations; your change will be
+included as part of the next kernel upgrade. Rebuilds of the kernel packages
+take a long time and they get updated regularly, so you'll only need to wait a
+few days until your change makes it into the released binaries.
 
 ## Policy for patches
 
@@ -115,3 +138,7 @@ kernel_mainline() {
   devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
 }
 ```
+
+The `linux-next` kernel doesn't have to be part of device packages, and is only
+intended to be enabled by device packages that want to enable it, but none of
+them have to.

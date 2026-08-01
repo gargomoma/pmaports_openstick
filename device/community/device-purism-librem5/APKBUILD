@@ -1,11 +1,10 @@
 # Reference: <https://postmarketos.org/devicepkg>
 # Co-Maintainer: Stefan Hansson <newbyte@postmarketos.org>
-# Contributor: Clayton Craft <clayton@craftyguy.net>
 maintainer="Alistair Francis <alistair@alistair23.me>"
 pkgname=device-purism-librem5
-pkgver=12
-pkgrel=1
-_confver=69
+pkgver=16
+pkgrel=0
+_confver=77
 _purismrel=2
 # <librem5-base ver>.<purism release>
 _purismver=${_confver}pureos$_purismrel
@@ -21,6 +20,8 @@ depends="
 	bluez
 	bluez-deprecated
 	bm818-tools
+	firmware-brcm43752
+	firmware-siliconlabs-rs9116
 	gnss-share
 	i2c-tools
 	iw
@@ -29,8 +30,8 @@ depends="
 	millipixels
 	postmarketos-base
 	postmarketos-base-ui-audio-backend-pulseaudio
-	pulseaudio<9990
 	postprocessd
+	pulseaudio<9990
 	u-boot-librem5
 	u-boot-tools
 	wys
@@ -53,23 +54,25 @@ source="
 	0001-udev-cameras-use-correct-path-for-modprobe-on-Alpine.patch
 	l5-brcm-bt-enable.initd
 	l5-brcm-bt-enable.service
+	l5-btsleep.sh
 	l5-lockdown-support.initd
 	l5-ship-mode.initd
 	udev/70-brcm-bluetooth.rules
 	udev/70-wifi-pm.rules
 "
+# $pkgname-openrc is out of order to allow collecting the remaining openrc
+# files using the default function
 subpackages="
-	$pkgname-gnome
-	$pkgname-nonfree-firmware:nonfree_firmware
 	$pkgname-pulseaudio
-	$pkgname-openrc
 	$pkgname-smartcard
 	$pkgname-smartcard-openrc:smartcard_openrc
+	$pkgname-openrc
 	$pkgname-systemd
 	$pkgname-tinydm
 	$pkgname-usbguard
 	$pkgname-x11
 "
+install="$pkgname-openrc.post-install $pkgname-openrc.post-upgrade"
 # TODO: remove "replaces" when upstream ucm has proper L5 support...
 replaces="alsa-ucm-conf"
 
@@ -79,12 +82,6 @@ builddir="$srcdir/librem5-base-pureos-$_purismver"
 build() {
 	mkimage -A arm64 -C none -O linux -T script -d "$srcdir/uboot-script.cmd" "$srcdir/boot.scr"
 	devicepkg_build $startdir $pkgname
-}
-
-gnome() {
-	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-base-ui-gnome"
-	install -D -m644 "$builddir"/default/org.freedesktop.ModemManager1.pkla \
-		"$subpkgdir"/var/lib/polkit-1/localauthority/10-vendor.d/org.freedesktop.ModemManager1.pkla
 }
 
 pulseaudio() {
@@ -103,14 +100,6 @@ tinydm() {
 	install_if="$pkgname tinydm"
 	install -Dm755 "$srcdir"/70-librem5-xwayland-accel.sh \
 		"$subpkgdir"/usr/share/tinydm/env-wayland.d/70-librem5-xwayland-accel.sh
-}
-
-openrc() {
-	install_if="$pkgname=$pkgver-r$pkgrel openrc"
-	install="$subpkgname.post-install $subpkgname.post-upgrade"
-	depends="openrc"
-
-	mkdir -p "$subpkgdir"
 }
 
 smartcard() {
@@ -172,6 +161,9 @@ package() {
 	install -Dm644 "$srcdir"/l5-brcm-bt-enable.service -t \
 		"$pkgdir"/usr/lib/systemd/system
 
+	install -Dm744 "$srcdir"/l5-btsleep.sh \
+		"$pkgdir"/usr/lib/systemd/system-sleep/l5-btsleep.sh
+
 	# install audio config files from Purism
 	install -Dm644 "$builddir"/default/audio/ucm2/conf.d/simple-card/Librem\ 5.conf \
 		"$pkgdir"/usr/share/alsa/ucm2/NXP/iMX8/Librem_5/Librem\ 5.conf
@@ -204,14 +196,8 @@ package() {
 	devicepkg_package $startdir $pkgname
 }
 
-nonfree_firmware() {
-	pkgdesc="Wifi and Bluetooth firmware"
-	depends="firmware-siliconlabs-rs9116 firmware-brcm43752"
-	mkdir "$subpkgdir"
-}
-
 sha512sums="
-f7add67e644664620a06c4905cfa8834c321ee2795632a301c7ffe0b8add5ea0dda6db2765559cef92aef22ea2595b4cab0af52d89c2dc65e01148e4a74be94e  librem5-base-pureos-69pureos2.tar.gz
+ab1db95e614070eee712914b8b7f1133f4993d6ed0a9d4b88f1d87e87c024c726b6260e570211656f02712565e23ae92ad2c4708c4d0d7bd1eb30dc1443fa33c  librem5-base-pureos-77pureos2.tar.gz
 2e72d9a084ecd6c96cafbbd8fda461ae8b2ebd14ffda601d9f36d73f08f04088213de17da078293ddd958d4c76d33148c7af6e252eb0709f6934855a55578509  00-mesa.sh
 18e6bc6c214fa8c0ec74e8d6ada8df0ed5981d4c8589116e158b2432a6249fbc94899e5906b5584603c9ceab17e488ffc678b319e547fa57e798680b0fe84ee8  deviceinfo
 138ed85e6509e4611bf21a0061c312e6c2ce60f722ee9e4565d19c5f025301d4df3fa321343524219a54b20c5288dc6ed1b058ac66f4d608af22eb5bc83e84c6  modules-initfs
@@ -226,6 +212,7 @@ fad386071fc45f9880a94cc8004fabd5d98b3e6a12606c98d8e72e0208f22ab54f03b921f5967a95
 b45749fcddfd65a302b502bcabfa5828d1b63e45d844fd50e44009a756b919db20fe9526102947c0f0dfcdffe4a037e5050fe1b24fb915933ce0837f49759378  0001-udev-cameras-use-correct-path-for-modprobe-on-Alpine.patch
 177ec87ec1f110d7c4253a20375c6771c6cfac41057b02bd673caea5399a799a59c5e087037fccf7a104447e6890499a2194aa34bab14df203fa95168ced75d7  l5-brcm-bt-enable.initd
 58edf35607606b7ef9079bfe015b8867c32ff3c0d3c87e11246e9077311017645d1a2d58917eab2990d25a26b85191fb3b9843195387643e4bafe3f3567cd0d2  l5-brcm-bt-enable.service
+32b6866226a97624a65deedc2a90a76b8da353bfeda060c606d8da20584d5a18e4b5ebe56415cb28d5645bda7c3c96689b0eddb5c11b999a1ac3385b27fd71ad  l5-btsleep.sh
 f4b314d553655f7975445ac0a33099923e20dabb082c07e2cf6a78e4118c143d777dd4ad2c09cbc388600bdefe8deb3073fbd15b238772ddf09c66ac46415590  l5-lockdown-support.initd
 c723764d507ccd4b04aa5ce79b1d1ebc131873cdc37a943cb0f92b8a08a3c69eb9e0d31fcd4589fd8c40a9676bae9897e4f12ec2ebe4db8214ac85669ef35a53  l5-ship-mode.initd
 b7f5ecd0fefe8a122ed20e7ac21a23a65e007f62a7343c7178712955ed580f5473ca923cedb9f86cd10ecb13a76ab50c91a2f7b8b2fd456ee8420aeca75f3fec  70-brcm-bluetooth.rules

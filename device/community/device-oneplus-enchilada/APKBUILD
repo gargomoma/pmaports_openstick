@@ -1,8 +1,9 @@
 # Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: DrRac27 <drrac27@riseup.net>
 maintainer="Casey Connolly <kcxt@postmarketos.org>"
 pkgname=device-oneplus-enchilada
 pkgdesc="OnePlus 6"
-pkgver=27
+pkgver=29
 pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
@@ -40,17 +41,17 @@ subpackages="
 	$pkgname-openrc
 	$pkgname-systemd
 "
+replaces="device-oneplus-enchilada-nonfree-firmware"
 
 build() {
 	devicepkg_build $startdir $pkgname
 }
 
 package() {
-	replaces="$pkgname-nonfree-firmware"
 	devicepkg_package $startdir $pkgname
 
 	install -Dm644 "$srcdir"/q6voiced.conf \
-		"$pkgdir"/etc/conf.d/q6voiced
+		-t "$pkgdir"/usr/share/q6voiced/
 	install -Dm644 "$srcdir"/hexagonrpcd.confd \
 		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-sdsp.conf
 	install -Dm644 -t "$pkgdir"/usr/lib/systemd/system-preset \
@@ -58,8 +59,9 @@ package() {
 }
 
 openrc() {
-	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	default_openrc
 	depends="hexagonrpcd-openrc"
+
 	mkdir -p "$subpkgdir"
 }
 
