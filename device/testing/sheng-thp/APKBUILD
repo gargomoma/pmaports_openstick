@@ -8,7 +8,7 @@ url="https://github.com/ianchb/xiaomi-sheng-thp"
 arch="aarch64"
 license="Apache-2.0"
 depends="bluez" # Also recommends xiaomi-pen-status
-makedepends="glib-dev pkgconf sheng-sensors-dev"
+makedepends="glib-dev pkgconf sheng-libssc sheng-sensors"
 _commit="34046210932d654a4c0df0121ecc31c008f8148c"
 source="$pkgname-$_commit.tar.gz::https://github.com/ianchb/xiaomi-sheng-thp/archive/$_commit.tar.gz"
 builddir="$srcdir/xiaomi-$pkgname-$_commit"
@@ -16,15 +16,18 @@ options="!check"
 
 prepare() {
 	default_prepare
-	
+
 	# Remove -Werror to avoid build failures with newer compilers
 	sed -i 's/-Werror//g' Makefile
-	
+
 	# Remove -s from install so abuild can generate debug packages properly
 	sed -i 's/install -Dm755 -s/install -Dm755/g' Makefile
+
+	echo "CXXFLAGS += -std=c++20" >> Makefile
 }
 
 build() {
+	export CXXFLAGS="$CXXFLAGS -std=c++20"
 	make
 }
 

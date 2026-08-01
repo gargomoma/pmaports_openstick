@@ -6,6 +6,7 @@ pkgrel=1
 arch="aarch64"
 url="https://github.com/ianchb/xiaomi-mipps-auth"
 license="BSD-3-Clause"
+options="!check"
 makedepends="
 	git
 	make
@@ -22,20 +23,17 @@ source="
 builddir="$srcdir/xiaomi-mipps-auth-$_commit"
 
 build() {
-    cd "$srcdir"
+	return 0
 }
 
 package() {
-    cd "$srcdir"
+	cd "$builddir"
 
-    mkdir -p "$pkgdir/usr/libexec"
-    mkdir -p "$pkgdir/usr/lib/systemd/system"
-    mkdir -p "$pkgdir/usr/lib/udev/rules.d"
-
-    install -m 0755 "$srcdir/xiaomi-mipps-auth" "$pkgdir/usr/libexec/xiaomi-mipps-auth"
-    install -m 0644 "$srcdir/xiaomi-mipps-auth.service" "$pkgdir/usr/lib/systemd/system/xiaomi-mipps-auth.service"
-    install -m 0644 "$srcdir/90-xiaomi-mipps-auth.rules" "$pkgdir/usr/lib/udev/rules.d/90-xiaomi-mipps-auth.rules"
+	install -D -m 0755 xiaomi-mipps-auth "$pkgdir/usr/libexec/xiaomi-mipps-auth"
+	install -D -m 0644 xiaomi-mipps-auth.service "$pkgdir/usr/lib/systemd/system/xiaomi-mipps-auth.service"
+	install -D -m 0644 90-xiaomi-mipps-auth.rules "$pkgdir/usr/lib/udev/rules.d/90-xiaomi-mipps-auth.rules"
 }
+
 sha512sums="
 5893bd66e9d4f16b94b3fe8054075651c9805ba0a4a3f8ad53a9c98ad06e2b0fb1dad226fbad41a752b96eefb5192ade376ee4954c1f39e53d82a2b0805987ee  9176efbdf276b874fc0a97912a914449a88155fb.zip
 "

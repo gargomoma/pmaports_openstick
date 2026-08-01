@@ -19,8 +19,8 @@ makedepends="
 
 depends="yaml-dev"
 source="
-	"https://github.com/qualcomm/fastrpc/archive/refs/tags/v$pkgver.zip"
-	"adsprpcd-sensorspd.service"
+	https://github.com/qualcomm/fastrpc/archive/refs/tags/v$pkgver.zip
+	adsprpcd-sensorspd.service
 "
 
 builddir="$srcdir/fastrpc-$pkgver"
@@ -51,5 +51,6 @@ package() {
 		"$pkgdir/usr/lib/systemd/system/adsprpcd-sensorspd.service"
 }
 sha512sums="
-
+65f233361e7ee490b34f70fac758a214a4efa8bf9763c9b25c1468f5ee077b7b76c8bcd59574b521e55a0d9e173f8fbf99aa3626e27062af8c55f3058ff4c81b  v1.0.2.zip
+ed231f597733aed13744e224c0880c8b4db9a840dde1664eb086264d76cf1b6e68cac172ed3c80f8aee6beeb0a36eeb71d082463aac2748f8035a83b43df32ed  adsprpcd-sensorspd.service
 "

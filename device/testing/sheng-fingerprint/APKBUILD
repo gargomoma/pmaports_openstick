@@ -15,8 +15,8 @@ source="
 	$pkgname-$_commit.tar.gz::https://github.com/ianchb/xiaomi-sheng-fingerprint/archive/$_commit.tar.gz
 	libfprint-$_libfprint_ver.orig.tar.xz.bin::https://deb.debian.org/debian/pool/main/libf/libfprint/libfprint_${_libfprint_ver}.orig.tar.xz
 "
-builddir="$srcdir/$pkgname-$_commit"
-options="!check"
+builddir="$srcdir/xiaomi-$pkgname-$_commit"
+options="!check !tracedeps"
 
 prepare() {
 	default_prepare
