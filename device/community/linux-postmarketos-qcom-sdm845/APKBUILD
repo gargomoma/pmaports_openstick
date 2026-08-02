@@ -4,8 +4,8 @@
 maintainer="Casey Connolly <kcxt@postmarketos.org>"
 _flavor="postmarketos-qcom-sdm845"
 pkgname=linux-$_flavor
-pkgver=7.1_rc1
-pkgrel=4
+pkgver=7.2_rc7
+pkgrel=0
 pkgdesc="Mainline Kernel fork for SDM845 devices"
 arch="aarch64"
 _carch="arm64"
@@ -36,13 +36,13 @@ makedepends="
 	zstd
 "
 
-_tag="sdm845-7.1-rc1-r0"
+_tag="sdm845-7.2-dev"
 
 # Source
+# TODO: restore once 7.2 tag is available: linux-$_tag.tar.gz::https://gitlab.com/sdm845-mainline/linux/-/archive/$_tag/linux-$_tag.tar.gz
 source="
-	linux-$_tag.tar.gz::https://gitlab.com/sdm845-mainline/linux/-/archive/$_tag/linux-$_tag.tar.gz
+	linux-$_tag.tar.gz::https://gitlab.com/tiol11/linux/-/archive/sdm845/7.2-dev/linux-$_tag.tar.gz
 	config-postmarketos-qcom-sdm845.aarch64
-	libbpf-Fix-UAF-in-strset__add_str.patch
 	enable-dynamic-ftrace.patch
 "
 builddir="$srcdir/linux-$_tag"
@@ -92,8 +92,7 @@ package() {
 }
 
 sha512sums="
-94da173aaf74dd33ef8ff9015e92759481cd0da5bd8a1e52c8664fd372d48a1155655001ad2e9d26557733c71ae8bc448e4ebdf1372b8f32159907a35f0306a9  linux-sdm845-7.1-rc1-r0.tar.gz
-0da9864ae972e81db443b58e990f62bb84bcd721f073c0b947725a7d7c1e630bde1395fa9108ce8264e6b88a6c92f3f52b551b0cd373e6bde54ea56a13a48e9b  config-postmarketos-qcom-sdm845.aarch64
-e2555390d48cbbdc32a7d3f0c27599ff88f2fe3e786d1d0086caaa5b092cc3edcb6e95e2fb07034edb3793f6dc954da0662c723202eb7e2c4956c99b50919b12  libbpf-Fix-UAF-in-strset__add_str.patch
+7e5b55c792e48cd196a862c75611bc2d8254dbc633d122e719f4f661a636f0bf6f5563a08dab296082a6b42119dde68bbd55d0d0f60b7001c924278e4bb33f59  linux-sdm845-7.2-dev.tar.gz
+f24ef7aee2910fff4d0e13b82ee543038b6fda69d13a529d47a7e10264caea8303931b875b5b7c17497bf3f6c62e5bb7b86e0755fae2bafbb252db6421a3db05  config-postmarketos-qcom-sdm845.aarch64
 e8b595f3e076896dc38f249c8908d58e2e6a858eaa77fe1e680f27db0e76d3d74c0b5dfebb7a4c57d546fee0b0f6eb81a38b20dfd72f985c9d02f28d79a5eceb  enable-dynamic-ftrace.patch
 "
