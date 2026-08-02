@@ -9,6 +9,7 @@ license="MIT"
 arch="aarch64"
 options="!check !archcheck"
 depends="py3-evdev"
+install="$pkgname-openrc.post-install"
 subpackages="
 	$pkgname-systemd
 	$pkgname-openrc
@@ -22,24 +23,17 @@ source="
 package() {
 	install -Dm755 "$srcdir"/rgxxxx-control-mapper.py \
 		"$pkgdir"/usr/bin/rgxxxx-control-mapper
+	install -Dm755 "$srcdir"/rgxxxx-control-mapper.initd \
+		"$pkgdir"/etc/init.d/rgxxxx-control-mapper
 }
 
 systemd() {
 	install_if="$pkgname=$pkgver-r$pkgrel systemd"
-	install -Dm644 "$srcdir"/rgxxxx-control-mapper.service \
-		"$subpkgdir"/usr/lib/systemd/system/rgxxxx-control-mapper.service
-	mkdir -p "$subpkgdir"/usr/lib/systemd/system/multi-user.target.wants/
-	ln -sf /usr/lib/systemd/system/rgxxxx-control-mapper.service \
-		"$subpkgdir"/usr/lib/systemd/system/multi-user.target.wants/rgxxxx-control-mapper.service
-	default_systemd
-}
+	# Service file
+	install -Dm644 "$srcdir"/rgxxxx-control-mapper.service -t \
+		"$subpkgdir"/usr/lib/systemd/system
 
-openrc() {
-	install_if="$pkgname=$pkgver-r$pkgrel openrc"
-	install="$subpkgname.post-install"
-	install -Dm755 "$srcdir"/rgxxxx-control-mapper.initd \
-		"$subpkgdir"/etc/init.d/rgxxxx-control-mapper
-	default_openrc
+	default_systemd
 }
 
 sha512sums="
