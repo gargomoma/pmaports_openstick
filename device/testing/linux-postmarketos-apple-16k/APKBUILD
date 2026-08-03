@@ -7,7 +7,7 @@
 maintainer="Nick Chan <towinchenmi@gmail.com>"
 _flavor="postmarketos-apple-16k"
 pkgname=linux-$_flavor
-pkgver=7.0.12
+pkgver=7.1
 pkgrel=0
 pkgdesc="Mainline kernel fork for Apple iPhone and iPad devices (16K)"
 arch="aarch64"
@@ -20,30 +20,32 @@ options="!check !strip !tracedeps
 	pmb:kconfigcheck-rust
 	"
 makedepends="
-	bash
-	bc
 	bison
 	clang
 	clang-libclang
-	devicepkg-dev
 	elfutils-dev
+	findutils
 	flex
 	linux-headers
 	lld
 	llvm
 	openssl-dev
+	pahole
 	perl
+	postmarketos-installkernel
 	python3
 	rust
 	rust-bindgen
 	rustfmt
 	rust-src
+	zstd
 	"
 source="
-	https://github.com/HoolockLinux/linux/archive/refs/tags/hoolock-$pkgver.tar.gz
+	https://github.com/HoolockLinux/linux/archive/refs/tags/hoolock-$pkgver-1.tar.gz
 	config-$_flavor.$arch
+	0001-resolve_btfids-preserve-parameter-names-when-process.patch
 	"
-builddir="$srcdir/linux-hoolock-$pkgver"
+builddir="$srcdir/linux-hoolock-$pkgver-1"
 
 prepare() {
 	default_prepare
@@ -74,6 +76,7 @@ package() {
 }
 
 sha512sums="
-0715d0a3ede47639c9283abd29e79dadc4c842c0396d3c539f413648db2091b164bf95b95d3e5e8db3d73f2faa2cba39ac9db2049cc6d60dd4765aeabb84814f  hoolock-7.0.12.tar.gz
-711c982ec45ad6594ae428bb486b0f1deb113838a35993c058e0bbfe76a129f7d1e02baaade51600f516a722dd6c9900966d87745d909b06ed5c0bbc7a0f7362  config-postmarketos-apple-16k.aarch64
+2a7595341d4ceadfa579da802b0ccd0474f4caa15c18d1a3668ea783755a0c1f4c66974029b5843e3cb9201da3538879a9b4d7b1a2cda2dbf3b28b5dbfb17bbf  hoolock-7.1-1.tar.gz
+35fcf0701b81174aa43d3f78a8acc6db81f55c315c9b5415e7227742b1347eb8b71d80d75cd721122028c179b2a3dc2f3b842ae66679d5495fe5ed2f6990628d  config-postmarketos-apple-16k.aarch64
+009c505edaaa22c48fe44280f35eb921181a711bd23fad219ff9c625a05fad6d63aa1a00af15d25f698884bb2c280583bd7a180c4885bd8847dc3577e542193e  0001-resolve_btfids-preserve-parameter-names-when-process.patch
 "
