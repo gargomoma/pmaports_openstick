@@ -1,24 +1,17 @@
 # NOTE: Please ensure any changes made to this kernel are also applied to the
-#       4k varient.
+#       4k variant.
 
 # Reference: <https://postmarketos.org/vendorkernel>
 # Kernel config based on: arch/arm64/configs/defconfig
 # Co-Maintainer: Aster Boese <asterboese@mailbox.org>
 maintainer="Nick Chan <towinchenmi@gmail.com>"
-_flavor="postmarketos-apple-16k"
-pkgname=linux-$_flavor
+pkgname=linux-postmarketos-apple-16k
 pkgver=7.1
 pkgrel=0
 pkgdesc="Mainline kernel fork for Apple iPhone and iPad devices (16K)"
 arch="aarch64"
-_carch="arm64"
 url="https://kernel.org"
 license="GPL-2.0-only"
-options="!check !strip !tracedeps
-	pmb:cross-native
-	pmb:kconfigcheck-community
-	pmb:kconfigcheck-rust
-	"
 makedepends="
 	bison
 	clang
@@ -42,27 +35,39 @@ makedepends="
 	"
 source="
 	https://github.com/HoolockLinux/linux/archive/refs/tags/hoolock-$pkgver-1.tar.gz
-	config-$_flavor.$arch
+	config-${pkgname#linux-}.$arch
 	0001-resolve_btfids-preserve-parameter-names-when-process.patch
+	"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-rust
 	"
 builddir="$srcdir/linux-hoolock-$pkgver-1"
 
+_carch="arm64"
+
+# Used internally by pmbootstrap. Don't touch.
+# TODO: Remove once minimum default pmbootstrap version supports
+# kernel packages without '_flavor'.
+_flavor="${pkgname#linux-}"
+
 prepare() {
 	default_prepare
-	cp "$srcdir/config-$_flavor.$arch" .config
+	cp "$srcdir"/config-"${pkgname#linux-}"."$arch" .config
 }
 
 build() {
 	unset LDFLAGS
-	make ARCH="$_carch" LLVM=1 \
+	make ARCH="$_carch" LLVM=1 HOSTLDFLAGS="-fuse-ld=lld" \
 		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
 }
 
 package() {
-	install -Dm644 "$builddir"/arch/"$_carch"/boot/vmlinuz \
-		-t "$pkgdir"/boot/
-
-	make modules_install dtbs_install \
+	make dtbs_install modules_install zinstall \
 		ARCH="$_carch" \
 		LLVM=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs \
@@ -72,7 +77,7 @@ package() {
 	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
 
 	install -D "$builddir"/include/config/kernel.release \
-		"$pkgdir"/usr/share/kernel/"$_flavor"/kernel.release
+		"$pkgdir"/usr/share/kernel/"${pkgname#linux-}"/kernel.release
 }
 
 sha512sums="
