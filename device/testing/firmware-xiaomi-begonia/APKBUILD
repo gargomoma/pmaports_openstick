@@ -1,6 +1,6 @@
 maintainer="Dinolek <git@dinolek.me>"
 pkgname=firmware-xiaomi-begonia
-pkgver=20250810
+pkgver=20260617
 pkgrel=0
 pkgdesc="Firmware for Xiaomi Redmi Note 8 Pro"
 subpackages="
@@ -10,7 +10,7 @@ url="https://gitlab.postmarketos.org/mt6785-mainline/firmware"
 arch="aarch64"
 license="proprietary"
 options="!check !strip !archcheck !tracedeps pmb:cross-native"
-_commit="d62a654f9f84344571cbf5a306d33869d49aa70b"
+_commit="ea59e1c147b9d3af81590d599eefe8f988e15f11"
 source="
 	https://gitlab.postmarketos.org/mt6785-mainline/firmware/-/archive/$_commit/firmware-$_commit.tar.gz
 	10-touch-firmware.files
@@ -25,13 +25,13 @@ package() {
 touchscreen() {
 	pkgdesc="Xiaomi Redmi Note 8 Pro touchscreen firmware"
 
-	install -Dm644 "$builddir/novatek/nt36672a_begonia_csot.bin.zst" -t \
+	install -Dm644 "$builddir"/novatek/nt36672a_begonia_*.bin.zst -t \
 		"$subpkgdir/lib/firmware/novatek/"
 	install -Dm644 "$srcdir/10-touch-firmware.files" -t \
 		"$subpkgdir/usr/share/mkinitfs/files/"
 }
 
 sha512sums="
-230a2acca5cf5d179c30338416dad01c14c0e8bf73e8034855c39a16757394c0d0fb8b924eead93cc873ffe50ba97faf5c3aea9034ac3ba31ff55c04185a9f80  firmware-d62a654f9f84344571cbf5a306d33869d49aa70b.tar.gz
-a8373ff6265c21be1aef1b5ccd0a0b419887864e5609b99ef0af96cdb0079c3a099fbbd6242fc3e95f89bb5b096119bd3e3ef232741700cf05b33a079d6aba1f  10-touch-firmware.files
+04f292b5e0ead2aea94a40e49816f9b7185e5edf9267a692787f6d91de2c59ff66054af839dc77ea0982a3309610076c8950393a3a29602d543821638da30c89  firmware-ea59e1c147b9d3af81590d599eefe8f988e15f11.tar.gz
+555204c307c1682d6a8588955cd9cdfaf88a2118304038dc7514c35ea9defcad32289766d4ea48affc140b79dfdda5bf689ccaddda6d5002cdf6d45f19038d16  10-touch-firmware.files
 "

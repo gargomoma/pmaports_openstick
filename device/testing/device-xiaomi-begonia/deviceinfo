@@ -15,8 +15,11 @@ deviceinfo_drm="true"
 deviceinfo_external_storage="true"
 
 # Bootimg related
-deviceinfo_bootimg_custom_args="--header_version 2 --dtb /boot/dtbs/mediatek/mt6785-xiaomi-begonia.dtb --recovery_dtbo /boot/empty.dtbo"
+deviceinfo_bootimg_custom_args="--recovery_dtbo /boot/empty.dtbo"
+deviceinfo_dtb_csot="mediatek/mt6785-xiaomi-begonia-csot"
+deviceinfo_dtb_tianma="mediatek/mt6785-xiaomi-begonia-tianma"
 deviceinfo_generate_bootimg="true"
+deviceinfo_header_version="2"
 
 # Flashing related
 deviceinfo_flash_kernel_on_update="true"

@@ -1,5 +1,12 @@
+governor_passive
 lm36274_bl
 lm363x-regulator
+mediatek-drm
+mt6360_charger
+mtk-cci-devfreq
+mtk-pmic-keys
 novatek-nvt-ts-spi
 panel-novatek-nt36672a
+phy-mtk-mipi-dsi-drv
+tcpci_mt6360
 ti-lmu

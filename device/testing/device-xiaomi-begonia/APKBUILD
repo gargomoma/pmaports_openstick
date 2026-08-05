@@ -2,7 +2,7 @@
 maintainer="Dinolek <git@dinolek.me>"
 pkgname=device-xiaomi-begonia
 pkgdesc="Xiaomi Redmi Note 8 Pro"
-pkgver=6
+pkgver=7
 pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
@@ -10,12 +10,15 @@ arch="aarch64"
 options="!check !archcheck"
 depends="
 	firmware-xiaomi-begonia-touchscreen
-	linux-postmarketos-mediatek-mt6785
 	mesa-vulkan-panfrost
 	mkbootimg
 	postmarketos-base
 "
 makedepends="android-tools devicepkg-dev dtc"
+subpackages="
+	$pkgname-kernel-csot:kernel_csot
+	$pkgname-kernel-tianma:kernel_tianma
+"
 source="deviceinfo kernel-cmdline.conf modules-initfs"
 
 build() {
@@ -35,8 +38,20 @@ package() {
 		"$pkgdir/boot/"
 }
 
+kernel_csot() {
+	pkgdesc="Kernel for devices with CSOT panel"
+	depends="linux-postmarketos-mediatek-mt6785"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_tianma() {
+	pkgdesc="Kernel for devices with Tianma panel"
+	depends="linux-postmarketos-mediatek-mt6785"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
 sha512sums="
-fd1e2f16accb71086e49311966e9fb41f9c626bfea6e9dc8b649cc0a4cb7935a0ac2fc23da6c5ff7effff0dc33ab3aa7bdcf036be8d56888609bf5bc6c05d6cf  deviceinfo
+e3ea00c72993e5131183bd346b6175245c68b9dd63bc442085bb479e38e7972e80a747d7e0e25a989c8e088ef4fb8f281b5e7b37279e76b497957a19ecc0b134  deviceinfo
 d89b08ef9888faae6cb96a378421669e6119023307a3b5a109e18b7f9e2c70e1f8b240ba8f9b9d22d319fa28e416565d06074d34382f482c9b037b7ab3f4861c  kernel-cmdline.conf
-fb17475e434aa5c1c7ee3103ef3dc5bd1d663184764d770f5c4944a2ea1901fc5351296ca5dc8e3dc3bf74aac1718f49b932f8be0b39add770c5851c708482b8  modules-initfs
+c18b628e44b202cdf0f19dd495567abd1cfd5946ddc555ffd663b89f2dc051f088930c1bdcd74b0cf0dda4fe7e5e6f59cb49ffbd8c0d94046f649d2801e80d36  modules-initfs
 "
