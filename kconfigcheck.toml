@@ -15,7 +15,6 @@ community = [
 	"category:accessibility",
 	"category:community_various",
 	"category:containers",
-	"category:debug",
 	"category:filesystems",
 	"category:hardening",
 	"category:immutable",
@@ -648,12 +647,6 @@ KVM_AMD = "m"
 KVM_INTEL = "m"
 
 VIRTUALIZATION = "y"
-
-["category:debug".">=0.0.0"."all"]
-FTRACE = "y" # Required by DEBUG_FTRACE
-FUNCTION_TRACER = "y" # Required by DEBUG_FTRACE
-DYNAMIC_DEBUG = "y"  # Enable debug dynamically
-DYNAMIC_FTRACE = "y"  # Enable function tracing dynamically
 
 # Device specific settings to prevent regressions
 ["category:pinephonepro".">=0.0.0"."aarch64"]
