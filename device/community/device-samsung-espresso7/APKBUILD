@@ -20,7 +20,7 @@ subpackages="$pkgname-wayland"
 source="
 	deviceinfo
 	etc-profile.d-25wlr-pixman.sh
-"
+	"
 replaces="device-samsung-espresso3g"
 provides="device-samsung-espresso3g=$pkgver-r$pkgrel"
 

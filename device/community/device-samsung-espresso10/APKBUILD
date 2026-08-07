@@ -15,12 +15,11 @@ depends="
 	postmarketos-base
 	"
 makedepends="devicepkg-dev"
+subpackages="$pkgname-wayland"
 source="
 	deviceinfo
 	etc-profile.d-25wlr-pixman.sh
-"
-
-subpackages="$pkgname-wayland"
+	"
 
 build() {
 	devicepkg_build $startdir $pkgname
