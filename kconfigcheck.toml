@@ -61,6 +61,7 @@ DM_CRYPT = "y"
 FB = "y"
 INPUT_EVDEV = "m"
 KINETO_GAN = "n"
+LOGO = "n"
 NLS_ASCII = "y" # required to mount FAT32
 PFT = "n"
 SEC_RESTRICT_ROOTING = "n"
