@@ -120,7 +120,6 @@ aport-lint:
   script:
     - .ci/lib/gitlab_prepare_ci.sh
     - .ci/apkbuild-lint.sh
-  allow_failure: true
 
 # deviceinfo linting
 dint:

@@ -54,8 +54,22 @@ if __name__ == "__main__":
 
     apkbuilds_filtered = []
     for apkbuild in apkbuilds:
-        if apkbuild.startswith("temp/") or apkbuild.startswith("cross/"):
-            print(f"NOTE: Skipping linting of {apkbuild}")
+        # Don't lint forked packages
+        with open(apkbuild,'r') as apkbuild_open:
+            if "Forked from" in apkbuild_open.read():
+                print(f"NOTE: Skipping linting of forked package: {apkbuild}")
+                continue
+        # Don't lint cross toolchain packages
+        if apkbuild.startswith("cross/"):
+            print(f"NOTE: Skipping linting of cross package: {apkbuild}")
+            continue
+        # Don't lint old versions of GCC
+        if "gcc4" in apkbuild or "gcc6" in apkbuild:
+            print(f"NOTE: Skipping linting of old GCC package: {apkbuild}")
+            continue
+        # Don't lint archived packages
+        if apkbuild.startswith("device/archived/"):
+            print(f"NOTE: Skipping linting of archived package: {apkbuild}")
             continue
         apkbuilds_filtered.append(apkbuild)
     if len(apkbuilds_filtered) < 1:
