@@ -74,3 +74,15 @@ https://wiki.postmarketos.org/wiki/Category:Interface
 - If a UI supports the ability to set a wallpaper, it is expected that the
   default wallpaper of postmarketOS is set by default. This is not a strict
   rule, as this is sometimes not possible due to technical constraints.
+
+## Testing requirements
+
+UI packages are expected to function properly when a developer wants to test a
+change with a specific UI. In particular, this means that the UI package must be
+usable when building and running it in a virtual machine with `pmbootstrap qemu`.
+
+Furthermore, UI packages must be tested in the testing phase for every stable
+release. The testing can be performed on any device, including virtual machines,
+and must be reported to the release testing issue in pmaports for that release.
+UI packages that were not tested in the testing phase will be removed from the
+release branch and edge.
