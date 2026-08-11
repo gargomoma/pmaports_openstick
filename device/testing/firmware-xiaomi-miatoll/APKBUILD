@@ -1,6 +1,6 @@
 maintainer="Nikroks <nikroks@mainlining.org>"
 pkgname=firmware-xiaomi-miatoll
-pkgver=4
+pkgver=5
 pkgrel=0
 pkgdesc="Firmware for miatoll"
 url="https://github.com/sm7125-mainline/firmware-xiaomi-miatoll"
@@ -15,35 +15,25 @@ source="
 	$pkgname.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz
 	30-initramfs-firmware.files
 	firmware.files
-	sensor.files
 "
+builddir="$srcdir/$pkgname-$_commit"
 
-subpackages="$pkgname-sensors:firmware_sensors"
+replaces="$pkgname-sensors"
 
 package() {
+	local _i _u
 	while IFS="" read -r _i || [ -n "$_i" ]; do
-		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
-		install -Dm644 "$srcdir/$pkgname-$_commit/$_i" "$pkgdir/$_i"
+		_u="${_i/usr\/lib/\/lib}"
+		[ ! -d "$(dirname "$_i")" ] && mkdir -p "$(dirname "$pkgdir"/"$_i")"
+		install -Dm644 "$builddir"/"$_u" "$pkgdir"/"$_i"
 	done < "$srcdir/firmware.files"
 
 	install -Dm644 "$srcdir/30-initramfs-firmware.files" -t \
 		"$pkgdir"/usr/share/mkinitfs/files
 }
 
-firmware_sensors() {
-	pkgdesc="Files to be included to add sensor support"
-	depends="$pkgname=$pkgver-r$pkgrel"
-	mkdir "$subpkgdir"
-
-	while IFS="" read -r _i || [ -n "$_i" ]; do
-		[ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
-		install -Dm644 "$srcdir/$pkgname-$_commit/$_i" "$pkgdir/$_i"
-	done < "$srcdir/sensor.files"
-}
-
 sha512sums="
 5535bbb86d41dabca255e76f0edd3032e58df1a8bee444dc26238119b224bdd8b3db97101439a81b9c24a16eeba106e8d0adf22904f0f810ee91008b69102a10  firmware-xiaomi-miatoll.tar.gz
-7a096879b5c0c0e74ca68deccd4ccc3c00a283dafe2ca68b512deb3582b98f33e771a245a99a44b3795ca167b5f9774b980b564ac28141f1a2dff315159a31e4  30-initramfs-firmware.files
-5d64a943f5651de3b7f7e66607d7ee147580a9eea8c584e80d12ba4fbad677bac10fe88d2714679f4c766c6f53f94fdb1ef8e6b4b5fe22dbe02b41593cfb92cc  firmware.files
-179837d48e4d91c5b37a7c478b61ac29ec02e92334aa0003619cc9aa8ab1d0ce789f06cea565e59f823dc42f8e1460294a9ec4e42eee907a3d127614313a8a29  sensor.files
+f6e264958160fefa0cafaef74d68d8056801b302923e24269e5c462dcab8d1af85f64a9d49da33de1fa5b659053e8c2819a7ef4c4262e877cdaf741f4eab84dc  30-initramfs-firmware.files
+790739c0fb53020563ff982d5a7f21cf41d8e77635deeb50046e97b6ddd7483fb1cfcfe0f4d451503b403e61bcb72f9c4f7e6274bacc3f5a73879cdd4bd276a1  firmware.files
 "
