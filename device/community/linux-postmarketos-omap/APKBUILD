@@ -1,7 +1,7 @@
 # Kernel config based on: arch/arm/configs/omap2plus_defconfig
 maintainer="Mithil Bavishi <bavishimithil@gmail.com>"
 pkgname=linux-postmarketos-omap
-pkgver=7.1.5
+pkgver=7.1.7
 pkgrel=0
 pkgdesc="Mainline kernel fork for OMAP devices"
 arch="armv7"
@@ -83,8 +83,8 @@ package() {
 }
 
 sha512sums="
-17f95307b6e86a0794df146d97256ba4783b7a494f5eb43aafc14d64367541874cec7f6e8c2ea724eca149db18e4bd5880bf28a8c5e47ae8a769776bbd955af8  linux-7.1.5.tar.xz
-e1e549db4eac7360a65121d705af3c880cc840736b5b0a87842828acf5bfd802c2e80807fb61cc10c343164f3162248308bb6acc7f3ee13520ad0d216128d65f  config-postmarketos-omap.armv7
+dbfd883848ed2951696462960c136e06ebc0b5c61b998341c0b28c256d3511e10249f5b064e6c6fec372a0e91391b369174c51bb22192e6426e418effac1f317  linux-7.1.7.tar.xz
+e1539ff56f142bf8fbfe4893751df9b7b85b290f9ee936eeaa73cebbeb8405323d47ff81c2cd709e4a1f4079432f660be6951348168d09b35b80854449e1c917  config-postmarketos-omap.armv7
 1a68e3a32ae1e56d325c0f759ee66d64d14f46a5d52e75ae008dfddac335beb3aa7acaf62abb95b6d5ce1557f0cf9b4c31ab78e110af178db1ac963bb377dbf0  0001-iio-rescale-revert-logic.patch
 11bcc2bdcd8862e56f23a763d393b1d5f62af82cfd6dd347b5786b9f299144950d5941579091fea144371bad1188f366d8cd5a26453fc852fd3e769df2bd21bc  0002-hsi-dma-fix.patch
 a17ddc7a41ce2a6be04a8ee0ffcfb8dbb0381d1ce7fac8336befd79bc388ce5d16b6ba3a4732a540a43add55c43b015a3b77205a007a058d4d6e3291234b5cc0  0003-Add-TWL6030-power-button-support-to-twl-pwrbutton.patch
