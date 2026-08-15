@@ -2,9 +2,9 @@
 # Kernel config based on: https://github.com/ROCKNIX/distribution/blob/ca50938cbc2762d77203e1f63b8b8aa85a75f4a4/projects/ROCKNIX/devices/H700/linux/linux.aarch64.conf
 maintainer="Kevin Widjaja <kevinwidjaja_dev@proton.me>"
 pkgname=linux-anbernic-rgxxxx
-pkgver=7.1.4
+pkgver=7.1.8
 pkgrel=0
-_commit="90be143be6834e5b5fb93c3f734c98259f7f3b9c"
+_commit="383c083c612f91a0510a525cc6f36a7063f00ce6"
 pkgdesc="Close-to-mainline kernel fork for Anbernic RGXXXX H700 devices"
 url="https://kernel.org"
 arch="aarch64"
@@ -39,8 +39,8 @@ _flavor="${pkgname#linux-}"
 # Source
 source="
 	01-remove-rocknix-dt-id.patch
-	02-v2_20250226_kikuchan98_drm_panel_add_generic_mipi_panel_driver.patch
-	03-libbpf-Fix-UAF-in-strset__add_str.patch
+	02-v8_20260804_james_hilliard1_introduce_allwinner_h616_pwm_controller.patch
+	03-rg35xx-enable-pwm-backlight.patch
 	config-$_flavor.$arch
 	minime-$_commit.tar.gz::https://github.com/minime-os/minime/archive/$_commit.tar.gz
 	patch.files
@@ -57,7 +57,7 @@ prepare() {
 
 	makefile="$builddir"/arch/arm64/boot/dts/allwinner/Makefile
 
-	for dts in "$srcdir"/minime-*/external/board/h700/dts/*dts*; do
+	for dts in "$srcdir"/minime-*/minime/boards/h700/dts/*dts*; do
 		dtb="$(basename "$dts" | sed 's/\.dts$/.dtb/')"
 
 		# Move the devicetree sources in the kernel tree.
@@ -97,10 +97,10 @@ package() {
 
 sha512sums="
 ee9a0c247a8128301fabc4709543f78b1146eb05ebedd2927c4bdae100f128dc41e22e2ff013ee46c1dbe5e14ff725624cac71284f27e849f3f454738c57afac  01-remove-rocknix-dt-id.patch
-4efea4396371dd8b83e26af91e90344dfcd111af59a2a537e3e4463789b20aa8ccc5b3934123253e2d5a11c54e8d12333e8f9e0bea23625f6c3f30fccc0e9867  02-v2_20250226_kikuchan98_drm_panel_add_generic_mipi_panel_driver.patch
-e2555390d48cbbdc32a7d3f0c27599ff88f2fe3e786d1d0086caaa5b092cc3edcb6e95e2fb07034edb3793f6dc954da0662c723202eb7e2c4956c99b50919b12  03-libbpf-Fix-UAF-in-strset__add_str.patch
-a4179708eea0c2d7958c03fb620ffbdf8d13d7c0c731ac81a394a3fe4b3d8f27bb36600d03e668e945cef4db0d8b817c393d4919c8f508f7d308c9793c7ece89  config-anbernic-rgxxxx.aarch64
-40d520344afcffd59c1c882857d9afb24221e6f77c756c15284595a37c0c804d86276cc1e1e338b763d981f2a97d5d7f910d0d9f74838f6b575fa628fac17f4f  minime-90be143be6834e5b5fb93c3f734c98259f7f3b9c.tar.gz
-fd43554ece899c883c28dc0d038c7c375300be4c9b50b75dd48dfc6a44417d5c4ce19f1f77af98c8133ad9d3ba7c659f9a0c70480c4a827bc0cd88d9fadd7631  patch.files
-08769707314ed114aabf2b8057e09f46ee07371cde29748378f646a125d392b14ad4b678380d76ad214b74fae7f5bc28505b8ca371156c4f5bd8d05d7e531fb8  linux-anbernic-rgxxxx-7.1.4.tar.gz
+a0b136e630bc758b0653210a67dc222a8a7fbc98970beffcd812b68f1fb0f9d5f585bb5b502801e648b33bbce349f6169525e9721aa0ecc09e11add894142b1e  02-v8_20260804_james_hilliard1_introduce_allwinner_h616_pwm_controller.patch
+34748f3d72c0d34a65c9916042259089ad69b67781af95392d4f5b2b73c4b8a49fed59f019e675a9fa492c8ff6d1f0d582c6f4a0c3fa77dfde801a2666609da5  03-rg35xx-enable-pwm-backlight.patch
+07eb70461e310804acde95fdb8342a232b36a72a3a4be4288884ad0f7031bd89d54c1e382bf3e6d68e97e94d65411d4bb6f0073978b5c28e288501fdd18f7b0f  config-anbernic-rgxxxx.aarch64
+f2d6e7e84c23c3dbf64f00948e5689937bfed932d0aaf98a27ede813e2a448f5e33028c6e7289d9aedd1fa7fefdfcc3cfc9740611156bcbf4011692750df0377  minime-383c083c612f91a0510a525cc6f36a7063f00ce6.tar.gz
+2692c52f0b7378b28d3d171f46ebccd10cd1d2e5caaf2970360f426f94fed7345a0426e9fdd4af3ef46210749d3f78d9405cb10ea780cc21010765de1f9a8b54  patch.files
+c177e7a73b5c202554d8aaabd018b0b6db8898fd8e8d741f07f40ed75c545f9acf3f2c2ade078605e9ad4bd733e94c9d9e571c2cef16f74e708739e01cc751c4  linux-anbernic-rgxxxx-7.1.8.tar.gz
 "
