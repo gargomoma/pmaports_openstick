@@ -1,4 +1,4 @@
-# Maintainer: Heit0r <heitordrp@proton.me>
+maintainer="Heit0r <heitordrp@proton.me>"
 pkgname=firmware-xiaomi-lime
 pkgver=1
 pkgrel=0
@@ -6,156 +6,48 @@ pkgdesc="Firmware for Xiaomi Redmi 9T (lime)"
 url="https://github.com/heit0r/firmware-xiaomi-lime"
 arch="aarch64"
 license="proprietary"
-options="!check !strip !archcheck"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
 source="https://github.com/heit0r/firmware-xiaomi-lime/releases/download/v14.0.3.0-sjqmixm/firmware-xiaomi-lime.tar.gz"
 
-subpackages="
-	$pkgname-adreno
-	$pkgname-adsp
-	$pkgname-cdsp
-	$pkgname-ipa
-	$pkgname-radio
-	$pkgname-rproc::noarch
-	$pkgname-venus
-"
-
 _fwdir="/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime"
-_compatdir="/lib/firmware/postmarketos/qcom/sm6115/Fxtec/QX1050"
-_pmosfw="/lib/firmware/postmarketos"
-_fwroot="/lib/firmware"
+_zapdir="/lib/firmware/qcom/sm6115/xiaomi/lime"
 
 package() {
-	mkdir -p "$pkgdir"
-}
-
-adreno() {
-	pkgdesc="Xiaomi lime Adreno firmware"
-
-	install -Dm644 -t "$subpkgdir/$_fwdir" \
+	install -Dm644 -t "$pkgdir/$_zapdir" \
 		"$srcdir/$pkgname"/a610_zap.*
 
-	install -Dm644 -t "$subpkgdir/$_compatdir" \
-		"$srcdir/$pkgname"/a610_zap.*
+	ln -sf a610_zap.mdt "$pkgdir/$_zapdir/a610_zap.mbn"
 
-	ln -sf a610_zap.mdt "$subpkgdir/$_fwdir/a610_zap.mbn"
-	ln -sf a610_zap.mdt "$subpkgdir/$_compatdir/a610_zap.mbn"
-
-	install -Dm644 -t "$subpkgdir/$_pmosfw/qcom" \
-		"$srcdir/$pkgname"/a630_sqe.fw
-
-	install -Dm644 -t "$subpkgdir/$_fwroot/qcom" \
-		"$srcdir/$pkgname"/a630_sqe.fw
-}
-
-adsp() {
-	pkgdesc="Xiaomi lime ADSP firmware"
-
-	install -Dm644 -t "$subpkgdir/$_fwdir" \
+	install -Dm644 -t "$pkgdir/$_fwdir" \
 		"$srcdir/$pkgname"/adsp.* \
 		"$srcdir/$pkgname"/adspr.jsn \
 		"$srcdir/$pkgname"/adsps.jsn \
-		"$srcdir/$pkgname"/adspua.jsn
-
-	install -Dm644 -t "$subpkgdir/$_compatdir" \
-		"$srcdir/$pkgname"/adsp.* \
-		"$srcdir/$pkgname"/adspr.jsn \
-		"$srcdir/$pkgname"/adsps.jsn \
-		"$srcdir/$pkgname"/adspua.jsn
-
-	ln -sf adsp.mdt "$subpkgdir/$_fwdir/adsp.mbn"
-	ln -sf adsp.mdt "$subpkgdir/$_compatdir/adsp.mbn"
-}
-
-cdsp() {
-	pkgdesc="Xiaomi lime CDSP firmware"
-
-	install -Dm644 -t "$subpkgdir/$_fwdir" \
+		"$srcdir/$pkgname"/adspua.jsn \
 		"$srcdir/$pkgname"/cdsp.* \
-		"$srcdir/$pkgname"/cdspr.jsn
-
-	install -Dm644 -t "$subpkgdir/$_compatdir" \
-		"$srcdir/$pkgname"/cdsp.* \
-		"$srcdir/$pkgname"/cdspr.jsn
-
-	ln -sf cdsp.mdt "$subpkgdir/$_fwdir/cdsp.mbn"
-	ln -sf cdsp.mdt "$subpkgdir/$_compatdir/cdsp.mbn"
-}
-
-ipa() {
-	pkgdesc="Xiaomi lime IPA firmware"
-
-	install -Dm644 -t "$subpkgdir/$_fwdir" \
-		"$srcdir/$pkgname"/ipa_fws.*
-
-	install -Dm644 -t "$subpkgdir/$_compatdir" \
-		"$srcdir/$pkgname"/ipa_fws.*
-
-	ln -sf ipa_fws.mdt "$subpkgdir/$_fwdir/ipa_fws.mbn"
-	ln -sf ipa_fws.mdt "$subpkgdir/$_compatdir/ipa_fws.mbn"
-}
-
-radio() {
-	pkgdesc="Xiaomi lime modem/radio/WLAN firmware"
-	depends="linux-firmware-ath10k"
-
-	install -Dm644 -t "$subpkgdir/$_fwdir" \
+		"$srcdir/$pkgname"/cdspr.jsn \
+		"$srcdir/$pkgname"/ipa_fws.* \
 		"$srcdir/$pkgname"/modem.* \
 		"$srcdir/$pkgname"/modemr.jsn \
 		"$srcdir/$pkgname"/modemuw.jsn \
 		"$srcdir/$pkgname"/wlanmdsp.mbn \
 		"$srcdir/$pkgname"/regdb.bin \
-		"$srcdir/$pkgname"/bdwlan.*
+		"$srcdir/$pkgname"/bdwlan.* \
+		"$srcdir/$pkgname"/venus.*
 
-	install -Dm644 -t "$subpkgdir/$_compatdir" \
-		"$srcdir/$pkgname"/modem.* \
-		"$srcdir/$pkgname"/modemr.jsn \
-		"$srcdir/$pkgname"/modemuw.jsn \
-		"$srcdir/$pkgname"/wlanmdsp.mbn \
-		"$srcdir/$pkgname"/regdb.bin \
-		"$srcdir/$pkgname"/bdwlan.*
+	ln -sf adsp.mdt "$pkgdir/$_fwdir/adsp.mbn"
+	ln -sf cdsp.mdt "$pkgdir/$_fwdir/cdsp.mbn"
+	ln -sf ipa_fws.mdt "$pkgdir/$_fwdir/ipa_fws.mbn"
+	ln -sf modem.mdt "$pkgdir/$_fwdir/modem.mbn"
+	ln -sf venus.mdt "$pkgdir/$_fwdir/venus.mbn"
 
 	install -Dm644 "$srcdir/$pkgname"/bdwlan.bin \
-		"$subpkgdir/lib/firmware/ath10k/WCN3990/hw1.0/board.bin"
-
-	ln -sf modem.mdt "$subpkgdir/$_fwdir/modem.mbn"
-	ln -sf modem.mdt "$subpkgdir/$_compatdir/modem.mbn"
+		"$pkgdir/lib/firmware/ath10k/WCN3990/hw1.0/board.bin"
 
 	if [ -d "$srcdir/$pkgname/modem_pr" ]; then
-		mkdir -p "$subpkgdir/$_fwdir/modem_pr"
-		cp -a "$srcdir/$pkgname"/modem_pr/* "$subpkgdir/$_fwdir/modem_pr/"
-
-		mkdir -p "$subpkgdir/$_compatdir/modem_pr"
-		cp -a "$srcdir/$pkgname"/modem_pr/* "$subpkgdir/$_compatdir/modem_pr/"
+		mkdir -p "$pkgdir/$_fwdir/modem_pr"
+		cp -a "$srcdir/$pkgname"/modem_pr/* "$pkgdir/$_fwdir/modem_pr/"
 	fi
 }
-
-venus() {
-	pkgdesc="Xiaomi lime Venus video firmware"
-
-	install -Dm644 -t "$subpkgdir/$_fwdir" \
-		"$srcdir/$pkgname"/venus.*
-
-	install -Dm644 -t "$subpkgdir/$_compatdir" \
-		"$srcdir/$pkgname"/venus.*
-
-	ln -sf venus.mdt "$subpkgdir/$_fwdir/venus.mbn"
-	ln -sf venus.mdt "$subpkgdir/$_compatdir/venus.mbn"
-}
-
-rproc() {
-	pkgdesc="Xiaomi lime remoteproc support"
-	depends="
-		rmtfs
-		rmtfs-systemd
-		tqftpserv
-		tqftpserv-systemd
-		pd-mapper
-		pd-mapper-systemd
-		qrtr
-	"
-	mkdir -p "$subpkgdir"
-}
-
 
 sha512sums="
 4cb279f47c09ba5a5c0329b3a58f56e3e2e1ebf25dc03efeb01a0037beaee54656a642acbb77d85bf04d04982b83ef7a9c1442c94744d3a9bc73a563b724c866  firmware-xiaomi-lime.tar.gz

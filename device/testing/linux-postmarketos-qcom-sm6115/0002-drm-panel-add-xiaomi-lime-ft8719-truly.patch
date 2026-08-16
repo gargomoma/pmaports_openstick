@@ -1,10 +1,6 @@
-diff -urN linux-sm6115-orig/drivers/gpu/drm/panel/Kconfig linux-sm6115-driverwork/drivers/gpu/drm/panel/Kconfig
 --- a/drivers/gpu/drm/panel/Kconfig	2024-07-22 10:17:50.000000000 -0300
 +++ b/drivers/gpu/drm/panel/Kconfig	2026-06-18 22:22:29.746175146 -0300
-@@ -87,6 +87,15 @@
- 	  Say Y here if you want to support for BOE TV101WUM and AUO KD101N80
- 	  45NA WUXGA PANEL DSI Video Mode panel
- 
+@@ -89,0 +90,9 @@
 +config DRM_PANEL_XIAOMI_LIME_FT8719_TRULY
 +	tristate "Xiaomi Redmi 9T FT8719 Truly panel"
 +	depends on OF
@@ -14,10 +10,6 @@ diff -urN linux-sm6115-orig/drivers/gpu/drm/panel/Kconfig linux-sm6115-driverwor
 +	  Say Y here if you want to enable support for the FT8719 Truly
 +	  video mode DSI panel found on the Xiaomi Redmi 9T / lime.
 +
- config DRM_PANEL_EBBG_FT8719
- 	tristate "EBBG FT8719 panel driver"
- 	depends on OF
-diff -urN linux-sm6115-orig/drivers/gpu/drm/panel/Makefile linux-sm6115-driverwork/drivers/gpu/drm/panel/Makefile
 --- a/drivers/gpu/drm/panel/Makefile	2024-07-22 10:17:50.000000000 -0300
 +++ b/drivers/gpu/drm/panel/Makefile	2026-06-18 22:22:29.749903526 -0300
 @@ -12,6 +12,7 @@
@@ -28,8 +20,7 @@ diff -urN linux-sm6115-orig/drivers/gpu/drm/panel/Makefile linux-sm6115-driverwo
  obj-$(CONFIG_DRM_PANEL_ELIDA_KD35T133) += panel-elida-kd35t133.o
  obj-$(CONFIG_DRM_PANEL_FEIXIN_K101_IM2BA02) += panel-feixin-k101-im2ba02.o
  obj-$(CONFIG_DRM_PANEL_FEIYANG_FY07024DI26A30D) += panel-feiyang-fy07024di26a30d.o
-diff -urN linux-sm6115-orig/drivers/gpu/drm/panel/panel-xiaomi-lime-ft8719-truly.c linux-sm6115-driverwork/drivers/gpu/drm/panel/panel-xiaomi-lime-ft8719-truly.c
---- a/drivers/gpu/drm/panel/panel-xiaomi-lime-ft8719-truly.c	1969-12-31 21:00:00.000000000 -0300
+--- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-xiaomi-lime-ft8719-truly.c	2026-06-18 22:22:19.175390903 -0300
 @@ -0,0 +1,270 @@
 +// SPDX-License-Identifier: GPL-2.0-only

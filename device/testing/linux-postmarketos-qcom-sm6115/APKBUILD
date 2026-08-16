@@ -1,16 +1,18 @@
-# Archived: unmaintained
-maintainer=""
+maintainer="Heit0r <heitordrp@proton.me>"
 pkgname=linux-postmarketos-qcom-sm6115
 pkgver=6.10
-pkgrel=8
+pkgrel=9
 pkgdesc="Mainline Kernel fork for SM6115 devices"
 arch="aarch64"
 _carch="arm64"
 _flavor="postmarketos-qcom-sm6115"
 url="https://kernel.org"
 license="GPL-2.0-only"
-options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+options="!strip !check !tracedeps pmb:cross-native"
 makedepends="
+	llvm
+	lld
+	clang
 	bash
 	bc
 	bison
@@ -40,7 +42,7 @@ prepare() {
 
 build() {
 	unset LDFLAGS
-	make ARCH="$_carch" CC="${CC:-gcc}" \
+	make ARCH="$_carch" LLVM=1 KCFLAGS="-fno-builtin-wcslen" \
 		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
 }
 
@@ -52,6 +54,7 @@ package() {
 
 	make modules_install dtbs_install \
 		ARCH="$_carch" \
+		LLVM=1 \
 		INSTALL_PATH="$pkgdir"/boot/ \
 		INSTALL_MOD_PATH="$pkgdir" \
 		INSTALL_MOD_STRIP=1 \
@@ -65,7 +68,7 @@ package() {
 
 sha512sums="
 67cf8499a17a18bbeec08eb7729b7dcec05661433dfb37684320ed806bedf105499a3f38dd8662ec1e443ae979d4050094a266fe250b6e6869ddd0eda2b14053  linux-postmarketos-qcom-sm6115-42b61ea7cdb9f531dd53f9e2c844a056db8978c1.tar.gz
-84caa7d55dd361710a45347ee87e3ee311f79565b07e68755917c95a81521bbd317fe9d95d49bf1dffc9a7af80b0cf57cc04c91f76d6a2e0098dd23b4f6f9672  config-postmarketos-qcom-sm6115.aarch64
+7e24c9270fb358285721161396b507bdd46eb53237a8335d3725d4e8d68dd012461cbb8634047279213d0984af4aeeaad3ca687b4743af0fe3cf446329c5e89a  config-postmarketos-qcom-sm6115.aarch64
 09729fb67b1be41d62505d293b4f0c1de390d4e84e01b327437f9d348c4f256f5e9a21d6f4e23368263004c91bed7c7e18067fe785cc0df3d662d053b6492cdb  0001-arm64-dts-qcom-add-xiaomi-lime.patch
-ebb2442a5092bfc84d01e47039ae717a6a0f60dc223d72fb2619d348d0c822f501bbe4f94ad4097b52580dc301f10362aeb66d633a6829b43ca211039e77ed6e  0002-drm-panel-add-xiaomi-lime-ft8719-truly.patch
+e1216e7b8240a40030e1d39837285d8e5c39a44557e1f468493300ecb061f3b0d723ad2cb5cf76df53a4939761b286270fab7e98af9b9ba221927bbcdaf77216  0002-drm-panel-add-xiaomi-lime-ft8719-truly.patch
 "

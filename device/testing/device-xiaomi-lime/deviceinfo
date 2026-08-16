@@ -33,4 +33,3 @@ deviceinfo_flash_fastboot_partition_vbmeta="vbmeta"
 deviceinfo_rootfs_image_sector_size="4096"
 
 # Include display/GPU-related modules in initramfs
-# deviceinfo_modules_initfs="gpu-sched drm drm_kms_helper msm adreno"
