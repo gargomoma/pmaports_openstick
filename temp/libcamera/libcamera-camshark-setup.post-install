@@ -1,0 +1,11 @@
+#!/bin/sh
+cat << __EOF__
+
+Please restart sshd to make this package take effect.
+
+Note that it is highly recommended to use public key authentication when
+connecting to camshark with ssh.
+
+__EOF__
+
+exit 0
