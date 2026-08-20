@@ -1,0 +1,41 @@
+--- a/default/audio/pulse/librem5.pa
++++ b/default/audio/pulse/librem5.pa
+@@ -4,10 +4,10 @@
+ 
+ # devkit
+ .ifexists /sys/bus/i2c/drivers/sgtl5000/0-000a
+-set-default-sink alsa_output.platform-sound.HiFi__hw_Devkit_0__sink
+-set-default-source alsa_input.platform-sound.HiFi__hw_Devkit_0__source
+-update-sink-proplist alsa_output.platform-sound.HiFi__hw_Devkit_0__sink filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\"analog_gain_control=0 voice_detection=0 high_pass_filter=0 noise_suppression=0\""
+-update-source-proplist alsa_input.platform-sound.HiFi__hw_Devkit_0__source filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\"analog_gain_control=0 voice_detection=0 high_pass_filter=0 noise_suppression=0\""
++# set-default-sink alsa_output.platform-sound.HiFi__hw_Devkit_0__sink
++# set-default-source alsa_input.platform-sound.HiFi__hw_Devkit_0__source
++# update-sink-proplist alsa_output.platform-sound.HiFi__hw_Devkit_0__sink filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\"analog_gain_control=0 voice_detection=0 high_pass_filter=0 noise_suppression=0\""
++# update-source-proplist alsa_input.platform-sound.HiFi__hw_Devkit_0__source filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\"analog_gain_control=0 voice_detection=0 high_pass_filter=0 noise_suppression=0\""
+ .endif
+ 
+ # phone
+@@ -18,17 +18,17 @@
+ .endif
+ 
+ .ifexists /sys/bus/i2c/drivers/wm8962/2-001a
+-set-card-profile alsa_card.platform-sound HiFi
+-set-default-sink alsa_output.platform-sound.HiFi__hw_L5__sink
+-set-default-source alsa_input.platform-sound.HiFi__hw_L5__source
+-update-sink-proplist alsa_output.platform-sound.HiFi__hw_L5__sink filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\"analog_gain_control=0\""
+-update-source-proplist alsa_input.platform-sound.HiFi__hw_L5__source filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\"analog_gain_control=0\""
++# set-card-profile alsa_card.platform-sound HiFi
++# set-default-sink alsa_output.platform-sound.HiFi__hw_L5__sink
++# set-default-source alsa_input.platform-sound.HiFi__hw_L5__source
++# update-sink-proplist alsa_output.platform-sound.HiFi__hw_L5__sink filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\"analog_gain_control=0\""
++# update-source-proplist alsa_input.platform-sound.HiFi__hw_L5__source filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\"analog_gain_control=0\""
+ .endif
+ 
+ .ifexists /etc/pulse/no-force-mic-volume
+ .else
+ .nofail
+-set-source-volume alsa_input.platform-sound.HiFi__hw_L5__source 26852
++# set-source-volume alsa_input.platform-sound.HiFi__hw_L5__source 26852
+ .fail
+ .endif
+ 
