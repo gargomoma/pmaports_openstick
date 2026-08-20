@@ -90,6 +90,18 @@ pulseaudio() {
 	# install config files from upstream Purism
 	mkdir -p "$subpkgdir"/etc/pulse/
 	cp -r "$builddir"/default/audio/pulse/daemon.conf.d "$subpkgdir"/etc/pulse/
+	# Fix "No such profile: HiFi" error (#4816)
+	sed -i 's/^set-default-sink alsa_output.platform-sound.HiFi__hw_Devkit_0__sink/# &/
+		    s/^set-default-source alsa_input.platform-sound.HiFi__hw_Devkit_0__source/# &/
+			s/^update-sink-proplist alsa_output.platform-sound.HiFi__hw_Devkit_0__sink filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\\\"analog_gain_control=0 voice_detection=0 high_pass_filter=0 noise_suppression=0\\\""/# &/
+			s/^update-source-proplist alsa_input.platform-sound.HiFi__hw_Devkit_0__source filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\\\"analog_gain_control=0 voice_detection=0 high_pass_filter=0 noise_suppression=0\\\""/# &/
+			s/^set-card-profile alsa_card.platform-sound HiFi/# &/
+			s/^set-default-sink alsa_output.platform-sound.HiFi__hw_L5__sink/# &/
+			s/^set-default-source alsa_input.platform-sound.HiFi__hw_L5__source/# &/
+			s/^update-sink-proplist alsa_output.platform-sound.HiFi__hw_L5__sink filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\\\"analog_gain_control=0\\\""/# &/
+			s/^update-source-proplist alsa_input.platform-sound.HiFi__hw_L5__source filter.apply.echo-cancel.parameters="channels=1 use_master_format=yes aec_args=\\\"analog_gain_control=0\\\""/# &/
+			s/^set-source-volume alsa_input.platform-sound.HiFi__hw_L5__source 26852/# &/' \
+			"$builddir"/default/audio/pulse/librem5.pa
 	install -D -m644 "$builddir"/default/audio/pulse/librem5.pa "$subpkgdir"/etc/pulse/librem5.pa
 	mkdir -p "$subpkgdir"/usr/share/pulseaudio/alsa-mixer
 	cp -r "$builddir"/default/audio/profile-sets "$subpkgdir"/usr/share/pulseaudio/alsa-mixer/
