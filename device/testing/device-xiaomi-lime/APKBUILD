@@ -1,17 +1,16 @@
 # Reference: <https://postmarketos.org/devicepkg>
-maintainer="Heit0r <heitordrp@proton.me>"
 pkgname=device-xiaomi-lime
 pkgdesc="Xiaomi Redmi 9T (lime)"
 pkgver=1
 pkgrel=0
+maintainer="Heit0r <heitordrp@proton.me>"
 url="https://postmarketos.org"
-license="MIT"
 arch="aarch64"
-options="!check !archcheck"
+license="MIT"
 depends="
-	linux-postmarketos-qcom-sm6115
 	firmware-qcom-adreno-a630-sqe
 	firmware-xiaomi-lime
+	linux-postmarketos-qcom-sm6115
 	mkbootimg
 	pd-mapper
 	postmarketos-base
@@ -20,8 +19,11 @@ depends="
 	tqftpserv
 "
 makedepends="devicepkg-dev"
-source="deviceinfo
-	30-gpu-firmware.files"
+source="
+	deviceinfo
+	30-gpu-firmware.files
+"
+options="!archcheck !check"
 
 build() {
 	devicepkg_build $startdir $pkgname
@@ -35,6 +37,6 @@ package() {
 }
 
 sha512sums="
-f8fa0fd50b81c791240baf3016cdf70f5304a5ccb6a971be4c09e5be1a256d3845db75126c796312cc484e617a79357bf5fac58cb7167bd19a5ecb587df04738  deviceinfo
-c7ea8dcdebcb474d591af4532f2afa5b29fa2e6b5f61f78527cd195c6b9d6bfbfea5b9772798ca9b3a234a7a34b8ae7bb7c57bc254807b9a0a2e9ac236508baf  30-gpu-firmware.files
+74d50787065ee8cd6f6bdbe26a7d0f26d94b038137a5210523052e489a7ee117158873b39ee7ad2664800ddbc2b21d00a7813b5ee4a3b7fdb3cda2bde1799ee7  deviceinfo
+8e1897cfdeb75b260bc8c9a23144ad1926468893f98ff93367a1cde03e2507bbc6fbfb6e8490502060ee0a4071ed658867ff667928c076a3a3fe33b990a42b74  30-gpu-firmware.files
 "

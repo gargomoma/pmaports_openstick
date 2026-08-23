@@ -1,24 +1,21 @@
-maintainer="Heit0r <heitordrp@proton.me>"
 pkgname=firmware-xiaomi-lime
+pkgdesc="Firmware for Xiaomi Redmi 9T (lime)"
 pkgver=1
 pkgrel=0
-pkgdesc="Firmware for Xiaomi Redmi 9T (lime)"
+maintainer="Heit0r <heitordrp@proton.me>"
 url="https://github.com/heit0r/firmware-xiaomi-lime"
 arch="aarch64"
 license="proprietary"
-options="!check !strip !archcheck !tracedeps pmb:cross-native"
 source="https://github.com/heit0r/firmware-xiaomi-lime/releases/download/v14.0.3.0-sjqmixm/firmware-xiaomi-lime.tar.gz"
-
-_fwdir="/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime"
-_zapdir="/lib/firmware/qcom/sm6115/xiaomi/lime"
+options="!archcheck !check !strip !tracedeps pmb:cross-native"
 
 package() {
-	install -Dm644 -t "$pkgdir/$_zapdir" \
+	install -Dm644 -t "$pkgdir/usr/lib/firmware/qcom/sm6115/xiaomi/lime" \
 		"$srcdir/$pkgname"/a610_zap.*
 
-	ln -sf a610_zap.mdt "$pkgdir/$_zapdir/a610_zap.mbn"
+	ln -sf a610_zap.mdt "$pkgdir/usr/lib/firmware/qcom/sm6115/xiaomi/lime/a610_zap.mbn"
 
-	install -Dm644 -t "$pkgdir/$_fwdir" \
+	install -Dm644 -t "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime" \
 		"$srcdir/$pkgname"/adsp.* \
 		"$srcdir/$pkgname"/adspr.jsn \
 		"$srcdir/$pkgname"/adsps.jsn \
@@ -34,18 +31,19 @@ package() {
 		"$srcdir/$pkgname"/bdwlan.* \
 		"$srcdir/$pkgname"/venus.*
 
-	ln -sf adsp.mdt "$pkgdir/$_fwdir/adsp.mbn"
-	ln -sf cdsp.mdt "$pkgdir/$_fwdir/cdsp.mbn"
-	ln -sf ipa_fws.mdt "$pkgdir/$_fwdir/ipa_fws.mbn"
-	ln -sf modem.mdt "$pkgdir/$_fwdir/modem.mbn"
-	ln -sf venus.mdt "$pkgdir/$_fwdir/venus.mbn"
+	ln -sf adsp.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/adsp.mbn"
+	ln -sf cdsp.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/cdsp.mbn"
+	ln -sf ipa_fws.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/ipa_fws.mbn"
+	ln -sf modem.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/modem.mbn"
+	ln -sf venus.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/venus.mbn"
 
 	install -Dm644 "$srcdir/$pkgname"/bdwlan.bin \
-		"$pkgdir/lib/firmware/ath10k/WCN3990/hw1.0/board.bin"
+		"$pkgdir/usr/lib/firmware/ath10k/WCN3990/hw1.0/board.bin"
 
 	if [ -d "$srcdir/$pkgname/modem_pr" ]; then
-		mkdir -p "$pkgdir/$_fwdir/modem_pr"
-		cp -a "$srcdir/$pkgname"/modem_pr/* "$pkgdir/$_fwdir/modem_pr/"
+		mkdir -p "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/modem_pr"
+		cp -a "$srcdir/$pkgname"/modem_pr/* \
+			"$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/modem_pr/"
 	fi
 }
 

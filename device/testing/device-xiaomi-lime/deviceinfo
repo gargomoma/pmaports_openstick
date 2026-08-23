@@ -13,8 +13,6 @@ deviceinfo_arch="aarch64"
 # Device related
 deviceinfo_chassis="handset"
 deviceinfo_external_storage="true"
-deviceinfo_screen_width="1080"
-deviceinfo_screen_height="2340"
 
 # Bootloader related
 deviceinfo_flash_method="fastboot"
@@ -31,5 +29,3 @@ deviceinfo_flash_fastboot_partition_vbmeta="vbmeta"
 
 # Required for devices using UFS as storage (instead of e.g. eMMC)
 deviceinfo_rootfs_image_sector_size="4096"
-
-# Include display/GPU-related modules in initramfs
