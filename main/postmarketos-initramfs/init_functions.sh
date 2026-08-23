@@ -906,27 +906,7 @@ setup_usb_network() {
 	# Run all usb network setup functions (add more below!)
 	setup_usb_network_android
 	setup_usb_network_configfs
-}
 
-start_unudhcpd() {
-	# Only run once
-	[ "$(pidof unudhcpd)" ] && return
-
-	local usb_iface
-	# Don't run if there's no USB gadget.
-	if [ -z "$(cat "$CONFIGFS/g1/UDC" 2>/dev/null)" ] &&
-		! [ -e /sys/class/android_usb/android0 ]; then
-		return
-	fi
-
-	# Skip if disabled
-	# shellcheck disable=SC2154
-	if [ "$deviceinfo_disable_dhcpd" = "true" ]; then
-		return
-	fi
-
-	local client_ip="${unudhcpd_client_ip:-172.16.42.2}"
-	info "Starting unudhcpd with server ip $HOST_IP, client ip: $client_ip"
 
 	# Get usb interface
 	usb_network_function="${deviceinfo_usb_network_function:-ncm.usb0}"
@@ -940,22 +920,50 @@ start_unudhcpd() {
 	else
 		usb_iface=""
 	fi
+
 	if [ -n "$usb_iface" ]; then
-		ifconfig "$usb_iface" "$HOST_IP"
-	elif ifconfig rndis0 "$HOST_IP" 2>/dev/null; then
+		ip link set "$usb_iface" up
+	elif ip link set rndis0 up 2>/dev/null; then
 		usb_iface=rndis0
-	elif ifconfig usb0 "$HOST_IP" 2>/dev/null; then
+	elif ip link set usb0 up 2>/dev/null; then
 		usb_iface=usb0
-	elif ifconfig eth0 "$HOST_IP" 2>/dev/null; then
+	elif ip link set eth0 up 2>/dev/null; then
 		usb_iface=eth0
 	fi
 
 	if [ -z "$usb_iface" ]; then
-		echo "  Could not find an interface to run a dhcp server on"
+		echo "  Could not find an interface to do usb networking"
 		echo "  Interfaces:"
 		ip link
 		return
 	fi
+
+	ip -6 addr add fe80::2/64 scope link dev "$usb_iface" || echo "cannot assign IPv6 address"
+}
+
+start_unudhcpd() {
+	# Only run once
+	[ "$(pidof unudhcpd)" ] && return
+
+	[ -z "$usb_iface" ] && return
+
+	# Don't run if there's no USB gadget.
+	if [ -z "$(cat "$CONFIGFS/g1/UDC" 2>/dev/null)" ] &&
+		! [ -e /sys/class/android_usb/android0 ]; then
+		return
+	fi
+
+	# Skip if disabled
+	# shellcheck disable=SC2154
+	if [ "$deviceinfo_disable_dhcpd" = "true" ]; then
+		return
+	fi
+
+	ip addr add "$HOST_IP/24" dev "$usb_iface"
+	local client_ip="${unudhcpd_client_ip:-172.16.42.2}"
+	info "Starting unudhcpd with server ip $HOST_IP, client ip: $client_ip"
+
+
 
 	info "  Using interface $usb_iface"
 	info "  Starting the DHCP daemon"
