@@ -1,6 +1,6 @@
 pkgname=linux-postmarketos-qcom-sm6115
 pkgver=6.10
-pkgrel=9
+pkgrel=0
 maintainer="Heit0r <heitordrp@proton.me>"
 pkgdesc="Mainline Kernel fork for SM6115 devices"
 arch="aarch64"
@@ -21,6 +21,7 @@ makedepends="
 	openssl-dev
 	perl
 	python3
+	zstd
 "
 
 _repository="linux"
@@ -56,7 +57,7 @@ package() {
 		ARCH="$_carch" \
 		LLVM=1 \
 		INSTALL_PATH="$pkgdir"/boot/ \
-		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
 		INSTALL_MOD_STRIP=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
 	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
@@ -68,7 +69,7 @@ package() {
 
 sha512sums="
 67cf8499a17a18bbeec08eb7729b7dcec05661433dfb37684320ed806bedf105499a3f38dd8662ec1e443ae979d4050094a266fe250b6e6869ddd0eda2b14053  linux-postmarketos-qcom-sm6115-42b61ea7cdb9f531dd53f9e2c844a056db8978c1.tar.gz
-7e24c9270fb358285721161396b507bdd46eb53237a8335d3725d4e8d68dd012461cbb8634047279213d0984af4aeeaad3ca687b4743af0fe3cf446329c5e89a  config-postmarketos-qcom-sm6115.aarch64
+9fb67b054570f3ddf3ba5fe7ce1b6056f17e6c47b63fee906048f70eb4e398cbe3de1e7374f6d6836cd6753479d5240aa6420ccdae08fc3c0bad625d9919dd15  config-postmarketos-qcom-sm6115.aarch64
 09729fb67b1be41d62505d293b4f0c1de390d4e84e01b327437f9d348c4f256f5e9a21d6f4e23368263004c91bed7c7e18067fe785cc0df3d662d053b6492cdb  0001-arm64-dts-qcom-add-xiaomi-lime.patch
 e1216e7b8240a40030e1d39837285d8e5c39a44557e1f468493300ecb061f3b0d723ad2cb5cf76df53a4939761b286270fab7e98af9b9ba221927bbcdaf77216  0002-drm-panel-add-xiaomi-lime-ft8719-truly.patch
 "
