@@ -1,7 +1,7 @@
+maintainer="Heit0r <heitordrp@proton.me>"
 pkgname=linux-postmarketos-qcom-sm6115
 pkgver=6.10
 pkgrel=0
-maintainer="Heit0r <heitordrp@proton.me>"
 pkgdesc="Mainline Kernel fork for SM6115 devices"
 arch="aarch64"
 _carch="arm64"
@@ -10,14 +10,14 @@ url="https://kernel.org"
 license="GPL-2.0-only"
 options="!strip !check !tracedeps pmb:cross-native"
 makedepends="
-	llvm
-	lld
-	clang
 	bash
 	bc
 	bison
+	clang
 	devicepkg-dev
 	flex
+	lld
+	llvm
 	openssl-dev
 	perl
 	python3
