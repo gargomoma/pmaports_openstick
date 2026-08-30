@@ -34,6 +34,7 @@ depends_systemd="libcap-utils"
 _pmb_recommends="
 	phosh-mobile-settings
 	phosh-tour
+	syncbus
 	"
 _pmb_groups="feedbackd"
 install="
