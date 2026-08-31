@@ -92,16 +92,12 @@ LBDAF = "y"
 # Provide a proper dummy null console to improve compatibility
 # on devices that like to coerce console=null
 NULL_TTY = "m"
+["category:default".">=5.17.0"."all"]
+# Busybox cannot handle module decompression for all formats
+MODULE_DECOMPRESS = "y"
 # MODULE_COMPRESS was added after the individual compression algorithm options
 ["category:default".">=6.12.0"."all"]
 MODULE_COMPRESS = "y"
-["category:default".">=6.2.0"."all"]
-# MODULE_COMPRESS_ZSTD exists since 5.13, but since kernels prior to 6.2 cannot
-# decompress it, we would break devices with split initramfs which use busybox
-# modprobe, so we only enforce it on 6.2 or newer
-MODULE_COMPRESS_ZSTD = "y"
-# MODULE_DECOMPRESS exists since 5.17, but can only decompress zstd since 6.2
-MODULE_DECOMPRESS = "y"
 ["category:default".">=5.19.0"."all"]
 FW_LOADER_COMPRESS = "y"
 FW_LOADER_COMPRESS_ZSTD = "y"
@@ -736,3 +732,10 @@ LOCK_DOWN_KERNEL_FORCE_INTEGRITY = "y"
 # Wine / Proton support
 ["category:wine".">=6.14.0"."all"]
 NTSYNC = "m"
+
+# Recommended options that may be overridden
+["category:recommended".">=6.2.0"."all"]
+# MODULE_COMPRESS_ZSTD exists since 5.13, but since kernels prior to 6.2 cannot
+# decompress it, we would break devices with split initramfs which use busybox
+# modprobe, so we only enforce it on 6.2 or newer
+MODULE_COMPRESS_ZSTD = "y"
