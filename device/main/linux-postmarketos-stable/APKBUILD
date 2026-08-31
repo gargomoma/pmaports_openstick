@@ -1,7 +1,7 @@
 # Co-Maintainer: Achill Gilgenast <achill@achill.org>
 maintainer="Aelin <aelin@postmarketos.org>"
 pkgname=linux-postmarketos-stable
-pkgver=7.1.8
+pkgver=7.2.2
 pkgrel=0
 _kver=${pkgver%.*}
 pkgdesc="Stable Kernel"
@@ -62,8 +62,7 @@ source="
 	linux-$_kver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$_kver.tar.xz
 
 	0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
-	0002-WIP-arch-powerpc-boot-Use-z-notext-for-pseries-image.patch
-	0003-WIP-arch-powerpc-boot-Add-z-norelro.patch
+	0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
 
 	config-stable.aarch64
 	config-stable.armv7
@@ -98,7 +97,7 @@ prepare() {
 
 build() {
 	unset LDFLAGS
-	make ARCH="$_carch" LLVM=1 HOSTLDFLAGS="-fuse-ld=lld" \
+	make ARCH="$_carch" LLVM=1 \
 		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
 }
 
@@ -124,16 +123,15 @@ package() {
 }
 
 sha512sums="
-15477b52f1c36e42d38486037b721bca075d8312d09b108c2628e14137fed6aeb9ed641035adae0f40d3fed9a231f8a315c7d163bb599d319714464963d8626d  patch-7.1.8.patch.xz
-d4d9c45261813559341c67ea53d4a47f5a04d1ad15e3c2b8222a09b5483380d2bfd31b8c675e144db2eb91f560d6cb28f66187a5ea4f24f6dfb82a4ad48064cc  linux-7.1.tar.xz
+144f29bcdf647b4d90179ca4132c0e9fa1d88993bb29ac84236c10c790188d79c827e633cc6cc852ea4b6259b58c6f25a8fbb7073fedf7434e9b0f07f986c2fc  patch-7.2.2.patch.xz
+47e63679363261a864d271277340a6f2d45f544e1a056be4159df081f4f6537d0efa865c4af26611ab33a3079ee65db88ec2f6bc0e5fff43e0c043cde0cd91e1  linux-7.2.tar.xz
 1f11df2480e9f691573283597160b4c806e492cdca4825f3acb3afb70bde43abfab487bcde1f5553b431a702a0039479d041b0ce7859970e706b5a51d2ad8fb0  0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
-26521a9c9ea769534095dc4e306babadc8bcbaf03d7faa523c377e41ba0f742ecd0490fa27791d895f729c3ae8845297dca59b4db2475e7f078e689c447430bc  0002-WIP-arch-powerpc-boot-Use-z-notext-for-pseries-image.patch
-302c20c85559fc9b3b2420ed25be1bfbb76c87f2a470e4141c32e9542cf1f5c6b3b5a7847231a3eaa0f6bc0e5942d0c1599e807175dcf5e63469704c3d6adde3  0003-WIP-arch-powerpc-boot-Add-z-norelro.patch
-2390f66a2481ac91d8950f41a60ba30d78d35095815bdaaa42ff42384cddfc5b094e2205cad33cdac33f43e03b57af9b257cbe4a3bbf4666fa0444c7c0abc28f  config-stable.aarch64
-2a27a157ea8078c92bb7fd71060a584f2d3c5f0982ae047b30cfa26cd8bc01d0dc6c8e6b23b3120d9224805f2743c1248e5b1cf58699616caac6589592ca3c27  config-stable.armv7
-2db8499d844d63e077be069c0bdedc349864fcecd19f748787aa9d7b7bbe4272294da93a984da38baea43a68d7b481293da200f85ce54c22ba081efa111dffbd  config-stable.loongarch64
-00051c078bd511248f530b8c4e6658c98a60f67a025dbefae1dfaa2bb2ca7dbd7dc7fcea6f3ce274f2ad85f4d364fa8200e7206df5b52ca393ed381e12bc0de1  config-stable.ppc64le
-e2e859c4bcb90d02726eb040083e492fb8bea542887328cf74140b80e86f9ebcf1cf6e7518c1bf3ea0bbb4696dd60fd58fbf44d49082c2b1e1644fcc15536768  config-stable.riscv64
-d3b9fa06e8bcec0e0a90cd95271c572e348b6171d6f561c370327a8597843305b27178423f11e07566b8978329069e6af30cd6921665393d61cd08213200f59f  config-stable.x86
-2d55861be20ea640ce230a533a5bf683c2a0d5ed47bf489d93e350a59d116f2a066eff5e8be873a0ada5c55cb7cf237f2f5eb42f53c0ec40b333f8e9ded1618f  config-stable.x86_64
+302c20c85559fc9b3b2420ed25be1bfbb76c87f2a470e4141c32e9542cf1f5c6b3b5a7847231a3eaa0f6bc0e5942d0c1599e807175dcf5e63469704c3d6adde3  0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
+a8e4806689e094ea78d25549f871cf81a29cbd904ae57f74db922c7d14564ef0a39422e64d82dd92931802bd77823bf774a3185a0fb4559eb0f74638883f09fe  config-stable.aarch64
+b17a8ff505a2bb5033b279400475bf43af1ae76f6b5029c711476fc6106150176b5b659327b37da3bc5635365dce53c427d618b7f1e04deddd90ca52f5671fc8  config-stable.armv7
+a006596541bd206c301eb66f98399a8d9aac082b851600c00e56acb7cbfb9e33cdb1802aa632e3e8f51331639122f0567fdf8458bf073d18ac23bd949edf82a1  config-stable.loongarch64
+5f8bb9ddda3ffda4e88a496896f3f7b4dc497fb77b0e73e99db20b1b9387e19ddc105f96b54cb056cf5d771a0c080af4aed7e5fca44c71f2d198a85317cdefde  config-stable.ppc64le
+9e9080f9456e4f65329e5b6c4afc9d594c298a40b3f58bf7072e8c449f98c50509117017bd5396005d0e7c567bf0792ebee869ef172a315f189cde8bf29a0420  config-stable.riscv64
+c5b6d32b77fc031acfe15391c5f769f1f4b9237b156831e9b1cd109632167089d66dfb3753466c1f93d8896f3048f31a77c3586aaa0a34504843b16e81f2e92f  config-stable.x86
+fecea4a1a36f02dc150727c899e46a5e6f04021b8c1d5c478cd5d995119a4a14650797e6f0b994731e94ff0ab05f474a941b09b60bb31ee682c45e633199f768  config-stable.x86_64
 "
