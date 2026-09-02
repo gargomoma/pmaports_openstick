@@ -1,0 +1,64 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=apk-command-not-found
+pkgver=1
+pkgrel=0
+pkgdesc="Shell script to prompt to install a missing command"
+url="https://postmarketos.org"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="cmd:sh"
+subpackages="
+	$pkgname-bash
+	$pkgname-fish
+	$pkgname-zsh
+"
+source="apk-command-not-found.sh
+	command-not-found.bash
+	command-not-found.zsh
+	command-not-found.fish
+"
+builddir="$srcdir"
+options="!check"
+
+package() {
+	install -Dm755 "$srcdir"/apk-command-not-found.sh \
+		"$pkgdir"/usr/bin/apk-command-not-found
+
+	# /etc/bash/bashrc only sources .sh files for some reason
+	install -Dm644 "$srcdir"/command-not-found.bash \
+		"$pkgdir"/etc/bash/command-not-found.sh
+
+	install -Dm644 "$srcdir"/command-not-found.fish \
+		-t "$pkgdir"/usr/share/fish/vendor_functions.d/
+
+	install -Dm644 "$srcdir"/command-not-found.zsh \
+		-t "$pkgdir"/etc/zsh/zshrc.d/
+}
+
+bash() {
+	pkgdesc="$pkgdesc (bash integration)"
+	install_if="$pkgname=$pkgver-r$pkgrel bash"
+
+	amove etc/bash
+}
+
+fish() {
+	pkgdesc="$pkgdesc (fish integration)"
+	install_if="$pkgname=$pkgver-r$pkgrel fish"
+
+	amove usr/share
+}
+
+zsh() {
+	pkgdesc="$pkgdesc (zsh integration)"
+	install_if="$pkgname=$pkgver-r$pkgrel zsh"
+
+	amove etc/zsh
+}
+
+sha512sums="
+b16a291f44f995bb2f8b5b5ab10b8386608471bd47743eedff84f9082eebd4718049b1eaf3ad9e01b6e6d455ae03b957ec7e06cbf8cc51cd1116875ffe07c501  apk-command-not-found.sh
+2492ffb5869553913e83df005cfa3bc9f6c9052078e693f5781b324588dead55e83a08e8347152dfb3cce2afdfa6cba6f655b9418dd07c65e8311f86c217da44  command-not-found.bash
+e0e8501df3d0e10d9d9b4b7cdede5a45c736e8ba46a3a41ff49838af113869ea4964662524c06f4ed54ec690f33202689ea828c3b3a9758dea1853f429f80721  command-not-found.zsh
+466c4cc6717a187463002d7fc038e29940fb91705b565484f2660b7198682c9ca890ffd194a9f61711eae7a828bda366c518d8cb056e02997e8e7420e4a4f671  command-not-found.fish
+"
