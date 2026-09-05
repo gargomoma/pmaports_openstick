@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="putra <tn.putra404@gmail.com>"
+pkgname=firmware-oppo-a37f
+pkgdesc="Firmware for Oppo A37f"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="proprietary"
+arch="aarch64"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+source="wlan/prima/WCNSS_qcom_wlan_nv.bin"
+
+build() {
+	return 0
+}
+
+package() {
+	install -Dm644 "$srcdir"/WCNSS_qcom_wlan_nv.bin \
+		-t "$pkgdir"/usr/lib/firmware/wlan/prima/
+	install -Dm644 "$srcdir"/WCNSS_qcom_wlan_nv.bin \
+		-t "$pkgdir"/usr/lib/firmware/postmarketos/wlan/prima/
+}
+
+sha512sums="
+2856fd83a0584d2a3b5056e513cb6c6e158ea797c05699fad0fcbe59e742e25939daccb692a9ab48735070cf06063a3bacce0330df4f1ccd3516351f282fa598  WCNSS_qcom_wlan_nv.bin
+"

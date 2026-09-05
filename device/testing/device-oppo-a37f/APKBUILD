@@ -1,0 +1,37 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="putra <tn.putra404@gmail.com>"
+pkgname=device-oppo-a37f
+pkgdesc="Oppo A37 (A37f)"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-oppo-a37f
+	linux-postmarketos-qcom-msm8916
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-msm8916
+	soc-qcom-msm8916-rproc
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+sha512sums="
+ac87746a0235c66c27a1ab2b12d24797394159385e06c0d95daab3976b1247a2b7eca22b4e7efc048b5055dd48fb281861703b7c4f54307679eea3decccfc71c  deviceinfo
+fd6d0f5139ed255cc38ccc24c94de89ba19a25f53172c478bff5294e2bf209202eea7c867f83c3241d46a5b50038268ece54d3cd82a1a36593de5fc766b45b9a  kernel-cmdline.conf
+4f874293d178ee99f3983097b0ea757e31adfd877e97400ff638c2e4f402cd5993e73714ca2ac88c59a7046f468669f941c547e33d89f2484048d30ce11d98fe  modules-initfs
+"
