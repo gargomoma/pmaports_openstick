@@ -1,0 +1,16 @@
+# greetd configuration for the Phosh session. Autologin is required: with no hardware keyboard,
+# a password prompt before an on-screen keyboard exists is a lockout. vt 1 is the only console that renders.
+
+[terminal]
+vt = 1
+
+# The wrapper fixes XDG_CONFIG_DIRS before gnome-session reads it.
+[initial_session]
+command = "/usr/bin/phosh-session-gts7fewifi"
+user = "user"
+
+# default_session runs after a logout and after a greetd restart. phoc must wrap phrog, and the
+# greeter needs XDG_RUNTIME_DIR=/run/greetd, a session bus (dbus-run-session) and an OSK provider.
+[default_session]
+command = "dbus-run-session -- sh -c 'export XDG_RUNTIME_DIR=/run/greetd; exec /usr/bin/phrog-greeter-gts7fewifi'"
+user = "greetd"

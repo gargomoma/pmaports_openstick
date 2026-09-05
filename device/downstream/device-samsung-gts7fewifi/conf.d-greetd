@@ -1,0 +1,12 @@
+# Configuration for /etc/init.d/greetd (replaces the postmarketos-ui-phosh-openrc copy).
+
+# Device session config: autologin into the phosh wrapper, phrog after a logout.
+cfgfile=/etc/greetd/gts7fewifi-phosh.toml
+
+# Supervised with unlimited respawn: without a hardware keyboard a dead greetd is a black
+# screen with no way back in.
+supervisor=supervise-daemon
+respawn_delay=3
+respawn_max=0
+output_log=/var/log/greetd.log
+error_log=/var/log/greetd.log

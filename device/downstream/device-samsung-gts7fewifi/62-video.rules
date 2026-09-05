@@ -1,0 +1,3 @@
+KERNEL=="video*", GROUP="video", MODE="0666"
+KERNEL=="binderfs/*", GROUP="video", MODE="0666"
+KERNEL=="ion", GROUP="video", MODE="0666"

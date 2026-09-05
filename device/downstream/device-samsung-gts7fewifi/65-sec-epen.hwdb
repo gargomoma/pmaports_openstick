@@ -1,0 +1,9 @@
+# S Pen (sec_e-pen) tablet resolution for libinput.
+
+evdev:name:sec_e-pen:*
+ EVDEV_ABS_00=0:16622:4:0:100
+ EVDEV_ABS_01=0:26596:4:0:100
+
+evdev:input:b0018v0000p0000*
+ EVDEV_ABS_00=0:16622:4:0:100
+ EVDEV_ABS_01=0:26596:4:0:100

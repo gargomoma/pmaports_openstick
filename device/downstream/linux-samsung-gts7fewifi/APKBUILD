@@ -1,0 +1,151 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/vendor/lineage-gts7fewifi_defconfig, with the
+# 'pmbootstrap kconfig check' options enabled and SELinux off.
+
+maintainer="dh <kood7567@gmail.com>"
+pkgname=linux-samsung-gts7fewifi
+pkgver=5.4.254
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab S7 FE Wi-Fi kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-gts7fewifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	cpio
+	devicepkg-dev
+	findutils
+	flex
+	gcc6
+	openssl-dev
+	perl
+	tar
+	xz
+"
+
+_setup_compiler() {
+	if [ "${CC:0:5}" != "gcc6-" ]; then
+		export CC="gcc6-${CC:-gcc}"
+		export HOSTCC="gcc6-gcc"
+	fi
+}
+
+# Same tree as the archived device-samsung-a52sxq port (android_kernel_samsung_sm7325), on
+# the branch with gts7fewifi board support; the fix-*/drop-* patches repair its merge artifacts.
+_repository="android_kernel_samsung_sm7325"
+_commit="d23fb02643beda440235a3281637a6ffc03f48d7"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/Bush-cat/$_repository/archive/$_commit.tar.gz
+	$_config
+	fix-camera-include-paths.patch
+	fix-duplicate-mmap-readaround-limit.patch
+	drop-chipidea-mtp-quirk.patch
+	drop-ion-tracing-marks.patch
+	sde-advertise-in-formats.patch
+	sde-dedupe-plane-formats.patch
+	audio-disable-wcn-bt-dai-links.patch
+	audio-afe-hw-params-buffer-overrun.patch
+	audio-skip-pdr-no-modem.patch
+	audio-log-pcm-capture-failures.patch
+	audio-cs35l45-quiet-mute-log.patch
+	bt-sock-null-sk.patch
+	dsi-drm-mode-clock-matches-timings.patch
+	bt-wcn6750-support.patch
+	bt-wcn6750-serdev-dt.patch
+	hci_sock-v5.4-upstream.c
+	statx-mnt-id-backport.patch
+	zstd-prepare-preboot.patch
+	zstd-add-decompress.patch
+	zstd-rd-zstd-kconfig.patch
+	zstd-limit-output-size.patch
+	v4l2loopback.c
+	v4l2loopback.h
+	v4l2loopback_formats.h
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	_setup_compiler
+
+	# Bypass scripts/gcc-wrapper.py, which breaks Kconfig's compiler probe.
+	export DISABLE_WRAPPER=1
+
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+
+	# Samsung stubbed out hci_sock_create(); restore upstream v5.4 hci_sock.c wholesale
+	# (the removed blocks reference each other).
+	cp "$srcdir"/hci_sock-v5.4-upstream.c "$builddir"/net/bluetooth/hci_sock.c
+
+	# Integrate v4l2loopback directly into the media subsystem
+	cp "$srcdir"/v4l2loopback.c "$srcdir"/v4l2loopback.h "$srcdir"/v4l2loopback_formats.h "$builddir"/drivers/media/v4l2-core/
+	printf '\nconfig VIDEO_V4L2_LOOPBACK\n\ttristate "V4L2 loopback video device"\n\tdepends on VIDEO_DEV && VIDEO_V4L2\n\tdefault m\n' >> "$builddir"/drivers/media/v4l2-core/Kconfig
+	printf '\nobj-$(CONFIG_VIDEO_V4L2_LOOPBACK) += v4l2loopback.o\n' >> "$builddir"/drivers/media/v4l2-core/Makefile
+}
+
+build() {
+	_setup_compiler
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		DISABLE_WRAPPER=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	_setup_compiler
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	# downstreamkernel_package does not install modules; without this no .ko ships (no
+	# touchscreen, no Wi-Fi). unset LDFLAGS: abuild's hardening flags break the module linker.
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		DISABLE_WRAPPER=1 \
+		INSTALL_MOD_PATH="$pkgdir"/usr INSTALL_MOD_STRIP=1 modules_install
+
+	# Fail the build rather than ship a kernel with no drivers.
+	_nko=$(find "$pkgdir"/usr/lib/modules -name '*.ko' 2>/dev/null | wc -l)
+	[ "$_nko" -gt 0 ] || die "modules_install produced no .ko files: touchscreen and WiFi would both be dead"
+	msg "installed $_nko kernel modules"
+
+	# Base SM7325 (yupik) DTB; board overlays stay in the stock dtbo partition.
+	mkdir -p "$pkgdir"/usr/share/dtb
+	cp "$_outdir"/arch/arm64/boot/dts/vendor/qcom/yupik.dtb \
+		"$pkgdir"/usr/share/dtb/gts7fewifi.dtb
+}
+
+sha512sums="
+8a2763f3b5d7ce61230d82e9411559d06c9f0800b07e88b7786878a9def9d0be7d5dd970faaa706e78318eec8265cb41da13d8f4756c8362dafc732dbec31013  linux-samsung-gts7fewifi-d23fb02643beda440235a3281637a6ffc03f48d7.tar.gz
+36c106b74b6504d1f17cf1c02331c74ee85216e54ef3380964aae44e66e58af02f57014e67ac220fcace677bed2dd3136b3823f7248b2e643a6a380b343f53ce  config-samsung-gts7fewifi.aarch64
+026ebb85188141c30ad379a23df3b9bda1a914d307e75cc0d1e41bea05ec4d990af21cb2fed8f995c351ca9a6a7dce57508fba57c66b8ec8ce73da63047210d5  fix-camera-include-paths.patch
+7a41d154abc4c400496ce0b33c2bf34af6e4d50a7475970a0fa99c80977a7ef3cda49bee45d4002cd9676e9170983e49208f5a498608c311c2a10b581e4b36d5  fix-duplicate-mmap-readaround-limit.patch
+f1539b02c855313bbd61416f91024323f878f0b167614c706ec05d5090088727657691543510fc80987d08977ae6b1abac15833563b12a4c40ecd5bd2bec4cde  drop-chipidea-mtp-quirk.patch
+177f5e610cfad835339e1dcc2c2787ebdf7445ea9253b8d9cf13b51c632a6b631528049c384d4d18f0555b22a5ac61b46d840b9d9d5198fd03aa0d3930baafed  drop-ion-tracing-marks.patch
+fa5c6e0d71f6f66b79f5a048ae514d158ba05c0fb3acd6ff61ad05bdeee8e7bc16cbf366fe0aff6efc468ef1e41d98b7b3d5b03ab121f5d6e33a14bbde4391bb  sde-advertise-in-formats.patch
+88acbaee1aa003650e700cd623a3f78132c79aca612589ec4dcd443dbf355cdbb69ec2d5f96087a15697c74bf105576a56ec71c21484bce60abccee659603aeb  sde-dedupe-plane-formats.patch
+c3edcdeec3622c6c45cae70c4970b98ee5014694c5eb26b9f6254b4aceb5c021fa05e6b268ec65ffcd4d223e15e9ddaf70daa3dba36fd816263ba1cce82b6495  audio-disable-wcn-bt-dai-links.patch
+01684a276f4dfc5fcbeada14d4ddcefbef1384c86063cb64ad32505c34e04d17db6519ef9c37c9252dec6a1d86819c6e0540de53c995f2d262993d4275a41206  audio-afe-hw-params-buffer-overrun.patch
+954860e8f507b81d36c61e1385e9bcbacb3f84c44a12424839c34d69fe016c97cc044f41f273e782a8b94d8315d058fe50f17a09660b8c7ff2655dd664ce1324  audio-skip-pdr-no-modem.patch
+6fd4c6e98b4ca05cf0eaf54143b728d0d9130efa06446e43f3f81c2ce5fc79d5edcff9e5f7e81384e96b1a41100d120e060ca3bd73159007da8d626f357c7281  audio-log-pcm-capture-failures.patch
+914e578d25387687e936cede8414423bc9aebe6a7a8a5e845ff169a706ed294a7086c64023f49d8683672bbe52e25bc0683c1a7f97db97e7c0500ae02fa62c70  audio-cs35l45-quiet-mute-log.patch
+942274904a6d13c4c15ea0039616503f8f4ecd513f26a598b3758be4e9219d458a6d7afb8e1e7c9ec1310105008d5b53bc12853674df6c0ca101699bd41812b2  bt-sock-null-sk.patch
+0ccd024465ea60efc826a055a128d68fd1f2a5a6a0ab1698d420b1d0fabd8c4c2e3ee4f0df14dce1bcbbce1ac912ed58babdcd267f647cc3099196295ba89d3e  dsi-drm-mode-clock-matches-timings.patch
+661aa5c85f0e6b0e2951496c939cd297026653b27d9e7026c0e45da37f1e72aed3f0c91ee60a67af4817d3e72796f3f4a5f85b838f5aee468edfd6913bef34aa  bt-wcn6750-support.patch
+b7630dc44d39f22a5359ebf1cf67109c5955994b7643bed8f3307b148ad39e7a78a6aef00e98da59864de98fc6d5b10860190a399ee2da5865bd946078504d0e  bt-wcn6750-serdev-dt.patch
+933fda456ff9810460be16bf89a13a53f1ce4f8090e972964321594fedf5e864a4edbf7dee751fc5a6ef1000238cb78bd82679205d491e3e83e69a636ef036aa  hci_sock-v5.4-upstream.c
+236c9549dbf4b6e3df44e640c7ad7504e17e6b661eab0b45d1ee24f16af2eef4a7cc4c79c59262a52ea4b60e3c491ba51db067b01d2eec18153b008634619394  statx-mnt-id-backport.patch
+e439c48a2f9badfbe4406747497d41f343d6a0bc17dba3039dd7e035de52aefb93918d3a7b20ae41fd017719133802c4933e94067c317e8ca2dc1c42c49d5dda  zstd-prepare-preboot.patch
+350fc0626073b4e26f3bbccb018fa79abd2575a5bc0a02b3abadf977ae4a4efd7335694bf1a76376e01d0b094195393349e4fd9724e7af58cad003bc05c28829  zstd-add-decompress.patch
+525b3fd3dd5e258af6f60bbf9c45e97843bd7462bdd69fe92a569cba8fe7f604aeebc7620323d9ae3a98882d1896b2dfa9b44ccb6d111d358c3b77ee1b05b6ae  zstd-rd-zstd-kconfig.patch
+977ebd0d45e9d4032da260e5bef289dc33a06ef6b384c30f774cce9433bb646e57c139eb3a2893ee3c28171d4531c720c1c0b953b2a9490224b4531f71d3ea2e  zstd-limit-output-size.patch
+8fdae9d07d3a5a862a759a3f221b6267d2d5d09a13fb71a678dbfc19368b0c05595eb1e422928f252dfa1c93cb2991c92585178443d05f6bffd50b12d2613c7b  v4l2loopback.c
+50d3fa53b175b7bbaf7c670e35bfe50a58c617b628b498d27dbde0a5bf09f389a8ec5198a2d8ff510f36e5fc37f8c8853d52ce8f70c5c18f3b1708115c825188  v4l2loopback.h
+f1facf9dc80587c040ca33b58dec6d4a67b1e016ed2772b85a9b9634a5f9fa01573ff5901d7658f793e534b033bcbc6c12eaef86a5e403b93bbd6e474362ae9c  v4l2loopback_formats.h
+"

@@ -1,0 +1,8 @@
+#!/bin/sh
+# The phrog greeter runs phoc as the greetd user before any PAM login, so nothing creates
+# an XDG_RUNTIME_DIR for it; /run/greetd is outside elogind's garbage collection.
+mkdir -p /run/greetd
+chown greetd:greetd /run/greetd 2>/dev/null || true
+chmod 700 /run/greetd
+
+exit 0

@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+# Hold Android's log socket open and discard: without a listener liblog retries the connect
+# for every message inside the camera pipeline. CAMERA_LOG_SINK=yes swaps in the decoding sink.
+
+description="Android log socket sink (discards)"
+
+supervisor="supervise-daemon"
+command="/usr/bin/python3"
+command_args="/usr/lib/pmos-camera/logdw-sink.py"
+pidfile="/run/logdw-sink.pid"
+respawn_delay=5
+respawn_max=0
+
+depend() {
+	before camera-bridge
+}

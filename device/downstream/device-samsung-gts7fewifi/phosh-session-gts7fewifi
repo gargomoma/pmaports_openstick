@@ -1,0 +1,36 @@
+#!/bin/sh
+# Phosh session launcher; greetd execs this instead of phosh-session.
+
+# XDG_CONFIG_DIRS: postmarketos-ui-xfce4's profile.d replaces it with /etc/xdg/xfce4-phone
+# and nothing appends /etc/xdg under greetd, so gnome-session finds no gsd components.
+XDG_CONFIG_DIRS=/etc/xdg
+export XDG_CONFIG_DIRS
+
+# gnome-session sets XDG_CURRENT_DESKTOP itself once running, but the gsd
+# .desktop files carry OnlyShowIn=GNOME; and are evaluated before that point.
+XDG_CURRENT_DESKTOP=Phosh:GNOME
+export XDG_CURRENT_DESKTOP
+XDG_SESSION_DESKTOP=phosh
+export XDG_SESSION_DESKTOP
+
+# GDMSESSION=phosh enables phosh's Log Out button (phosh_shell_started_by_display_manager).
+# Safe only because greetd is supervised with unlimited respawn.
+GDMSESSION=phosh
+export GDMSESSION
+
+# faccessat2 does not exist on 5.4: musl's faccessat() gets ENOSYS and GLib treats every file
+# as missing (phosh then dies in its metainfo error path). The shim uses classic faccessat.
+export LD_PRELOAD=/usr/lib/faccessat-compat.so
+
+# Session log in $HOME: the script runs unprivileged and greetd on OpenRC keeps no log.
+LOG="$HOME/phosh-session.log"
+exec >>"$LOG" 2>&1
+echo "=== phosh-session start: $(date) ==="
+
+# Kill stale gnome-keyring daemons (-f: comm is truncated to 15 chars): the autostart's
+# --start hands off to any running daemon and org.freedesktop.secrets never registers here.
+pkill -u "$(id -u)" -f 'gnome-keyring-daemon' 2>/dev/null || true
+
+# phosh-session spawns its own dbus-run-session when DBUS_SESSION_BUS_ADDRESS
+# is unset, so it is not wrapped a second time here.
+exec phosh-session

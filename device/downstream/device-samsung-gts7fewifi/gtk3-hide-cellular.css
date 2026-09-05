@@ -1,0 +1,22 @@
+/* /etc/gtk-3.0/gtk.css */
+/* Permanently hide all cellular/WWAN indicators and quick settings in Phosh */
+.phosh-wwan-indicator,
+.phosh-wwan-info,
+phosh-wwan-info,
+phosh-wwan-manager,
+.phosh-quick-setting.wwan,
+#wwaninfo,
+#wwan_quick_setting {
+    opacity: 0;
+    min-width: 0px;
+    min-height: 0px;
+    margin: 0px;
+    padding: 0px;
+}
+
+/* Compact on-screen keyboard styling */
+.pos-key {
+    min-height: 38px;
+    padding: 3px 5px;
+    margin: 2px;
+}

@@ -1,0 +1,145 @@
+#!/bin/sh
+# Bring the sound card up at boot. The card only exists if the ADSP's first up notification
+# reaches apr, so the DSP is booted exactly once, after apr is subscribed, in the background.
+
+set -u
+
+APR=/sys/devices/platform/soc/soc:qcom,msm-audio-apr
+Q6=$APR/soc:qcom,msm-audio-apr:qcom,q6core-audio
+
+# Raise the subsystem-restart escalation limit (vendor default 0 hard-resets the board).
+echo 100 > /sys/module/subsystem_restart/parameters/max_restarts 2>/dev/null || true
+
+audio_bringup() {
+	log() { logger -t audio-bringup "$*"; }
+
+	# Wait until apr is subscribed: immediately with audio-skip-pdr-no-modem.patch, otherwise
+	# after PDR's service locator (on the absent modem) times out at about t=316 s.
+	if dmesg 2>/dev/null | grep -q "PDR skipped: no modem"; then
+		log "kernel skips PDR; apr is on SSR already, booting the dsp now"
+	else
+		i=0
+		while [ "$i" -lt 96 ]; do
+			dmesg 2>/dev/null |
+				grep -q "Unable to connect to service locator" && break
+			sleep 5
+			i=$((i + 1))
+		done
+		if [ "$i" -ge 96 ]; then
+			log "service locator never reported giving up; trying anyway"
+		else
+			log "service locator gave up after $((i * 5))s of polling; apr should be on SSR now"
+		fi
+	fi
+
+	# Every driver present before the devices appear, so nothing has to defer.
+	for m in pinctrl_lpi_dlkm pinctrl_wcd_dlkm wcd_core_dlkm stub_dlkm \
+			native_dlkm bolero_cdc_dlkm va_macro_dlkm tx_macro_dlkm \
+			rx_macro_dlkm machine_dlkm; do
+		modprobe "$m" 2>/dev/null || true
+	done
+
+	if [ ! -e /sys/kernel/boot_adsp/boot ]; then
+		modprobe adsp_loader_dlkm 2>/dev/null || true
+		i=0
+		while [ ! -e /sys/kernel/boot_adsp/boot ] && [ "$i" -lt 10 ]; do
+			sleep 1
+			i=$((i + 1))
+		done
+	fi
+	if [ ! -e /sys/kernel/boot_adsp/boot ]; then
+		log "no /sys/kernel/boot_adsp/boot: adsp_loader_dlkm did not probe"
+		return
+	fi
+
+	# The one DSP power-up. Not a subsystem restart, which reboots the tablet.
+	echo 1 > /sys/kernel/boot_adsp/boot 2>/dev/null || true
+
+	i=0
+	while [ ! -d "$Q6" ] && [ "$i" -lt 20 ]; do
+		sleep 1
+		i=$((i + 1))
+	done
+	if [ ! -d "$Q6" ]; then
+		log "adsp booted but q6core-audio absent: apr got no up notification"
+		return
+	fi
+	log "q6core-audio populated, $(ls "$Q6" | grep -c 'q6core-audio:') children"
+
+	i=0
+	while [ "$i" -lt 25 ]; do
+		grep -q lahaina /proc/asound/cards 2>/dev/null && break
+		sleep 1
+		i=$((i + 1))
+	done
+
+	# AFE-PROXY PCMs: unblock them only on a kernel carrying audio-afe-hw-params-buffer-overrun
+	# (checked in the module itself); PipeWire hides the card while any PCM node is inaccessible.
+	AFEKO=/lib/modules/$(uname -r)/kernel/techpack/audio/asoc/platform_dlkm.ko
+	if grep -aqs 'asked for %u bytes but only' "$AFEKO"; then
+		afe_fixed=1
+	else
+		afe_fixed=0
+	fi
+
+	# Match by name, not by the numbers in the udev rule, so renumbered DAI links cannot
+	# reopen the panic; chown instead of setfacl, which is not installed.
+	if [ -r /proc/asound/pcm ]; then
+		grep -i 'AFE-PROXY' /proc/asound/pcm 2>/dev/null |
+		while IFS= read -r line; do
+			dev=$(printf '%s' "$line" | sed -n 's/^[0-9]*-0*\([0-9][0-9]*\):.*/\1/p')
+			[ -n "$dev" ] || continue
+			case "$line" in
+				*playback*) n=/dev/snd/pcmC0D${dev}p ;;
+				*)          n=/dev/snd/pcmC0D${dev}c ;;
+			esac
+			[ -e "$n" ] || continue
+			if [ "$afe_fixed" = 1 ]; then
+				chown root:audio "$n" 2>/dev/null || true
+				chmod 0660 "$n" 2>/dev/null || true
+				log "unblocked $n (platform_dlkm carries the hw_params fix)"
+			else
+				chown root:root "$n" 2>/dev/null || true
+				chmod 0000 "$n" 2>/dev/null || true
+				log "blocked $n (AFE-PROXY panics msm_afe_hw_params; no sink in PipeWire)"
+			fi
+		done
+	fi
+
+	# Route playback: MultiMedia1 -> QUAT_TDM_RX_0 -> the cs35l45 amps (the MI2S names are
+	# decoys). AMP PCM Gain item 0 is 10 dB; the default item 3 is the 19 dB maximum.
+	if [ -e /proc/asound/card0 ]; then
+		amixer -c0 cset name='Left AMP PCM Gain' 0 >/dev/null 2>&1 || true
+		amixer -c0 cset name='Right AMP PCM Gain' 0 >/dev/null 2>&1 || true
+		amixer -c0 cset name='QUAT_TDM_RX_0 Audio Mixer MultiMedia1' 1 >/dev/null 2>&1 || true
+		amixer -c0 cset name='Left AMP Enable Switch' 1 >/dev/null 2>&1 || true
+		amixer -c0 cset name='Right AMP Enable Switch' 1 >/dev/null 2>&1 || true
+		amixer -c0 cset name='Left AMP Mute' 0 >/dev/null 2>&1 || true
+		amixer -c0 cset name='Right AMP Mute' 0 >/dev/null 2>&1 || true
+
+		# Route the microphone: DMIC0 -> TX DEC0 -> TX_AIF1_CAP -> TX_CDC_DMA_TX_3 -> MultiMedia1.
+		# Channels must be One: the DMIC route is mono and the ADSP rejects a mismatched port config.
+		amixer -c0 cset name='TX DMIC MUX0' 1 >/dev/null 2>&1 || true
+		amixer -c0 cset name='TX DEC0 MUX' 0 >/dev/null 2>&1 || true
+		amixer -c0 cset name='TX_AIF1_CAP Mixer DEC0' 1 >/dev/null 2>&1 || true
+		amixer -c0 cset name='TX_CDC_DMA_TX_3 Channels' 0 >/dev/null 2>&1 || true
+		amixer -c0 cset name='MultiMedia1 Mixer TX_CDC_DMA_TX_3' 1 >/dev/null 2>&1 || true
+
+		log "card up, 48 kHz, 10 dB, speakers routed, mic on DMIC0 (mono)"
+	else
+		log "no sound card after the dsp boot"
+	fi
+}
+
+# Safety gate: without 99-block-afe-pcm.rules WirePlumber's probe of the AFE nodes panics
+# an unpatched kernel; proceed only with the rule installed or an explicit opt-in file.
+if [ ! -e /usr/lib/udev/rules.d/99-block-afe-pcm.rules ] &&
+   [ ! -e /etc/gts7fewifi-audio-enable ]; then
+	logger -t audio-bringup "refusing: 99-block-afe-pcm.rules is not installed"
+	exit 0
+fi
+
+# Fork: the wait can take over five minutes and must not hold up the boot.
+audio_bringup </dev/null >/dev/null 2>&1 &
+
+exit 0

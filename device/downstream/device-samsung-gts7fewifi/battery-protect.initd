@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+description="Samsung Tablet Battery Charge Protection Service"
+supervisor="supervise-daemon"
+command="/usr/libexec/battery-protect"
+
+depend() {
+	need localmount
+	after udev
+}

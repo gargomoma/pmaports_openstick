@@ -1,0 +1,3 @@
+# idle-delay=0: the session must never blank; a DPMS blank kills this panel until reboot.
+[org/gnome/desktop/session]
+idle-delay=uint32 0

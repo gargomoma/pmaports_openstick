@@ -1,0 +1,8 @@
+#!/bin/sh
+# Clear VT blank and powerdown timers: a blanked panel is unrecoverable on this device.
+echo 0 > /sys/class/graphics/fbcon/cursor_blink 2>/dev/null || true
+for t in /dev/tty1 /dev/tty2 /dev/tty3 /dev/tty4 /dev/tty5 /dev/tty6; do
+	[ -c "$t" ] || continue
+	setterm --blank 0 --powerdown 0 --cursor off > "$t" 2>/dev/null
+done
+exit 0

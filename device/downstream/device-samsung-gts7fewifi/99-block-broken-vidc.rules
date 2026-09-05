@@ -1,0 +1,4 @@
+# Deny the msm_vidc nodes: without the vpu20_1v firmware opening one wedges the caller in D
+# state. TAG-=uaccess drops elogind's ACL; 16-vidc-unblock.start relaxes this once it is present.
+KERNEL=="video32", TAG-="uaccess", GROUP="root", MODE="0000"
+KERNEL=="video33", TAG-="uaccess", GROUP="root", MODE="0000"

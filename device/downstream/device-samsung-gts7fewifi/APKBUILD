@@ -1,0 +1,589 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="dh <kood7567@gmail.com>"
+pkgname=device-samsung-gts7fewifi
+pkgdesc="Samsung Galaxy Tab S7 FE Wi-Fi"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-gts7fewifi
+	mesa-vulkan-freedreno
+	postmarketos-base
+	postmarketos-base-downstream
+"
+# mesa-vulkan-freedreno: Turnip on KGSL is the GPU driver for the Adreno 642L and nothing
+# else pulls it in; without it the desktop runs on llvmpipe.
+makedepends="devicepkg-dev linux-headers"
+# No source tarball: build the shims in $srcdir.
+builddir="$srcdir"
+install="
+	$pkgname.post-install
+	$pkgname.post-upgrade
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+	$pkgname-phosh.post-install
+	$pkgname-phosh-openrc.post-install
+	"
+# $pkgname-openrc last: abuild's default openrc() takes every etc/init.d and etc/conf.d
+# file still in $pkgdir, after the subpackage-specific OpenRC splits took theirs.
+subpackages="
+	$pkgname-xorg
+	$pkgname-xorg-openrc:xorg_openrc
+	$pkgname-wayland
+	$pkgname-phosh
+	$pkgname-phosh-openrc:phosh_openrc
+	$pkgname-openrc
+	"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	99-block-broken-vidc.rules
+	99-block-afe-pcm.rules
+	wireplumber-50-gts7fewifi-alsa.conf
+	60-kgsl.rules
+	61-backlight.rules
+	screen-toggle
+	local-10-usbnet.start
+	local-15-vendor-firmware.start
+	local-16-vidc-unblock.start
+	local-18-subsystem-restart.start
+	local-20-usbnet-route.start
+	local-30-wifi.start
+	local-40-noblank.start
+	local-45-greetd-runtime.start
+	local-50-spen.start
+	local-60-governor.start
+	local-72-audio-bringup.start
+	gts7fewifi-bringup.initd
+	conf.d-udev-settle
+	nm-dispatcher-50-chrony
+	audio-up
+	periodic-weekly-fstrim
+	noblank.c
+	faccessat-compat.c
+	conf.d-lightdm
+	lightdm.conf
+	lightdm-gtk-greeter.conf
+	xdg-autostart-noblank.desktop
+	xorg-10-noblank.conf
+	xorg-20-fbdev.conf
+	weston.ini
+	xfce4-panel.xml
+	labwc-autostart
+	labwc-menu.xml
+	labwc-rc.xml
+	pam.d-phosh
+	phosh-greetd-config.toml
+	conf.d-greetd
+	wayland-sessions-phosh.desktop
+	phosh-session-gts7fewifi
+	phrog-greeter-gts7fewifi
+	check-apk-perms
+	logind-40-gts7fewifi.conf
+	dconf-profile-user
+	dconf-00-noblank
+	dconf-10-no-lock
+	powerbutton-daemon
+	powerbutton.initd
+	62-powerbutton-libinput.rules
+	qpnp-volume-relay.c
+	qpnp-volume-relay.initd
+	polkit-50-user.rules
+	sysctl-50-polkit-pidfd.conf
+	dconf-20-osk.conf
+	dconf-30-power.conf
+	ucm2/samsung-gts7fewifi.conf
+	ucm2/HiFi.conf
+	dconf-locks-lock
+	dconf-locks-osk
+	dconf-locks-power
+	dconf-40-scale-to-fit
+	dconf-50-window-buttons
+	android-camera.initd
+	62-video.rules
+	v4l2loopback-modules.conf
+	v4l2loopback-modprobe.conf
+	ld.config.txt
+	sysctl-99-security.conf
+	sshd-50-security.conf
+	modprobe-50-security-blacklist.conf
+	limits-10-disable-coredump.conf
+	battery-protect
+	battery-protect.initd
+	battery-protect.conf
+	sysctl-98-memory-tuning.conf
+	dconf-35-wifi-only.conf
+	dconf-locks-wifi-only
+	dconf-45-app-folders.conf
+	gtk3-hide-cellular.css
+	65-sec-epen.hwdb
+	fonts-local.conf
+	osk-toggle
+	osk-toggle.desktop
+	bridge.c
+	props.c
+	selinux_shim.c
+	pmos-props.conf
+	vintf-manifest.xml
+	vintf-framework-manifest.xml
+	camxoverridesettings.txt
+	camera-stack.sh
+	camera-bridge
+	camera-bridge.initd
+	logdw-sink.initd
+	camera-bridge.confd
+	logdw-sink.py
+	logdw-listen.py
+	phoc.ini
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	# musl declares ioctl(int, int, ...); the glibc signature does not compile.
+	${CC:-gcc} -shared -fPIC -O2 -o noblank.so "$srcdir"/noblank.c -ldl
+	${CC:-gcc} -shared -fPIC -O2 -o faccessat-compat.so "$srcdir"/faccessat-compat.c -ldl
+	${CC:-gcc} -O2 -Wall -o qpnp-volume-relay "$srcdir"/qpnp-volume-relay.c
+
+	# Camera preload libraries run inside bionic processes: -nostdlib keeps musl out and
+	# every libc symbol binds to bionic at load time.
+	_camlib() {
+		${CC:-gcc} -shared -fPIC -nostdlib -fno-builtin \
+			-fno-stack-protector -Wl,-soname,"$1" \
+			-o "$srcdir/$1" "$srcdir/$2"
+	}
+	_camlib libselinux_shim.so selinux_shim.c
+	_camlib libpmos_props.so props.c
+	_camlib libbridge.so bridge.c
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Deny the msm_vidc nodes until 16-vidc-unblock.start has verified the vpu20_1v
+	# firmware; opening them without it wedges the caller in D state.
+	install -Dm644 "$srcdir"/99-block-broken-vidc.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/99-block-broken-vidc.rules
+	install -Dm644 "$srcdir"/60-kgsl.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/60-kgsl.rules
+
+	# Deny the AFE-PROXY PCM nodes: probing them panics an unpatched kernel.
+	# 72-audio-bringup.start relaxes this once the patched platform_dlkm is loaded.
+	install -Dm644 "$srcdir"/99-block-afe-pcm.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/99-block-afe-pcm.rules
+
+	# ACP off for this card, UCM instead: ACP probes all forty DSP PCMs and wedges on MultiMedia2.
+	install -Dm644 "$srcdir"/wireplumber-50-gts7fewifi-alsa.conf \
+		"$pkgdir"/usr/share/wireplumber/wireplumber.conf.d/50-gts7fewifi-alsa.conf
+
+	# FBIOBLANK kills the panel until reboot; screen-toggle dims the backlight instead.
+	# The rule grants write on brightness only, never on bl_power.
+	install -Dm644 "$srcdir"/61-backlight.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/61-backlight.rules
+	install -Dm755 "$srcdir"/screen-toggle "$pkgdir"/usr/bin/screen-toggle
+
+	# Boot bringup scripts, run in glob order by the gts7fewifi-bringup service.
+	for f in 10-usbnet 15-vendor-firmware 16-vidc-unblock 18-subsystem-restart 20-usbnet-route 30-wifi \
+			40-noblank 45-greetd-runtime 50-spen 60-governor 72-audio-bringup; do
+		install -Dm755 "$srcdir"/local-$f.start "$pkgdir"/usr/libexec/gts7fewifi/$f.start
+	done
+	install -Dm755 "$srcdir"/gts7fewifi-bringup.initd \
+		"$pkgdir"/etc/init.d/gts7fewifi-bringup
+
+	# udev-settle never completes here: cap its timeout (replaces the udev-init-scripts-openrc file).
+	install -Dm644 "$srcdir"/conf.d-udev-settle "$pkgdir"/etc/conf.d/udev-settle
+
+	# Weekly fstrim of the UFS; not 'fstrim -a', see the script.
+	install -Dm755 "$srcdir"/periodic-weekly-fstrim \
+		"$pkgdir"/etc/periodic/weekly/fstrim
+
+	# No readable RTC: every boot starts in 1970, so kick chrony as soon as a link is up.
+	install -Dm755 "$srcdir"/nm-dispatcher-50-chrony \
+		"$pkgdir"/usr/lib/NetworkManager/dispatcher.d/50-chrony
+
+	# faccessat-compat.so: no faccessat2 syscall on 5.4; both display stacks LD_PRELOAD it.
+	install -Dm755 "$builddir"/faccessat-compat.so \
+		"$pkgdir"/usr/lib/faccessat-compat.so
+
+	# Power key: short press toggles the backlight, long press powers off. The udev rule
+	# hides the key from libinput, whose DPMS blank would kill the panel.
+	install -Dm755 "$srcdir"/powerbutton-daemon "$pkgdir"/usr/bin/powerbutton-daemon
+	install -Dm755 "$srcdir"/powerbutton.initd "$pkgdir"/etc/init.d/powerbutton
+	install -Dm644 "$srcdir"/62-powerbutton-libinput.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/62-powerbutton-libinput.rules
+	install -Dm755 "$builddir"/qpnp-volume-relay "$pkgdir"/usr/sbin/qpnp-volume-relay
+	install -Dm755 "$srcdir"/qpnp-volume-relay.initd "$pkgdir"/etc/init.d/qpnp-volume-relay
+
+	# check-apk-perms: diagnoses a rootfs whose ownership and setuid bits were rewritten.
+	install -Dm755 "$srcdir"/check-apk-perms "$pkgdir"/usr/bin/check-apk-perms
+
+	# audio-up: manual audio recovery; see the script and 72-audio-bringup.start.
+	install -Dm755 "$srcdir"/audio-up "$pkgdir"/usr/bin/audio-up
+
+	# UCM: the directory is the ALSA driver name (lahaina-yupikid, 15 chars), the master
+	# file is the card longname, and File entries resolve relative to that directory.
+	install -Dm644 "$srcdir"/samsung-gts7fewifi.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/lahaina-yupikid/lahaina-yupikidp-snd-card.conf
+	install -Dm644 "$srcdir"/HiFi.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/lahaina-yupikid/HiFi.conf
+
+	# xfce4-panel layout with the power buttons; xfce4-panel owns panel/default.xml,
+	# this xfconf path is unowned.
+	install -Dm644 "$srcdir"/xfce4-panel.xml \
+		"$pkgdir"/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
+
+	# labwc reaches the GPU where Xorg (fbdev only) cannot; autostart ships in /etc/skel
+	# because a bare labwc session has no way in without keyboard or right-click.
+	install -Dm755 "$srcdir"/labwc-autostart "$pkgdir"/etc/skel/.config/labwc/autostart
+	install -Dm644 "$srcdir"/labwc-menu.xml  "$pkgdir"/etc/skel/.config/labwc/menu.xml
+	install -Dm644 "$srcdir"/labwc-rc.xml    "$pkgdir"/etc/skel/.config/labwc/rc.xml
+
+
+	# Modules udev cannot autoload: wez01 (S Pen digitizer) defers probe, slimbus_ngd has no
+	# MODULE_DEVICE_TABLE (no sound card without it), pinctrl_lpi_dlkm has no modalias match.
+	install -Dm644 /dev/stdin "$pkgdir"/usr/lib/modules-load.d/gts7fewifi.conf <<-EOF
+		wlan
+		focaltech_ts_ft820x
+		wez01
+		slimbus_ngd
+		hci_uart
+		pinctrl_lpi_dlkm
+	EOF
+
+	# Camera bridge: drives camera.qcom.so directly and feeds /dev/video10. Files live in
+	# /usr/lib/pmos-camera; camera-stack.sh copies them into the unpackaged Android tree.
+	install -Dm644 "$srcdir"/libselinux_shim.so \
+		"$pkgdir"/usr/lib/pmos-camera/libselinux_shim.so
+	install -Dm644 "$srcdir"/libpmos_props.so \
+		"$pkgdir"/usr/lib/pmos-camera/libpmos_props.so
+	install -Dm644 "$srcdir"/libbridge.so \
+		"$pkgdir"/usr/lib/pmos-camera/libbridge.so
+	install -Dm644 "$srcdir"/pmos-props.conf \
+		"$pkgdir"/usr/lib/pmos-camera/pmos-props.conf
+	install -Dm644 "$srcdir"/vintf-manifest.xml \
+		"$pkgdir"/usr/lib/pmos-camera/vintf-manifest.xml
+	install -Dm644 "$srcdir"/vintf-framework-manifest.xml \
+		"$pkgdir"/usr/lib/pmos-camera/vintf-framework-manifest.xml
+	install -Dm644 "$srcdir"/camxoverridesettings.txt \
+		"$pkgdir"/usr/lib/pmos-camera/camxoverridesettings.txt
+	install -Dm755 "$srcdir"/camera-stack.sh \
+		"$pkgdir"/usr/lib/pmos-camera/camera-stack.sh
+	install -Dm755 "$srcdir"/camera-bridge \
+		"$pkgdir"/usr/lib/pmos-camera/camera-bridge
+	install -Dm755 "$srcdir"/logdw-sink.py \
+		"$pkgdir"/usr/lib/pmos-camera/logdw-sink.py
+	install -Dm755 "$srcdir"/logdw-listen.py \
+		"$pkgdir"/usr/lib/pmos-camera/logdw-listen.py
+	install -Dm755 "$srcdir"/camera-bridge.initd \
+		"$pkgdir"/etc/init.d/camera-bridge
+	install -Dm755 "$srcdir"/logdw-sink.initd \
+		"$pkgdir"/etc/init.d/logdw-sink
+	install -Dm644 "$srcdir"/camera-bridge.confd \
+		"$pkgdir"/etc/conf.d/camera-bridge
+
+	# Samsung HIDL camera provider, shipped but not enabled: it fights the bridge for the sensor.
+	install -Dm755 "$srcdir"/android-camera.initd \
+		"$pkgdir"/etc/init.d/android-camera
+	install -Dm644 "$srcdir"/62-video.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/62-video.rules
+	install -Dm644 "$srcdir"/v4l2loopback-modules.conf \
+		"$pkgdir"/usr/lib/modules-load.d/v4l2loopback.conf
+	install -Dm644 "$srcdir"/v4l2loopback-modprobe.conf \
+		"$pkgdir"/usr/lib/modprobe.d/v4l2loopback.conf
+	install -Dm644 "$srcdir"/ld.config.txt \
+		"$pkgdir"/linkerconfig/ld.config.txt
+
+	# Linux security hardening: kernel sysctls and sshd configuration
+	install -Dm644 "$srcdir"/sysctl-99-security.conf \
+		"$pkgdir"/usr/lib/sysctl.d/99-security.conf
+	install -Dm644 "$srcdir"/sshd-50-security.conf \
+		"$pkgdir"/etc/ssh/sshd_config.d/50-security.conf
+	install -Dm644 "$srcdir"/modprobe-50-security-blacklist.conf \
+		"$pkgdir"/usr/lib/modprobe.d/50-security-blacklist.conf
+	install -Dm644 "$srcdir"/limits-10-disable-coredump.conf \
+		"$pkgdir"/etc/security/limits.d/10-disable-coredump.conf
+	install -Dm755 "$srcdir"/battery-protect \
+		"$pkgdir"/usr/libexec/battery-protect
+	install -Dm755 "$srcdir"/battery-protect.initd \
+		"$pkgdir"/etc/init.d/battery-protect
+	install -Dm644 "$srcdir"/battery-protect.conf \
+		"$pkgdir"/usr/share/battery-protect/battery-protect.conf
+	install -Dm644 "$srcdir"/sysctl-98-memory-tuning.conf \
+		"$pkgdir"/usr/lib/sysctl.d/98-memory-tuning.conf
+	install -Dm644 "$srcdir"/65-sec-epen.hwdb \
+		"$pkgdir"/usr/lib/udev/hwdb.d/65-sec-epen.hwdb
+	install -Dm644 "$srcdir"/fonts-local.conf \
+		"$pkgdir"/etc/fonts/local.conf
+
+	# Files of the -xorg subpackage. xorg() moves them out with amove.
+	install -Dm755 "$builddir"/noblank.so "$pkgdir"/usr/lib/noblank.so
+	install -Dm644 "$srcdir"/conf.d-lightdm "$pkgdir"/etc/conf.d/lightdm
+	# Drop-in: lightdm owns /etc/lightdm/lightdm.conf.
+	install -Dm644 "$srcdir"/lightdm.conf \
+		"$pkgdir"/etc/lightdm/lightdm.conf.d/99-gts7fewifi.conf
+
+	# Drop-in: lightdm-gtk-greeter owns /etc/lightdm/lightdm-gtk-greeter.conf.
+	install -Dm644 "$srcdir"/lightdm-gtk-greeter.conf \
+		"$pkgdir"/etc/lightdm/lightdm-gtk-greeter.conf.d/99-gts7fewifi.conf
+	install -Dm644 "$srcdir"/xdg-autostart-noblank.desktop \
+		"$pkgdir"/etc/xdg/autostart/00-noblank.desktop
+	install -Dm644 "$srcdir"/xorg-10-noblank.conf \
+		"$pkgdir"/usr/share/X11/xorg.conf.d/10-noblank.conf
+	install -Dm644 "$srcdir"/xorg-20-fbdev.conf \
+		"$pkgdir"/usr/share/X11/xorg.conf.d/20-fbdev.conf
+
+	# Files of the -wayland subpackage. wayland() moves them out with amove.
+	install -Dm644 "$srcdir"/weston.ini "$pkgdir"/etc/xdg/weston/weston.ini
+
+	# Files of the -phosh subpackage. phosh() moves them out with amove.
+	install -Dm755 "$srcdir"/phosh-session-gts7fewifi \
+		"$pkgdir"/usr/bin/phosh-session-gts7fewifi
+	install -Dm755 "$srcdir"/phrog-greeter-gts7fewifi \
+		"$pkgdir"/usr/bin/phrog-greeter-gts7fewifi
+
+	# greetd-phrog owns /etc/phrog/greetd-config.toml: ship the device config at its own
+	# path and point /etc/conf.d/greetd (shipped by -phosh-openrc) at it.
+	install -Dm644 "$srcdir"/phosh-greetd-config.toml \
+		"$pkgdir"/etc/greetd/gts7fewifi-phosh.toml
+	install -Dm644 "$srcdir"/conf.d-greetd "$pkgdir"/etc/conf.d/greetd
+
+	# Session entry pointing at the device wrapper (replaces the phosh copy).
+	install -Dm644 "$srcdir"/wayland-sessions-phosh.desktop \
+		"$pkgdir"/usr/share/wayland-sessions/phosh.desktop
+
+	# Without this PAM service the lockscreen rejects every passcode.
+	install -Dm644 "$srcdir"/pam.d-phosh "$pkgdir"/usr/lib/pam.d/phosh
+
+	# The greetd autologin session is not polkit-active; without this rule NetworkManager
+	# refuses every UI action.
+	install -Dm644 "$srcdir"/polkit-50-user.rules \
+		"$pkgdir"/usr/share/polkit-1/rules.d/50-gts7fewifi-user.rules
+
+	# Needed by the rule above: polkitd cannot validate unix-process subjects on this
+	# kernel until the dumpable flag survives its privilege drop.
+	install -Dm644 "$srcdir"/sysctl-50-polkit-pidfd.conf \
+		"$pkgdir"/usr/lib/sysctl.d/50-gts7fewifi-polkit.conf
+
+	# Suspend never resumes on this kernel and an uninhibited power key
+	# means instant poweroff: block every path at the elogind level.
+	install -Dm644 "$srcdir"/logind-40-gts7fewifi.conf \
+		"$pkgdir"/etc/elogind/logind.conf.d/40-gts7fewifi.conf
+
+	# System dconf defaults: never blank (the panel does not survive it), never lock.
+	# The post-install runs dconf update.
+	install -Dm644 "$srcdir"/dconf-profile-user \
+		"$pkgdir"/etc/dconf/profile/user
+	install -Dm644 "$srcdir"/dconf-00-noblank \
+		"$pkgdir"/etc/dconf/db/local.d/00-gts7fewifi-noblank
+	install -Dm644 "$srcdir"/dconf-10-no-lock \
+		"$pkgdir"/etc/dconf/db/local.d/10-gts7fewifi-no-lock
+	# The on-screen keyboard is the only keyboard; stevia stays hidden until this key is true.
+	install -Dm644 "$srcdir"/dconf-20-osk.conf \
+		"$pkgdir"/etc/dconf/db/local.d/20-gts7fewifi-osk
+	# Power key suppressed at the desktop; qpnp_pon also carries volume down.
+	install -Dm644 "$srcdir"/dconf-30-power.conf \
+		"$pkgdir"/etc/dconf/db/local.d/30-gts7fewifi-power
+	install -Dm644 "$srcdir"/dconf-35-wifi-only.conf \
+		"$pkgdir"/etc/dconf/db/local.d/35-gts7fewifi-wifi-only
+	install -Dm644 "$srcdir"/dconf-40-scale-to-fit \
+		"$pkgdir"/etc/dconf/db/local.d/40-gts7fewifi-scale-to-fit
+	install -Dm644 "$srcdir"/dconf-45-app-folders.conf \
+		"$pkgdir"/etc/dconf/db/local.d/45-gts7fewifi-app-folders
+	install -Dm644 "$srcdir"/dconf-50-window-buttons \
+		"$pkgdir"/etc/dconf/db/local.d/50-gts7fewifi-window-buttons
+	# Keyboard toggle launcher: the only way to type into X11 apps.
+	install -Dm755 "$srcdir"/osk-toggle "$pkgdir"/usr/bin/osk-toggle
+	install -Dm644 "$srcdir"/osk-toggle.desktop \
+		"$pkgdir"/usr/share/applications/osk-toggle.desktop
+	# dconf lock: the OSK key must not be shadowable from the user db.
+	install -Dm644 "$srcdir"/dconf-locks-lock \
+		"$pkgdir"/etc/dconf/db/local.d/locks/10-gts7fewifi-lock
+	install -Dm644 "$srcdir"/dconf-locks-osk \
+		"$pkgdir"/etc/dconf/db/local.d/locks/20-gts7fewifi-osk
+	install -Dm644 "$srcdir"/dconf-locks-power \
+		"$pkgdir"/etc/dconf/db/local.d/locks/30-gts7fewifi-power
+	install -Dm644 "$srcdir"/dconf-locks-wifi-only \
+		"$pkgdir"/etc/dconf/db/local.d/locks/35-gts7fewifi-wifi-only
+	install -Dm644 "$srcdir"/gtk3-hide-cellular.css \
+		"$pkgdir"/etc/gtk-3.0/gtk.css
+	# Display scaling and Phoc config: 1.5x scale (1706x1067)
+	install -Dm644 "$srcdir"/phoc.ini \
+		"$pkgdir"/etc/phosh/phoc.ini
+}
+
+# Xorg issues FBIOBLANK during setup, which kills the panel: noblank.so is LD_PRELOADed
+# through /etc/conf.d/lightdm, since xorg-server owns and overwrites any Xorg wrapper.
+xorg() {
+	pkgdesc="Xorg display fix for gts7fewifi: the panel dies on FBIOBLANK"
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	depends="
+		lightdm
+		lightdm-gtk-greeter
+		xf86-video-fbdev
+		xorg-server
+		xrandr
+		xset
+	"
+	amove usr/lib/noblank.so \
+		etc/lightdm \
+		etc/xdg/autostart/00-noblank.desktop \
+		usr/share/X11/xorg.conf.d
+}
+
+xorg_openrc() {
+	pkgdesc="$pkgdesc (OpenRC files for -xorg)"
+	install_if="$pkgname-xorg=$pkgver-r$pkgrel openrc"
+	depends=""
+	amove etc/conf.d/lightdm
+}
+
+# Weston and labwc run on the Adreno via zink/Turnip; needs the two SDE IN_FORMATS
+# kernel patches and seatd for DRM master.
+wayland() {
+	pkgdesc="Wayland route for gts7fewifi: Weston on the Adreno via zink/Turnip"
+	install_if="$pkgname=$pkgver-r$pkgrel weston"
+	depends="seatd weston weston-backend-drm weston-shell-desktop"
+	amove etc/xdg/weston
+}
+
+# Phosh session fixes: stock postmarketos-ui-phosh does not reach a desktop on this device.
+phosh() {
+	pkgdesc="Phosh session for gts7fewifi (greetd, PAM, XDG, faccessat, no-BT)"
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-phosh"
+	# seatd: phoc cannot take DRM master without it and the phosh packages do not pull it in.
+	depends="polkit seatd"
+	replaces="phosh"
+	amove usr/bin/phosh-session-gts7fewifi \
+		usr/bin/phrog-greeter-gts7fewifi \
+		etc/greetd \
+		usr/lib/pam.d \
+		usr/share/polkit-1 \
+		usr/lib/sysctl.d/50-gts7fewifi-polkit.conf \
+		etc/elogind \
+		etc/dconf \
+		usr/bin/osk-toggle \
+		usr/share/applications \
+		etc/gtk-3.0 \
+		usr/share/wayland-sessions \
+		etc/phosh
+}
+
+# Ships /etc/conf.d/greetd pointed at the device session config; the post-install sets runlevels.
+phosh_openrc() {
+	pkgdesc="$pkgdesc (OpenRC setup for -phosh)"
+	install_if="$pkgname-phosh=$pkgver-r$pkgrel openrc"
+	depends=""
+	replaces="postmarketos-ui-phosh-openrc greetd-openrc"
+	amove etc/conf.d/greetd
+}
+
+# /etc/conf.d/udev-settle belongs to udev-init-scripts-openrc; the shipped copy overrides it.
+openrc() {
+	default_openrc
+	replaces="udev-init-scripts-openrc"
+}
+sha512sums="
+3e383b6d048daed0d70e4006b3df9f5df522636fd2e3d31ff442e102a341e4043b1bc50ffbb291b05137e52b73fdbe172e0891d92db00958eb85739f3fb709be  deviceinfo
+367374cb89c143b9cd5d40fafdd114dc3d92f52733e4aeb34b501ae3fffa25fef278ba17b9ee45b430fea06ec46467892ef87305458518bb9a8aff973d3ab5b8  kernel-cmdline.conf
+3ae1ccd3b2baec6f1ab4ea7a92a4419c40f3b5a7430ed26f6901a675389d57cbfef7354961d75cc8d3e2f047c2ab8d8459720bc955a543c2c36ae27d8dc0ea5b  99-block-broken-vidc.rules
+ccb8dfa679a889abd0e60a87202b69ef22a51a8b4047987fe4a1c44c2822d6bdb6400da34db966165013979e8a981d69a4eeb184ebed28a2d59ba42738848a68  99-block-afe-pcm.rules
+ae818c14d0c40ceb444a00eb6a855ca2617dda4284dac86f80061704950cf4f60be093204a9ffa1843548adf35a7f4610c35409e621d1a107c37b96f0abf5456  wireplumber-50-gts7fewifi-alsa.conf
+d5f5e2af71b291627e7a404cc434f58355d2127c11a07f0689d4b1c3f511cb780c7d179eb8c702f2f4dca1eb27eeaa6f1330d4f1ea4f50b3cc9062c4b148f95f  60-kgsl.rules
+9a6a87f9701464bd6dfa6cee16e2be5a4a5be4336e7a6c4c6840f4d2aa3a1f9b8e16a459e5d42c561a688455c890fa048752af871f5f6363d66ad824b564364e  61-backlight.rules
+0f8bdb6fee995fa96a98a4675e65a181f9686ebf21c3d675b5e9eafa7257acdee96889000d1037522f33fc308752c0f8725e52da0b5e20b1c8abd3c0d703e49a  screen-toggle
+b16b82311e85a3144643a39739041aa69358b2a4f1b1f3a37c23eab117f46f61b97bbf9617d9da4586fab637c032d5de0ba35bcb34e064b644e9408b08a909e6  local-10-usbnet.start
+423f23ce275e0be56a801c72b2dfac38e94431d0ec15f1a0030a6660cc834e07d9a0d8f1dc5fc2d47a307c34220d7a5a5a34e8b5afc8a8fbcaddaba16cf6bf11  local-15-vendor-firmware.start
+4514f6bd4a49967a9277c9cf27cc975edd66dd69a54442491f975dfa210b8e5116e81f6e0db52e98daf3eacc2db460d7baf12ed3a049f45f7775486e373f7204  local-16-vidc-unblock.start
+7e427030eb09b2ba207a96cb38ac8a839743c91270125835d6ccaa45cd04b26ad3823d89325c1ea6dc9efed65c1af1772fe8a9cb1afdee40bd4a99dfa37393e1  local-18-subsystem-restart.start
+6cd968ca1198c4019cfdca9732e5b01b853ef80e5f92fc57afe2113a5643f96013cac33794403443cbda100ecc93d998637bbafd86c72a2ce66f12954b3b8d9c  local-20-usbnet-route.start
+eaab8d584f300ea598bac694ac006318e6d3ac1b0de9676b50e79605603eaf2a5c7e6c2beca23fd72eceb69ab63161ec9ad0eae240ca0c7f5bcac7a4be704a16  local-30-wifi.start
+b3c3b4d7c6ed22cf41346bcde2f2f695b9054fda59c67a32c07cce82a2fd31756be7c6b81c075af8ad82d5cc3cdacefacaaf76bd18eeebb37cd622779e658824  local-40-noblank.start
+0ad658c73953ccaf9a15e148b70c0f294b4e72ec2c0bfc7407d6fc4a8de79274b4a1e8b0e659a04bf858d0e4361195a3dde21947608ff07a5768d83710b131c4  local-45-greetd-runtime.start
+10f0ce69bfd0a991f87e5fce6b52e60c319d9a1bc9e77402f353bace580c19616fd4e934f8637d60057bc5b98635fe6299808d9761f0487446ba68678863864f  local-50-spen.start
+eb061714cd3428aa77f936f72ba3317c6636c159d60f3f4152dfcf176251567102b3a2466da96f967dda304178a472eb96475e507194cb996f812675f3e3a243  local-60-governor.start
+59d80898ce3ea8ed5411941b9cf1518a93d927e59153a05d2f0eaec15948e759c33ef20ea29036dcf6797d8f3d72f3096bda196b2796c96cb87d9957b9ced8b3  local-72-audio-bringup.start
+fe0e00625d41ac3c2a14cc05778cd6fd23f714f6aa8e9cc37f74cc2f05d604443e06c22a7487a3285e3e393f591ff0398ce680f462e695b5912fe01a8b16cc8f  gts7fewifi-bringup.initd
+f21f8d88f3c12ac2f2a296cbd9b0265f71b31bbab0459121cc6a74e3b4db500c2787e305f54e5aa3ddcf9cf6f9807745a1fed418a9c49491081bde00fbc7b824  conf.d-udev-settle
+4ed91337c9d3bfe9a0357e90f60d433706bb477fe575ec4b3b965a5fa3709e1cc51ac3527915a109ae86e8a15ef9de82aae90b8dad4093a44473c56501a2b8d5  nm-dispatcher-50-chrony
+21eba3ed0ddebc3a6241d959c9bf8cfcf7e0c591e621c3f4470db92e704e1fb59d76fb07f4f221b5239a9ab0652f467ff085b1fcd6ad3f479bb1e7bc36429a04  audio-up
+8005980d9931dee9af390ee5c13f35698b6a9c8f6c6b336941137d1dd342bd398c58413f74d46bf91b0dc698bf36de259a2f08e07d9bd51c43c31b05e5ac8e94  periodic-weekly-fstrim
+29c4edb79e7a016e7a50fcf763d925171a5b20f39211306c9a5883bf72ad84d1fe134ac5eeae89bcbb76a5265360d37d2b43916d5ef9ccbd7b1e4a4e1bac6f55  noblank.c
+9d24333824f7b337a216239f5f504b1db97bd6b1d41e1f15da7af7b69a9ab579419648ead4993fcdd8e4bf475df278a01e32d11a9cd120db531bf609e289b665  faccessat-compat.c
+3133d24575cbce6d649fd9e7010f6c7422ad8c2230e68a87bcba8b2d71ec1f28619c1a105552beae40ee4b3c81a46b50246ea867ac09d4976c1a3493b9dba467  conf.d-lightdm
+eb35d2e96e9a44fb0e696216f20dd8bf1b2efd4ae98421a885b18a74bf6de7ddb643e7887787b4ea98f8bd69ef2d905fc93796acf4009adb0db100ca51a6279e  lightdm.conf
+f711cf414ac9397bb4b6372123d22a87eb77168a285d6aa4f6650e88655c8295c155d70d95249f00a969d30a9baa37aa8c5227f926fa9bc9f4d5d31c7eda16e9  lightdm-gtk-greeter.conf
+fd1850d21ce9c3ed05250217bdd6e9645263a66f051f76bf9ed1e0f77f6f61be17dc0f8f688e6cbc1be6cadcfc459bb849bc08b761aa949ae1c8d3893e741186  xdg-autostart-noblank.desktop
+519b80a4973740fb6d4eb5f937258093c1627ca4b0b4f4b7a7776e5b66c029f96a9b629711ae99965592106bface9d760cfe4e25470fa28feefb526d6dd5ff44  xorg-10-noblank.conf
+6cb5c2016db9dab86502e2c53eb5fa62da9ec7d9e56b0ccdf7791b60e572321f270644af399a2547fbe46264e4972eb5e5d560db8d58d5c4839af195239ddd7e  xorg-20-fbdev.conf
+787f2ce149bc01b651ed8e448d17bf05c6483e5fe4e2af9cd9dff888f1492e0bb28bd7bbee590609248d4c1f065023a780a9afc6bdc3c07159b2bc48dd7d1893  weston.ini
+83ec1efd49ae09d09b47158559340e18930247df42232a86ab6223621420a8d6da1b600896f36a2c17e6d36884be2a7877e1a4910590fe22fd3097025595f3ae  xfce4-panel.xml
+e4b26674ac8ed5085cbf6bbb9beeecd95e0c5365f18d628aab1d35ff8f426e7af2a44ea8ff8b8df1ca1996f8dbac9a409264810b0b4c0f21bfec9fc8df69ed6f  labwc-autostart
+1cbbadd573b6018d22f7e494d2aa7be4ba0c98759903ac5d683c6ec60d12e157bc1f35a84649c469c009089d904ce294aa715612aa0d98677b4628213bd948f9  labwc-menu.xml
+5a35e28032d3b0c145bb2d5792b272c04cf28acdb0e32d69fc979801c826872248297b238c795e15bcddc7b785022a51a13d968633fe403ce5652a9202cbbf84  labwc-rc.xml
+28d3cedf4c0ab714904e5257df2d087754678ff3a723e3006725a3d42c65e496c03d9802051171c391013a2b2a6b1ab98183ebb85c7e8140ebebb9d9a2298501  pam.d-phosh
+4d2a513d602dfdff2b5e5ee0f1a32f873917b284e25a8dbc03b7cd4575a0b72adbbb200c7deba16754bd88398c96ee690230cec2288530994c0dd6793f1a612b  phosh-greetd-config.toml
+2cd69bfc2801a2d0a10f6e0f099652a5d31fabd7184dfb3e970cbeb09aaf67520fe38d81443a400021fd07614ccff80f34701db245a5bc17b587416ba6535e99  conf.d-greetd
+7b45bebe4434ada9eb4aca24b3ac5f523ebbf4a33a9f4a4c4dc764a7c66e3aa76710f9cb21171e8f6a6b655f32e3de1a19afd52343664464feb9197396e17826  wayland-sessions-phosh.desktop
+607303c4c01d264a353dd2b01cfe2e773ae363a75fadf58fe87cb6858c7d36c57a9ed2f33d3607076387fc63d186ad111717ffbc1a2588499e632bbcc1af9e8f  phosh-session-gts7fewifi
+bfaf17abf813fbbc6ccf23e0022f077b27af805dfbfa2de9b05ccdbf28acd2e02157b463fc41d4e1748872fda4e519fcc8d085293eb902499c06a65b2bcd2dba  phrog-greeter-gts7fewifi
+ad6ec369d85359f28280b9548a7983a56b663db06298bb253722d1d8f632b7ba0f672a06b101ec07f6aca8685ff67d13a7b28a3d1fa7594e1b9319582607c9a6  check-apk-perms
+c34c89726bf173b1a9a604b8eb5a5bea9ec15689c1cdc7e151dadcdd87b896b582887047494dcd2c65c7144ce40a946c486554a2424b19141d74f517074e12ae  logind-40-gts7fewifi.conf
+226ef29cced7271d503ae29580fa189994067aa174903844b1bcc619d1e33e6038e5d9d3dd6d502505fdb966489605227323cba37db2d5287b6317ad2d31480e  dconf-profile-user
+f3081d404236a2b75076fb6afda38b5278e28b41a049ad97b80c3f8a745b4ebc7e229e5d8923a071bfe8a7591d377fce1ac5953b8eb864e2e1132bd4ea564436  dconf-00-noblank
+7fa5c5cd1e8f545584a1b9f7dc9d727870501cedec37705ab95306bf54e92094461d8bf7f8ff8f635d2987bedb1ca28fd4d527f3d2b113e09f4164d0ed58ba64  dconf-10-no-lock
+7ad62d2bce3f1ac6c7144cb7b5534001c857e8d27f042fee9bff875ff358e110ef4a337054f4f495238e4d62530d6895f52378d702ca6c9a97c019b1d1e045e0  powerbutton-daemon
+752f22e74fc1ee21478edfac0b154377fb480cfd27a048a2f489e1e4e4cbbec1cec9a51d5f352cc95d929ffea9a43d04c06331c4d79e211d948b402c54568a18  powerbutton.initd
+5693009d53b5b0ed852369f79a4adfe61c7ca1372eabb92a38464e88d6e359797c5800ae69e022e0835f950f3424f89a0b50008dae0f0218dbd56757fa43c63d  62-powerbutton-libinput.rules
+ad447b3a882c02ebe35f83a09a884ff0927b27474a3568815b86f8602273fb048d712ca70c4f56681d3e1855f924aaba4d50cad199ca9cf0cdfc5313d2266662  qpnp-volume-relay.c
+2c72edda218bfb184f1504d88fba53c46544b1faf715d1344a40a4e74b45c09c33a1cdfae84449002cc99a0f92e216bbda47cb8dfebcb9a64510dcd1a8fcd095  qpnp-volume-relay.initd
+6b5d9338affc1cc0ea8c20379b356f9dee0837a17366d40f85e01863d3b3f424c5edf6fcdfbfae75370dd2f9b533a0fbd489764e743b5b3b8fd8104bfcbd2bf1  polkit-50-user.rules
+1275a6d3a106a20700ba937defdef0b371bed730971197e6fab3ee202b536d548fada496c1596f5ffdc9279e050493ba1550d62c335d6b09e2f24c4842f9c5a0  sysctl-50-polkit-pidfd.conf
+2ca6190c4fd8f7146c818a8dfb5164f86653575576b18c32961bb8be0026314ba5bef3bf2da16cee056f0dfbf53acabbe00761f5c8d6b0f0d2a666c5e07460ab  dconf-20-osk.conf
+565c73e0babe1536d4677b1ddd3259d724bf482505d744e5e6ca50864975343774f53081e2c06704804f52b3ed30a1e6cd5a7f9bae26ea9112073fcfcb407b07  dconf-30-power.conf
+19da3552a73c7559d3e63d358b7bdc696f3b52bb4b508bd68716c287517da3967eec949b1b06186fb1b96fc37876876ed508165fd6434600e7b05355a366e97a  samsung-gts7fewifi.conf
+affdc6346d01f80019287826756de6c1e1244e73676e1785547ef589feebdf5faf8b7cbcfba4373d5751d783fefc82d68688914bcf055452d89a2dad53c03c75  HiFi.conf
+f8d0dd6cc3caa7b523086a65207fa2c74d1496af4fbf769c51d9b052161d4ab22e9611c6602e6c5856a4a4f747120be724d7268baf68aec8d870106fedc1ac4a  dconf-locks-lock
+7ccf1275168797f9c9ab5bdcd6376477abdfe2231fc6699c573adb33b2c7a10f4c33a9f79f93fe61b81cb32e06807ad784d00533153edc601c642adff239b15f  dconf-locks-osk
+125c3f6d599fbbaa196556a569e58f69c3005c4ee83bd30dc866c1a41860853f0399f42b3f3fb8d578d350942305ae2507802f9ca6fa5d812d7b5fb98fbf0353  dconf-locks-power
+4587edfe7360530f72528f1f503178c440190baab68ae2fe0925c55c897e796273e33d6b8a8568ea346fd91507ee8ea2b615068706c491ae84307390ea8d90be  dconf-40-scale-to-fit
+802e7f63a263e7558d8892dc64c8104f13f1f538e6a9d46928d85c698d87b44fd52fc470821548a859c334f157a76a9353d6541364230784f45000aa5a490fde  dconf-50-window-buttons
+c8f7b35e32f04435a650b92037727034d731007f3cb45e5a0aca57e7c649f3ac7033317d74636b39810aabdd6df3ec167be863280ca710d43f57de73cab4de60  android-camera.initd
+a3eed18ba0c8cd0bbe1a0e632f117b0ed36c7e7f957ca283e37f44e97a0223a96d4dfef6ff2f6a07db7a22ca73b414f4dc788dfffc07b41fba4d4a8e8cda3f08  62-video.rules
+b1421fe64d13e368cfb5a8a879780b28bab356624b8992b57e66254c77cc52f0524f407c3603e035e769d87cf7c80abd9f05b95b62636d654e593f7437c98a92  v4l2loopback-modules.conf
+eb046176edfc9e4f202dd2892288433df13ba7fc17b149b5703cb013f7b8e86d17c39aaf09e0a47a96c5f13b6dc7c7285b324e09693bf5146136e6e90f73332d  v4l2loopback-modprobe.conf
+ce4227c31d69ad45d7d9af366e09784eab53de77df9d3d5eed493e2273be0f95afc5084d87f8b4775c5cbde01397c9cedab55d337fc048ba11007fcee1481cb5  ld.config.txt
+b73e72d607c0527221a42b41db880f91f8bd0dda53ad2155d114ddc810968ffc35d01c03fc6df976b46cfcc813900d66ff0f19b35509cf8ab0e36bb16af0b790  sysctl-99-security.conf
+fed18240bacd96944c1ab3664e790aaefe9394da0e4a12d6abc7399f1982041eb1ae38440cb791647c01e497372a0b61d07bf80cd49e7d0142e0d63836d2d56b  sshd-50-security.conf
+9b2ec50e4614b6db09a19da1b30a349634870edd6635e54f693faa5edd86480dc4c00328eb554d0d9aaab30565b5cf22a24669f573e62df26505c718971c80b4  modprobe-50-security-blacklist.conf
+cf478b9545e8cc35e50a7fda9bef9dc732632e713493b3cb44693bb599c68b982e1fac1fd50d706fe6ccf0801b5380dc9e9c1d83f8000b889c27d8d0f89f2e9a  limits-10-disable-coredump.conf
+ef26af4f5178e0c17f53b714bb540d0e8124a8a73ae45f0f768f9127fc88edbba0160535798d644fa03432e298fd3283dacdbe80a07480c4408e24079261a88b  battery-protect
+3b395a1c07fd0040a611e44b776961ecd601c12d41a36d500e2c6a9527dbc5d60985fd47331fd956aa8c68dbc501e120e59ad5f2d6f0bb4308bf54903cc8fbad  battery-protect.initd
+f8f51c9a7953ece761300d9eb5a762b255bb68b69773de7c84edc75aa2bf6579d6f020a5645496b68984b916b08981896fd9125750bb87002afeefdd4387287d  battery-protect.conf
+dfdf7b5010d0edbf4ec6fdd0cfba29af5943efc430ba2a4526e43751fe1941be1cc4f251ba0ee6df8ee3fcfce990ff5d1cb1e36d61785db920c0c222b8a3f7a9  sysctl-98-memory-tuning.conf
+212334137e881af4f7296a6e7c649b51e90bd0c7e53824734b63cc3e0c8d64d657f09198cf246fbc9ea6b8fe7c93c0bee1e6fb502b867756193c9bfc84f6d85b  dconf-35-wifi-only.conf
+c0f3f550da5eac7aeed65bd62e65cba31dd50e8ecaf64a7aa1723aa03fcef7543fc3fe806591963457b124d52339ff289c473da427946efde320c86bd5e95a6e  dconf-locks-wifi-only
+0283a1c48fe11e93f0425d3440dd01ebbc908c3240fbbbe318e1c00fed2cfca8b51237f5ccd3f801fc3c024c7f5a6e77ba1fca580167689a7e6db8033e3e8531  dconf-45-app-folders.conf
+5fdde84517df6c7abfd77dabc67263064b44528b904cbb5cc9c6eb54463757330ba9fb7b8321939c8314f9883c224d37a3c5cebf12e5429d88e254ab5d2505f7  gtk3-hide-cellular.css
+c0ab959ca63e12bdb7d47531b4545e046d91f473ec0caf317f0a0297d3025949c69717370837dfabf4c6fe561c33512915691fa1abf20baee8beca95b451eca7  65-sec-epen.hwdb
+77e5d99d711851c5ad766e272787eeda4786ea1e44c252e1f5071855dd7331e182d4daf94ae88d7bd86a8743ce03e92193d9f0b04b5242664286e6f3f5573b40  fonts-local.conf
+c0ebedee13afb8ea2764c58bac546db92fb6075f8203091ecc20ddd3ada573a77f570aee331ef9d90d2ed3a57a4678027a3125a1b9860f3892e9fe6e9b1b6816  osk-toggle
+d140de0c04d671d98148bce8f54ab5d7b9d36457b2d463e82193a784bbc7716d55924dbda56905fc6d4f61982b958161af210fca2b758a2da37b4b24dca8629c  osk-toggle.desktop
+43e7e9b7f68c7ffbe1e6de02e70ab4267faeb3fb576c442678607ac5969b5fd4e827ae41bfcf13962d8d54edcef1b7574981e61f6f95fd625b6e210c655e5de4  bridge.c
+e3eeb3d4fb3b461ee18d70ce026ecf9eff5fdd939f150bf30f5eae74abc953648b1b3056d2e39358f6c623b613174a98cc53c6bf7500423a91c7bc9a37467436  props.c
+5b1d359756a2a347d0b6f52982a568b6b79feb606f83446494ebf8066074a9f039ebf13383a7c093e25ebf705930d7fd97d1b855f5ad771576b68f5e8b3a5bf8  selinux_shim.c
+299deaeb945079b098e5c3fc9e19940038fee96efa4194111ecb01170a08fbe561bd087bda9ffff57411c12f994b3d304c0d966a3430b8fada0696e9819f2f5a  pmos-props.conf
+f7c541c42433435acdca06d9a82f1bad4c734682f4095477e2f4df6108586136e539d69ffa11aba0e0acfcec8f836ae30cca914328695aecbf0f89f92358b076  vintf-manifest.xml
+9d10307745b050f31259facff160ecd0b2386e54e9f02de0e723bb8732c068448409b05ff443faf8da83b78eb234e4d057305d2813e40da95baa58944c8cc638  vintf-framework-manifest.xml
+375413390ced7e001a78ea3a24271ed75c12939afc39100849e3e12d862cfc1dfc31b0e9daad8b3fa0c0b488a38082c8c67626959e86b237ecc0b1f139bc5562  camxoverridesettings.txt
+e51608ec114c9ac1feba4e2391c84cbd31ced502e3b145dd388d1db22e3ea5fbaea95e0c7022b64892f0e83454786b5f8922f22ed91ec9b86c26b146be731b59  camera-stack.sh
+33b1bb5c9d597d972f633727de525d2313d42636708f99f26d78c6b6da343a09f687039f4fde6e80da25b871840ec63588a8d16f5c30c8af7701aa3df151970d  camera-bridge
+bb6e508e13c06b216a6c3182afc0f469f65088a954aea14bb78ab077dba66e8f19e26cad6294b8c6d146b6378096ac119fe75fb6e63eacba56936608878c7317  camera-bridge.initd
+fc2327720e60740d518df9ad8d6901379c72e3ddfda4877f0c35b0a3c1665f71526ff30346b9d81aaf176458f1feb04e67b388ef111b6a73fc24a957d5f7a347  logdw-sink.initd
+ea680309e6f6d70f97c37b3101c551c13032592e9d3d461c79a49137e240bc1120a816c948dd96f30f4bd679f841e6bf03222a1beb9ba76b6c71e9930314793f  camera-bridge.confd
+712422f95f29da6ea13d811085f011470edbd99c46d2322dc22abc47cffd3ab3e33891b6c095695effcd793cdf3edde5b1fda19bc50eaa01633b521e92aff2cf  logdw-sink.py
+282aaf03328a54ccdd736349d124ab4ac69a15ee1c6b554ae7d6855a156e929bd78e8b269c687cd4ead3938b7c7b9bfd40ec539e5a21b098e1914a4615e77426  logdw-listen.py
+83ce1ebcb45eb3ac038e444e8519e648495be2bf7263ab5764e245137c66946a2218e4234391a8682c3cc05a3517acb1680215d6e01b9edaa9cdbe03671ee855  phoc.ini
+"

@@ -1,0 +1,74 @@
+#!/bin/sh
+# Power key daemon: short press toggles the backlight via screen-toggle, long press powers
+# off. Reads raw evdev (24-byte input_event) with busybox tools; PBD_* overrides are for tests.
+
+DEV="${PBD_DEV:-/dev/input/event0}"
+LOG="${PBD_LOG:-/var/log/pbkeys.log}"
+LOCK="${PBD_LOCK:-/run/powerbutton-daemon.lock}"
+ACT_SHORT="${PBD_ACT_SHORT:-/usr/bin/screen-toggle}"
+ACT_LONG="${PBD_ACT_LONG:-poweroff}"
+THRESH_MS="${PBD_THRESH_MS:-4000}"
+MAX_MS="${PBD_MAX_MS:-30000}"
+
+# Singleton: evdev fans events out to every reader, so two instances would act twice.
+exec 9> "$LOCK"
+if ! flock -n 9; then
+	echo "$(date '+%F %T') start refused: another instance holds $LOCK" >> "$LOG"
+	exit 1
+fi
+
+# Keep the log bounded: one rotation generation at 512 KB.
+if [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 524288 ]; then
+	mv "$LOG" "$LOG.0" 2>/dev/null
+fi
+echo "$(date '+%F %T') daemon start pid=$$ dev=$DEV thresh=${THRESH_MS}ms" >> "$LOG"
+
+# Wait for qpnp_pon's node rather than die before udev settles.
+n=0
+while [ ! -e "$DEV" ] && [ "$n" -lt 60 ]; do sleep 1; n=$((n + 1)); done
+[ -e "$DEV" ] || exit 1
+
+press_ms=0
+while :; do
+	# One open() for the whole loop, so events queue while an action runs.
+	while :; do
+		chunk=$(dd bs=24 count=1 2>/dev/null | od -An -v -tu1 | tr "\n" " ")
+		set -- $chunk
+		[ $# -ge 24 ] || break
+		# 32 bits of seconds is enough until 2106 and keeps the math in
+		# busybox's 64-bit arithmetic comfortable.
+		sec=$(( $1 + $2 * 256 + $3 * 65536 + $4 * 16777216 ))
+		usec=$(( $9 + ${10} * 256 + ${11} * 65536 + ${12} * 16777216 ))
+		type=$(( ${17} + ${18} * 256 ))
+		code=$(( ${19} + ${20} * 256 ))
+		value=$(( ${21} + ${22} * 256 ))
+		[ "$type" -eq 1 ] || continue
+		now_ms=$(( sec * 1000 + usec / 1000 ))
+		echo "$(date '+%F %T') code=$code value=$value ms=$now_ms" >> "$LOG"
+		[ "$code" -eq 116 ] || continue
+		if [ "$value" -eq 1 ]; then
+			press_ms=$now_ms
+		elif [ "$value" -eq 0 ] && [ "$press_ms" -ne 0 ]; then
+			dur=$(( now_ms - press_ms ))
+			press_ms=0
+			cur_bright=$(cat /sys/class/backlight/panel0-backlight/brightness 2>/dev/null || echo 1)
+			if [ "$cur_bright" -eq 0 ]; then
+				echo "$(date '+%F %T') screen is dark, turning screen ON (dur=$dur)" >> "$LOG"
+				"$ACT_SHORT" < /dev/null 9<&-
+			elif [ "$dur" -ge "$THRESH_MS" ] && [ "$dur" -le "$MAX_MS" ]; then
+				echo "$(date '+%F %T') action=poweroff dur=$dur" >> "$LOG"
+				"$ACT_LONG" < /dev/null 9<&-
+			else
+				if [ "$dur" -gt "$MAX_MS" ]; then
+					echo "$(date '+%F %T') anomalous dur=$dur (clock step or stale state), treating as short press" >> "$LOG"
+				fi
+				echo "$(date '+%F %T') action=screen-toggle dur=$dur" >> "$LOG"
+				"$ACT_SHORT" < /dev/null 9<&-
+			fi
+		fi
+	done < "$DEV"
+	# Short read or EOF: the device went away (driver reset). Log it,
+	# pause, reopen. Never busy-loop on a dead fd.
+	echo "$(date '+%F %T') short read from $DEV, reopening in 1 s" >> "$LOG"
+	sleep 1
+done

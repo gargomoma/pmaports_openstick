@@ -1,0 +1,2 @@
+# Pin screen-keyboard-enabled: the OSK is the only keyboard and a user-db false would hide it.
+/org/gnome/desktop/a11y/applications/screen-keyboard-enabled

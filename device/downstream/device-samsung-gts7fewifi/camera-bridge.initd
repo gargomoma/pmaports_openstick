@@ -1,0 +1,84 @@
+#!/sbin/openrc-run
+# Stream both sensors from one process into v4l2loopback nodes (CamX cannot serve two
+# processes). Starts before the display manager so wireplumber sees a device with a format.
+
+description="Camera bridge: Android camera HAL to a v4l2loopback node"
+
+: ${CAMERA_ID:=1}
+: ${CAMERA_OUT:=/dev/video10}
+: ${CAMERA_DIR:=/usr/lib/pmos-camera}
+
+supervisor="supervise-daemon"
+command="$CAMERA_DIR/camera-bridge"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="/var/log/${RC_SVCNAME}.log"
+error_log="/var/log/${RC_SVCNAME}.log"
+# Two SIGTERMs before SIGKILL: the bridge must close the HAL session cleanly or the next
+# start oopses the kernel (cdm_write_genirq).
+retry="SIGTERM/15/SIGTERM/10/SIGKILL/5"
+# The HAL takes seconds to open the sensor; not a crash loop.
+respawn_delay=10
+respawn_max=0
+
+depend() {
+	need udev
+	after localmount logdw-sink
+	before display-manager greetd
+}
+
+start_pre() {
+	modprobe v4l2loopback 2>/dev/null
+	if [ ! -e "$CAMERA_OUT" ]; then
+		eerror "$CAMERA_OUT does not exist; is v4l2loopback loaded?"
+		return 1
+	fi
+	if [ -n "${CAMERA_OUT2:-}" ] && [ ! -e "$CAMERA_OUT2" ]; then
+		ewarn "$CAMERA_OUT2 does not exist; starting the front camera only"
+		unset CAMERA_ID2 CAMERA_OUT2
+	fi
+
+	# CAMERA_LOG_SINK=yes swaps in the decoding log sink (/var/log/android-hal.log).
+	[ -n "${CAMERA_LOG_SINK:-}" ] && export CAMERA_LOG_SINK
+
+	"$CAMERA_DIR"/camera-stack.sh || return 1
+
+	export CAMERA_ID CAMERA_OUT
+	[ -n "${CAMERA_ID2:-}" ] && export CAMERA_ID2
+	[ -n "${CAMERA_OUT2:-}" ] && export CAMERA_OUT2
+	[ -n "${CAMERA_W:-}" ] && export CAMERA_W
+	[ -n "${CAMERA_H:-}" ] && export CAMERA_H
+	[ -n "${CAMERA_NICE:-}" ] && export CAMERA_NICE
+	[ -n "${CAMERA_IDLE_SECONDS:-}" ] && export CAMERA_IDLE_SECONDS
+	for v in CAMERA_STILL_W CAMERA_STILL_H CAMERA_STILL_W2 CAMERA_STILL_H2; do
+		eval "[ -n \"\${$v:-}\" ] && export $v"
+	done
+	[ -n "${CAMERA_W2:-}" ] && export CAMERA_W2
+	[ -n "${CAMERA_H2:-}" ] && export CAMERA_H2
+	[ -n "${CAMERA_NV12:-}" ] && export CAMERA_NV12
+	return 0
+}
+
+start_post() {
+	# Re-add the nodes once they have a format so PipeWire recreates its camera node; a
+	# change event is not enough. Background, since the HAL needs up to half a minute.
+	(
+		# Wait per node: the second sensor gets its format after the first is streaming.
+		for node in "$CAMERA_OUT" ${CAMERA_OUT2:-}; do
+			i=0
+			while [ $i -lt 120 ]; do
+				if v4l2-ctl --device="$node" --list-formats 2>/dev/null \
+						| grep -q "'"; then
+					break
+				fi
+				sleep 1
+				i=$((i + 1))
+			done
+			SYS=/sys/class/video4linux/$(basename "$node")
+			udevadm trigger --action=remove "$SYS" 2>/dev/null
+			sleep 1
+			udevadm trigger --action=add "$SYS" 2>/dev/null
+		done
+	) >/dev/null 2>&1 &
+
+	return 0
+}

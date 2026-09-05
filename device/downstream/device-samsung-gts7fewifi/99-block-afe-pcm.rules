@@ -1,0 +1,5 @@
+# Deny the AFE-PROXY PCM nodes: a second hw_params with a larger buffer panics an unpatched
+# kernel. TAG-=uaccess drops elogind's ACL; 72-audio-bringup.start relaxes this when patched.
+KERNEL=="pcmC0D5p",  TAG-="uaccess", GROUP="root", MODE="0000"
+KERNEL=="pcmC0D6c",  TAG-="uaccess", GROUP="root", MODE="0000"
+KERNEL=="pcmC0D42c", TAG-="uaccess", GROUP="root", MODE="0000"

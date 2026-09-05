@@ -1,0 +1,9 @@
+#!/bin/sh
+# The session user and the greeter user must both be in the seat group to talk to seatd.
+addgroup user seat 2>/dev/null || true
+addgroup greetd seat 2>/dev/null || true
+
+# Compile the dconf system database shipped by this package.
+dconf update 2>/dev/null || true
+
+exit 0

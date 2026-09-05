@@ -1,0 +1,80 @@
+#!/bin/sh
+# check-apk-perms: verify every file against the uid:gid:mode apk recorded, to catch a
+# rootfs whose owners or setuid bits were rewritten. Modes 755/777 are skipped without --all.
+# Usage: check-apk-perms [--repair] [--all]
+
+set -u
+
+DB=/lib/apk/db/installed
+repair=0
+all=0
+
+for arg in "$@"; do
+	case "$arg" in
+		--repair) repair=1 ;;
+		--all)    all=1 ;;
+		-h|--help)
+			sed -n '2,/^set -u/p' "$0" | sed 's/^# \{0,1\}//'
+			exit 0
+			;;
+		*)
+			echo "check-apk-perms: unknown option $arg" >&2
+			exit 2
+			;;
+	esac
+done
+
+if [ ! -r "$DB" ]; then
+	echo "check-apk-perms: cannot read $DB" >&2
+	exit 2
+fi
+
+if [ "$repair" = 1 ] && [ "$(id -u)" != 0 ]; then
+	echo "check-apk-perms: --repair needs root" >&2
+	exit 2
+fi
+
+# Report parked *.apk-new files: apk keeps a locally edited /etc file and parks the packaged
+# version beside it, so device and package silently fork. Report only, never auto-resolve.
+parked=$(find /etc -name '*.apk-new' 2>/dev/null)
+if [ -n "$parked" ]; then
+	echo "PARKED .apk-new FILES: the device has forked from its packages."
+	printf '%s\n' "$parked" | sed 's/^/  /'
+	echo "Diff each against its twin, absorb the right direction, then rm it."
+	echo
+fi
+
+awk -v all="$all" '
+	/^F:/ { dir  = substr($0, 3); next }
+	/^R:/ { file = substr($0, 3); next }
+	/^a:/ {
+		split(substr($0, 3), f, ":")
+		if (all == 0 && (f[3] == "777" || f[3] == "755")) next
+		print "/" dir "/" file "\t" f[1] "\t" f[2] "\t" f[3]
+	}
+' "$DB" | {
+	bad=0
+	# Tab-separated so paths containing spaces survive.
+	while IFS='	' read -r path uid gid mode; do
+		[ -e "$path" ] || continue
+		cur=$(stat -c '%u %g %a' "$path" 2>/dev/null) || continue
+		want="$uid $gid $mode"
+		[ "$cur" = "$want" ] && continue
+
+		bad=$((bad + 1))
+		if [ "$repair" = 1 ]; then
+			echo "REPAIR   $path  have[$cur] want[$want]"
+			# chown before chmod: chown clears setuid/setgid bits.
+			chown "$uid:$gid" "$path" && chmod "$mode" "$path"
+		else
+			echo "MISMATCH $path  have[$cur] want[$want]"
+		fi
+	done
+
+	if [ "$bad" = 0 ]; then
+		echo "check-apk-perms: clean"
+		exit 0
+	fi
+	echo "check-apk-perms: $bad file(s) differ from what apk recorded"
+	exit 1
+}

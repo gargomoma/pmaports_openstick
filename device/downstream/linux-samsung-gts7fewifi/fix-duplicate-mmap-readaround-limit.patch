@@ -1,0 +1,14 @@
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -2486,11 +2486,6 @@
+ 	return 1;
+ }
+ 
+-#if CONFIG_MMAP_READAROUND_LIMIT == 0
+-int mmap_readaround_limit = (VM_MAX_READAHEAD / 4); 		/* page */
+-#else
+-int mmap_readaround_limit = CONFIG_MMAP_READAROUND_LIMIT;	/* page */
+-#endif
+ 
+ /*
+  * Synchronous readahead happens when we don't even find a page in the page

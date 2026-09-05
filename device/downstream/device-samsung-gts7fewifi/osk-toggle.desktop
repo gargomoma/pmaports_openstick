@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Keyboard
+Comment=Show or hide the on-screen keyboard (X11 apps like OrcaSlicer cannot summon it themselves)
+Icon=input-keyboard
+Exec=osk-toggle
+Categories=Utility;

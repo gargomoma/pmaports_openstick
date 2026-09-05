@@ -1,0 +1,27 @@
+#!/bin/sh
+# S Pen (Wacom EMR, wez01): nothing loads the module and its first probe defers forever,
+# so load it and bind the i2c device explicitly.
+
+modprobe wez01 2>/dev/null
+
+# The driver registers asynchronously; wait for it.
+_n=0
+while [ "$_n" -lt 30 ]; do
+	[ -d /sys/bus/i2c/drivers/wacom_w90xx ] && break
+	_n=$((_n + 1))
+	sleep 1
+done
+[ -d /sys/bus/i2c/drivers/wacom_w90xx ] || exit 0
+
+# Already bound (device symlink present under the driver)? Then leave it be.
+for _b in /sys/bus/i2c/drivers/wacom_w90xx/*-0056; do
+	[ -e "$_b" ] && exit 0
+done
+
+for _dev in /sys/bus/i2c/devices/*-0056; do
+	[ -e "$_dev/of_node/compatible" ] || continue
+	tr -d '\0' < "$_dev/of_node/compatible" | grep -q wacom || continue
+	echo "${_dev##*/}" > /sys/bus/i2c/drivers/wacom_w90xx/bind 2>/dev/null
+done
+
+exit 0

@@ -1,0 +1,82 @@
+arm64: dts: yupik: attach the WCN6750 Bluetooth to the HS UART as a serdev
+
+The vendor tree describes Bluetooth as a bare soc-level node,
+soc/bt_wcn6750, carrying ONLY power rails and GPIOs and no transport at
+all. That suits Qualcomm's downstream design, where a proprietary Android
+userspace opens the tty directly and btpower.ko just sequences the rails.
+There is no such userspace on postmarketOS, so nothing ever creates an HCI
+device and Settings shows "No Bluetooth found".
+
+The mainline model instead expects the BT chip to be a CHILD of the UART it
+hangs off, so the serdev core instantiates it and hci_uart/hci_qca drives
+it. This adds that child.
+
+Everything here is copied from the board's own bt_wcn6750 node so the
+hardware description stays identical, only re-expressed in the bindings the
+in-tree driver understands:
+
+    enable-gpios   <&tlmm 85 0>   was qcom,bt-reset-gpio  (BT_EN)
+    swctrl-gpios   <&tlmm 86 0>   was qcom,bt-sw-ctrl-gpio
+    vddio          &L19B          was qcom,bt-vdd-io-supply
+    vddaon         &S7B           was qcom,bt-vdd-aon-supply
+    vddbtcxmx      &S7B           was qcom,bt-vdd-dig-supply
+    vddrfacmn      &S7B           was qcom,bt-vdd-rfacmn-supply
+    vddrfa0p8      &S7B           was qcom,bt-vdd-rfa-0p8-supply
+    vddrfa1p7      &S1B           was qcom,bt-vdd-rfa1-supply
+    vddrfa1p2      &S8B           was qcom,bt-vdd-rfa2-supply
+    vddasd         &L11C          was qcom,bt-vdd-asd-supply
+
+qupv3_se7_4uart is the right UART: yupik.dtsi aliases it as hsuart0, and it
+is the only high-speed UART enabled on this board.
+
+The old soc-level node is deliberately LEFT ENABLED. Disabling it was the
+first attempt and it wedged the boot: btpower.ko and bt_fm_slim.ko both
+load at boot for audio, and pulling their node out from under them stalled
+the rootfs before networking came up (gadget enumerated, carrier 0, no
+PMOS_LOGS export, so the initramfs had already handed over). Measured
+2026-08-03.
+
+Two drivers touching one radio's rails is still a concern, but it is a
+manageable one: hci_qca is built as a MODULE and blacklisted, so nothing
+binds this node until it is loaded deliberately. That also makes the
+failure debuggable over SSH instead of by flash-and-pray.
+
+firmware-name selects the NVM file; btqca.c prefixes "qca/", so this
+resolves to qca/msnv11.bin. The rampatch name is derived from the ROM
+version by the driver (qca/msbtfw%02x.mbn) - see bt-wcn6750-support.patch.
+Both files ship in the vendor firmware package already installed on this
+device.
+
+--- a/arch/arm64/boot/dts/vendor/qcom/yupik.dtsi
++++ b/arch/arm64/boot/dts/vendor/qcom/yupik.dtsi
+@@ -5498,4 +5498,26 @@
+-&qupv3_se7_4uart {
+-	status = "ok";
+-};
++&qupv3_se7_4uart {
++	status = "ok";
++
++	/* WCN6750 Bluetooth, as a serdev child so hci_qca can bind. */
++	bt_serdev: bluetooth {
++		compatible = "qcom,wcn6750-bt";
++		pinctrl-names = "default";
++		pinctrl-0 = <&bt_en_sleep>;
++
++		enable-gpios = <&tlmm 85 0>;
++		swctrl-gpios = <&tlmm 86 0>;
++
++		vddio-supply = <&L19B>;
++		vddaon-supply = <&S7B>;
++		vddbtcxmx-supply = <&S7B>;
++		vddrfacmn-supply = <&S7B>;
++		vddrfa0p8-supply = <&S7B>;
++		vddrfa1p7-supply = <&S1B>;
++		vddrfa1p2-supply = <&S8B>;
++		vddasd-supply = <&L11C>;
++
++		max-speed = <3200000>;
++		firmware-name = "msnv11.bin";
++	};
++};
+
+ 

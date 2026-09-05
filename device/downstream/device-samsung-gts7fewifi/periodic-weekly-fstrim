@@ -1,0 +1,3 @@
+#!/bin/sh
+# Weekly batch trim: the UFS supports discard but no mount uses -o discard.
+exec /sbin/fstrim -a

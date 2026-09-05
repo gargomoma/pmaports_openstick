@@ -1,0 +1,13 @@
+# Pin enable-suspend and the power keys: tapping Suspend reboots this tablet, and a user-db
+# value would silently shadow the system default.
+/sm/puri/phosh/enable-suspend
+/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-type
+/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type
+/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-timeout
+/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout
+/org/gnome/settings-daemon/plugins/power/idle-dim
+/org/gnome/settings-daemon/plugins/media-keys/power
+/org/gnome/settings-daemon/plugins/media-keys/power-static
+/org/gnome/desktop/session/idle-delay
+/org/gnome/desktop/screensaver/idle-activation-enabled
+/org/gnome/desktop/screensaver/lock-enabled

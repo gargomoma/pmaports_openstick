@@ -1,0 +1,15 @@
+#!/bin/sh
+# Runlevels for the services this package ships.
+
+# powerbutton owns the power key: the compositor's blank path would kill the panel.
+rc-update -q add powerbutton default 2>/dev/null || true
+rc-update -q add qpnp-volume-relay default 2>/dev/null || true
+rc-update -q add gts7fewifi-bringup default 2>/dev/null || true
+rc-update -q add battery-protect default 2>/dev/null || true
+
+# The camera bridge must start before the session (wireplumber enumerates devices only
+# at startup).
+rc-update -q add logdw-sink default 2>/dev/null || true
+rc-update -q add camera-bridge default 2>/dev/null || true
+
+exit 0

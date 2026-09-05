@@ -1,0 +1,8 @@
+#%PAM-1.0
+# PAM service for the Phosh lockscreen: Alpine ships none, and without it every passcode is
+# rejected. Copy of /etc/pam.d/greetd; needs unix_chkpwd setgid shadow and /etc/shadow root:shadow.
+
+auth include base-auth
+account include base-account
+password include base-password
+session include base-session

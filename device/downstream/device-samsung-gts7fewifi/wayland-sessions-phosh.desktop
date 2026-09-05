@@ -1,0 +1,9 @@
+# Copy of phosh's session entry with Exec pointing at the device wrapper, which sets
+# XDG_CONFIG_DIRS and the faccessat shim before phosh-session runs (replaces the phosh copy).
+[Desktop Entry]
+Name=Phosh
+Comment=Phone Shell
+Comment=This session logs you into Phosh
+Exec=/usr/bin/phosh-session-gts7fewifi
+Type=Application
+DesktopNames=Phosh;GNOME;

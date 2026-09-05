@@ -1,0 +1,105 @@
+Audio: make the PCM capture failure paths say why they failed.
+
+THREE FAILURES THAT RETURN AN ERROR AND LOG NOTHING
+---------------------------------------------------
+Recording on this port fails with, from userspace:
+
+    arecord: set_params:1462: Unable to install hw params:
+    ACCESS: RW_INTERLEAVED
+    FORMAT: S16_LE
+    ...
+
+and from the kernel, in full, unfiltered:
+
+    q6asm_send_cal: cal_block is NULL
+    adm_open_v2:port 0xb037 path:2 rate:48000 mode:2 perf_mode:0,topo_id 66322
+    adm_open_v2:bit_width:16 app_type:0x0 acdb_id:0
+    event_handler: reclaimed all bufs
+    adm_close: port_id=0xb037 perf_mode: 0 copp_idx: 0
+
+Nothing there is an error. The ADM opened with a valid topology and then unwound,
+and the reason was discarded. Diagnosing this cost a full source read of
+msm_pcm_hw_params(), msm_pcm_capture_prepare(),
+q6asm_audio_client_buf_alloc_contiguous() and q6asm_enc_cfg_blk_pcm_v5() purely
+to find out which return statement had been taken.
+
+Three sites are responsible:
+
+  msm_pcm_hw_params()
+      if (buf == NULL || buf[0].data == NULL)
+              return -ENOMEM;                      /* silent */
+      if (!dma_buf->area)
+              return -ENOMEM;                      /* silent */
+
+  msm_pcm_capture_prepare()
+      if (ret < 0)
+              pr_debug("%s: cmd cfg pcm was block failed", __func__);
+      prtd->enabled = RUNNING;
+      return ret;                                  /* returned, logged at
+                                                      pr_debug, and this kernel
+                                                      has CONFIG_DYNAMIC_DEBUG
+                                                      unset so pr_debug is
+                                                      compiled out entirely */
+
+The third is the worst of the three: it is the value actually returned to
+userspace, it is the likely cause of the capture failure, and the message it
+does carry omits the return code and every parameter that would identify the
+problem. It also sets prtd->enabled = RUNNING on the failure path, which is
+left alone here because changing state machines is not what this patch is for.
+
+WHAT THIS CHANGES
+-----------------
+Nothing functional. The same values are returned on the same conditions. Only
+the diagnostics change: pr_err instead of silence, and the encoder-config
+message now carries ret, rate, channels, bits per sample and word size, which
+between them distinguish "the DSP rejected these parameters" from "the command
+never reached the DSP".
+
+CONFIG_DYNAMIC_DEBUG is not set on this kernel (only CONFIG_DYNAMIC_DEBUG_CORE),
+so pr_debug cannot be turned on at runtime and there is no way to get this
+information without a code change.
+
+SHIPPING
+--------
+msm-pcm-q6-v2.c builds into platform_dlkm.ko, a MODULE on the rootfs, so this
+does not need a flash: build the kernel package and push that one file.
+
+--- a/techpack/audio/asoc/msm-pcm-q6-v2.c
++++ b/techpack/audio/asoc/msm-pcm-q6-v2.c
+@@ -918,7 +918,9 @@
+ 						DEFAULT_QF);
+ 
+ 	if (ret < 0)
+-		pr_debug("%s: cmd cfg pcm was block failed", __func__);
++		pr_err("%s: encoder cfg block failed, ret=%d (rate=%d ch=%d bps=%d word=%d) - capture will fail\n",
++		       __func__, ret, prtd->samp_rate, prtd->channel_mode,
++		       bits_per_sample, sample_word_size);
+ 
+ 	prtd->enabled = RUNNING;
+ 
+@@ -1504,8 +1506,11 @@
+ 		return -ENOMEM;
+ 	}
+ 	buf = prtd->audio_client->port[dir].buf;
+-	if (buf == NULL || buf[0].data == NULL)
++	if (buf == NULL || buf[0].data == NULL) {
++		pr_err("%s: buffer allocation returned success but buf=%pK data=%pK, dir=%d\n",
++		       __func__, buf, buf ? buf[0].data : NULL, dir);
+ 		return -ENOMEM;
++	}
+ 
+ 	pr_debug("%s:buf = %pK\n", __func__, buf);
+ 	dma_buf->dev.type = SNDRV_DMA_TYPE_DEV;
+@@ -1514,8 +1519,11 @@
+ 	dma_buf->area = buf[0].data;
+ 	dma_buf->addr =  buf[0].phys;
+ 	dma_buf->bytes = params_buffer_bytes(params);
+-	if (!dma_buf->area)
++	if (!dma_buf->area) {
++		pr_err("%s: dma_buf->area is NULL, dir=%d bytes=%zu\n",
++		       __func__, dir, dma_buf->bytes);
+ 		return -ENOMEM;
++	}
+ 
+ 	snd_pcm_set_runtime_buffer(substream, &substream->dma_buffer);
+ 	return 0;

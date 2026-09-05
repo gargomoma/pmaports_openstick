@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+# Power key handling; the compositor must not react to this key on this panel.
+
+name="powerbutton"
+description="gts7fewifi power button: short=backlight toggle, long=poweroff"
+supervisor=supervise-daemon
+command=/usr/bin/powerbutton-daemon
+respawn_delay=2
+respawn_max=0
+
+depend() {
+	need dev
+	after udev
+}

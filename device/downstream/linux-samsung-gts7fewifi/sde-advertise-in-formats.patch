@@ -1,0 +1,148 @@
+SDE: advertise IN_FORMATS properly, so Wayland compositors can scan out.
+
+Without this, Weston 14.0.2 on the DRM backend fails on every output:
+
+    format XRGB8888 not supported by output DSI-1
+    failed to create gbm surface
+    Failed to init output gl state
+    Enabling output "DSI-1" failed.
+
+wlroots compositors (labwc, sway) resolve formats the same way and fail the
+same way. Xorg does not, which is why the fbdev desktop never noticed.
+
+THIS PATCH HAS TWO HALVES AND THE FIRST ONE ALONE IS WORSE THAN NOTHING
+-----------------------------------------------------------------------
+An earlier version of this patch supplied only the modifier list, replacing
+the NULL passed to drm_universal_plane_init(). That shipped, and it did NOT
+work. Measured on the running device with drm_info, all 8 planes:
+
+    ├───"IN_FORMATS" (immutable): blob = 71
+    │   └───DRM_FORMAT_MOD_LINEAR (0x0000000000000000)
+    ├───"zpos": range [0, INT32_MAX] = 0
+
+One modifier, and ZERO formats under it. The reason is in the DRM core,
+create_in_format_blob() in drivers/gpu/drm/drm_plane.c:
+
+    /* If we can't determine support, just bail */
+    if (!plane->funcs->format_mod_supported)
+            goto done;
+
+    mod = modifiers_ptr(blob_data);
+    for (i = 0; i < plane->modifier_count; i++) {
+            for (j = 0; j < plane->format_count; j++) {
+                    if (plane->funcs->format_mod_supported(...))
+                            mod->formats |= 1ULL << j;
+            }
+            mod->modifier = plane->modifiers[i];
+
+sde_plane_funcs has no .format_mod_supported, so the core jumps past the only
+loop that ever writes mod->modifier or mod->formats. The blob comes from
+drm_property_create_blob(), which zeroes it, so the entry reads back as
+modifier 0 with an empty format mask. DRM_FORMAT_MOD_LINEAR is 0, so that
+zeroed entry decodes as a perfectly plausible "LINEAR, no formats".
+
+That is why the earlier half-patch looked like it had worked. The property
+existed and named a sensible modifier. It was uninitialised memory.
+
+So: declaring modifiers WITHOUT .format_mod_supported is strictly worse than
+declaring none. With no IN_FORMATS at all, modifier-aware clients fall back to
+the plane's legacy format list, which does contain XRGB8888 and would work.
+With an empty blob they fail instead.
+
+Both halves are required, and they are both here now:
+  1. pass a modifier list to drm_universal_plane_init()
+  2. add .format_mod_supported so the core actually fills the blob in
+
+SDE accepts everything in its legacy format list as linear and describes its
+compressed layouts with private properties rather than DRM modifiers, so
+LINEAR is the only modifier to claim and it applies to every format.
+
+Verify after flashing, BEFORE blaming a compositor:
+
+    drm_info /dev/dri/card0 | grep -A20 IN_FORMATS
+
+The LINEAR line must now have format entries beneath it.
+
+--- a/techpack/display/msm/sde/sde_plane.c
++++ b/techpack/display/msm/sde/sde_plane.c
+@@ -33,6 +33,7 @@
+ #include "sde_hw_sspp.h"
+ #include "sde_hw_catalog_format.h"
+ #include "sde_trace.h"
++#include <drm/drm_fourcc.h>
+ #include "sde_crtc.h"
+ #include "sde_vbif.h"
+ #include "sde_plane.h"
+@@ -4628,6 +4629,31 @@
+ 	_sde_plane_destroy_debugfs(plane);
+ }
+ 
++/*
++ * The DRM core will not populate the IN_FORMATS blob's modifier entries at all
++ * unless the driver can answer which formats work with which modifier. See
++ * create_in_format_blob(): "If we can't determine support, just bail" jumps
++ * straight past the loop that fills in mod->modifier and mod->formats when
++ * this callback is NULL.
++ *
++ * Supplying a modifier list without this callback is therefore worse than
++ * supplying nothing: the property gets created and advertises count_modifiers
++ * entries, but the array stays zeroed. Userspace then reads one entry whose
++ * modifier happens to decode as DRM_FORMAT_MOD_LINEAR, because LINEAR is 0,
++ * carrying an empty format bitmask. Weston reports exactly that as
++ * "format XRGB8888 not supported by output DSI-1" and refuses to create a GBM
++ * surface.
++ *
++ * SDE accepts every format in its legacy list as linear, and describes its
++ * compressed layouts with private properties rather than DRM modifiers, so
++ * LINEAR is the only modifier to claim and it applies to all of them.
++ */
++static bool sde_plane_format_mod_supported(struct drm_plane *plane,
++		uint32_t format, uint64_t modifier)
++{
++	return modifier == DRM_FORMAT_MOD_LINEAR;
++}
++
+ static const struct drm_plane_funcs sde_plane_funcs = {
+ 		.update_plane = drm_atomic_helper_update_plane,
+ 		.disable_plane = drm_atomic_helper_disable_plane,
+@@ -4639,6 +4665,7 @@
+ 		.atomic_destroy_state = sde_plane_destroy_state,
+ 		.late_register = sde_plane_late_register,
+ 		.early_unregister = sde_plane_early_unregister,
++		.format_mod_supported = sde_plane_format_mod_supported,
+ };
+ 
+ static const struct drm_plane_helper_funcs sde_plane_helper_funcs = {
+@@ -4658,6 +4685,23 @@
+ 	return plane ? to_sde_plane(plane)->is_virtual : false;
+ }
+ 
++/*
++ * Modifiers advertised per plane. Passing a non-NULL list is what makes the DRM
++ * core create the IN_FORMATS property (see __drm_universal_plane_init: it only
++ * calls create_in_format_blob() once allow_fb_modifiers is set, which in turn
++ * only happens when a modifier list is supplied). Atomic compositors that read
++ * IN_FORMATS, such as mutter 48+, otherwise see no usable planes and never scan
++ * out, leaving the panel blank with no error reported.
++ *
++ * Only LINEAR is claimed: SDE describes its compressed layouts with private
++ * properties rather than DRM modifiers, so this matches exactly what the legacy
++ * format list already accepts.
++ */
++static const uint64_t sde_plane_format_modifiers[] = {
++	DRM_FORMAT_MOD_LINEAR,
++	DRM_FORMAT_MOD_INVALID
++};
++
+ /* initialize plane */
+ struct drm_plane *sde_plane_init(struct drm_device *dev,
+ 		uint32_t pipe, bool primary_plane,
+@@ -4757,7 +4801,7 @@
+ 		type = DRM_PLANE_TYPE_OVERLAY;
+ 	ret = drm_universal_plane_init(dev, plane, 0xff, &sde_plane_funcs,
+ 				psde->formats, psde->nformats,
+-				NULL, type, NULL);
++				sde_plane_format_modifiers, type, NULL);
+ 	if (ret)
+ 		goto clean_sspp;
+ 

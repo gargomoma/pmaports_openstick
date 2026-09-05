@@ -1,0 +1,5 @@
+#!/bin/sh
+# Greeter for greetd default_session: phoc wrapping phrog plus phosh-osk-stevia, since
+# phrog's lockscreen keypad is digits only. Needs XDG_RUNTIME_DIR=/run/greetd from greetd.
+export LD_PRELOAD=/usr/lib/faccessat-compat.so
+exec phoc -S -C /etc/phosh/phoc.ini -E "sh -c 'phosh-osk-stevia >/run/greetd/stevia.log 2>&1 & exec phrog'"

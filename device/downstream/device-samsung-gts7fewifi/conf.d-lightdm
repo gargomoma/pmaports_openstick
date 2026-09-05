@@ -1,0 +1,3 @@
+# OpenRC sources this into lightdm's environment, so Xorg and the whole session inherit both
+# shims: noblank.so swallows the FBIOBLANK that kills the panel, faccessat-compat.so fixes glib on 5.4.
+export LD_PRELOAD="/usr/lib/noblank.so /usr/lib/faccessat-compat.so"

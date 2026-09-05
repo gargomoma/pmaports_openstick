@@ -1,0 +1,25 @@
+// The greetd autologin session is not polkit-active on OpenRC/elogind, so allow_active defaults
+// fall through and NetworkManager, udisks2 and login1 actions are denied. No blanket admin grant.
+polkit.addRule(function(action, subject) {
+	if (subject.user == "user" &&
+		(action.id.indexOf("org.freedesktop.NetworkManager.") == 0 ||
+		 action.id.indexOf("org.freedesktop.udisks2.") == 0)) {
+		return polkit.Result.YES;
+	}
+});
+
+polkit.addRule(function(action, subject) {
+	var power = [
+		"org.freedesktop.login1.suspend",
+		"org.freedesktop.login1.suspend-multiple-sessions",
+		"org.freedesktop.login1.hibernate",
+		"org.freedesktop.login1.hibernate-multiple-sessions",
+		"org.freedesktop.login1.reboot",
+		"org.freedesktop.login1.reboot-multiple-sessions",
+		"org.freedesktop.login1.power-off",
+		"org.freedesktop.login1.power-off-multiple-sessions"
+	];
+	if (subject.user == "user" && power.indexOf(action.id) >= 0) {
+		return polkit.Result.YES;
+	}
+});

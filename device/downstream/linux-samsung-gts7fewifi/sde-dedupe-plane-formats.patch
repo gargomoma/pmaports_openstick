@@ -1,0 +1,90 @@
+SDE: de-duplicate the plane format list, which crashes every Wayland compositor.
+
+Weston 14 aborts on this device the instant it reads a plane's formats:
+
+    GL renderer: zink Vulkan 1.3(Adreno 7c+ Gen 3 (MESA_TURNIP))
+    Using GL renderer
+    Assertion failed: !weston_drm_format_array_find_format(formats, format)
+        (../libweston/drm-formats.c: weston_drm_format_array_add_format: 131)
+
+Note where it dies. This is AFTER the DRM backend came up, after gl-renderer
+loaded, after EGL reported dmabuf modifier support, and after the GPU was
+selected and announced. Weston had the Adreno running through zink/Turnip and
+threw the whole thing away over a duplicate entry in a list.
+
+THE DUPLICATE IS REAL, measured on the running device:
+
+    drm_info /dev/dri/card0   ->  40 format entries, 39 unique
+                                  ABGR8888 (0x34324241) appears TWICE
+
+WHY
+
+sde_populate_formats() de-duplicates against only the PREVIOUS entry:
+
+    /* assume base formats grouped together */
+    if (fourcc_format != format_list->fourcc_format) {
+
+That assumption does not hold for this panel. Its list is
+
+    ARGB8888, ABGR8888, RGBA8888, ABGR8888, BGRA8888, ...
+
+so ABGR8888 at index 1 and index 3 are not adjacent, the comparison against the
+previous entry passes, and it is emitted a second time. That duplicate then
+goes straight into the plane's format array and therefore into the IN_FORMATS
+blob that sde-advertise-in-formats.patch publishes.
+
+Nothing in the kernel cares. Every Wayland compositor does, because
+drm_format_array is a set and Weston asserts that property.
+
+THE FIX
+
+Scan the whole array already built rather than just the last entry. O(n^2) on
+a list of 40, run once per plane at probe, so the cost is irrelevant.
+
+Deliberately NOT touched: the `if (pixel_modifiers)` branch above. There the
+same fourcc legitimately repeats once per modifier, and de-duplicating it would
+be wrong.
+
+VERIFY AFTER FLASHING
+
+    drm_info /dev/dri/card0 | grep -A40 IN_FORMATS | grep -c ABGR8888   # 1, not 2
+    weston --backend=drm-backend.so --tty=1                             # must not abort
+
+--- a/techpack/display/msm/sde/sde_formats.c
++++ b/techpack/display/msm/sde/sde_formats.c
+@@ -1285,7 +1285,8 @@
+ 		uint64_t *pixel_modifiers,
+ 		uint32_t pixel_formats_max)
+ {
+-	uint32_t i, fourcc_format;
++	uint32_t i, j, fourcc_format;
++	bool duplicate;
+ 
+ 	if (!format_list || !pixel_formats)
+ 		return 0;
+@@ -1301,8 +1302,23 @@
+ 			pixel_formats[i] = format_list->fourcc_format;
+ 			pixel_modifiers[i++] = format_list->modifier;
+ 		} else {
+-			/* assume base formats grouped together */
+-			if (fourcc_format != format_list->fourcc_format) {
++			/*
++			 * Do NOT assume identical fourccs are adjacent. This
++			 * panel lists ABGR8888 at both index 1 and index 3, so
++			 * comparing against only the previous entry emitted it
++			 * twice, the duplicate reached the IN_FORMATS blob, and
++			 * Weston aborted on it. Scan what was built so far.
++			 */
++			duplicate = false;
++			for (j = 0; j < i; ++j) {
++				if (pixel_formats[j] ==
++						format_list->fourcc_format) {
++					duplicate = true;
++					break;
++				}
++			}
++
++			if (!duplicate) {
+ 				fourcc_format = format_list->fourcc_format;
+ 				pixel_formats[i++] = fourcc_format;
+ 			}

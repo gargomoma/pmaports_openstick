@@ -1,0 +1,6 @@
+#!/bin/sh
+# Downstream pins 'performance' on every policy; schedutil is available and saner on battery.
+for p in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do
+	[ -w "$p" ] && echo schedutil > "$p"
+done
+exit 0

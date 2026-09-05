@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+description="Samsung Android Camera Provider HAL Service"
+supervisor="supervise-daemon"
+
+command="/system/bin/linker64"
+command_args="/vendor/bin/hw/vendor.samsung.hardware.camera.provider@4.0-service_64"
+export LD_PRELOAD="/system/lib64/libselinux_shim.so"
+
+depend() {
+	need udev
+	after localmount
+}
+
+start_pre() {
+	if ! grep -qs "/dev/binderfs" /proc/mounts; then
+		mkdir -p /dev/binderfs
+		mount -t binder binder /dev/binderfs -o default,stats=global 2>/dev/null || true
+	fi
+	chmod 755 /dev/binderfs 2>/dev/null || true
+	chmod 666 /dev/binderfs/* /dev/binder /dev/hwbinder /dev/vndbinder /dev/ion 2>/dev/null || true
+	modprobe v4l2loopback video_nr=10 card_label="Tablet Front Camera" exclusive_caps=1 2>/dev/null || true
+}

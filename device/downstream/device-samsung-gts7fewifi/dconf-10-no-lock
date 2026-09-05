@@ -1,0 +1,7 @@
+# Screen locking disabled: the lockscreen's fade and output-power path near the power key
+# can reach DPMS, which this panel does not survive.
+[org/gnome/desktop/lockdown]
+disable-lock-screen=true
+
+[org/gnome/desktop/screensaver]
+lock-enabled=false

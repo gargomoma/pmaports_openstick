@@ -1,0 +1,4 @@
+# Let the video group write brightness (safe) but never bl_power (unrecoverable). The add
+# rule sets a 15% starting brightness from max_brightness; $$ is a shell dollar in udev.
+SUBSYSTEM=="backlight", KERNEL=="panel0-backlight", RUN+="/bin/sh -c 'chgrp video /sys/class/backlight/%k/brightness; chmod 664 /sys/class/backlight/%k/brightness'"
+ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="panel0-backlight", RUN+="/bin/sh -c 'm=$$(cat /sys/class/backlight/%k/max_brightness); echo $$((m*15/100)) > /sys/class/backlight/%k/brightness'"
