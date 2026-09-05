@@ -1,0 +1,58 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=libinsn
+pkgver=54
+pkgrel=0
+pkgdesc="An instruction decoder/encoder for 64bit ARM."
+url="https://github.com/tihmstar/libinsn"
+arch="all"
+license="LGPL-2.1-or-later"
+makedepends="
+	autoconf
+	automake
+	clang
+	libgeneral-dev
+	libtool
+	lld
+	llvm-dev
+	m4
+	"
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz"
+# No tests
+options="!check"
+
+# Requires clang
+CC=clang
+CXX=clang++
+LD=lld
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	libtoolize
+	aclocal
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+671887cb374afcb9eed9ed579f8f75d1c56bd339e38b74e8438ef60da6a6043799711f888f38822ef792538fe28668e9352e0e35d6a5402345db9ca6d3c4441e  54-0.tar.gz
+"

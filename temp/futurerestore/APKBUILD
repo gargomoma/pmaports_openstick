@@ -1,0 +1,49 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=futurerestore
+pkgver=194_git20240524
+_commit=22a5d89bdec6e1c441012d63822184c93530b7e5
+pkgrel=0
+pkgdesc="A hacked up idevicerestore wrapper"
+url="https://github.com/futurerestore/futurerestore"
+arch="all"
+license="LGPL-3.0-or-later"
+depends="libusb"
+makedepends="
+	cmake
+	curl-dev
+	futurerestore
+	img4tool-dev
+	libfragmentzip-dev
+	libgeneral-dev
+	libimobiledevice-dev
+	libimobiledevice-glue-dev
+	libinsn-dev
+	libirecovery-dev
+	libpatchfinder-dev
+	libplist-dev
+	libpng-dev
+	libusb-dev
+	libusbmuxd-dev
+	lzfse-dev
+	openssl-dev
+	xpwn
+"
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/$_commit.tar.gz"
+# No tests
+options="!check"
+
+build() {
+	# export CFLAGS="$CFLAGS -I/usr/include/cctools"
+	# export CXXFLAGS="$CXXFLAGS -I/usr/include/cctools"
+	cmake -B build -G Ninja
+	cmake --build build
+}
+
+package() {
+	cmake --install build
+}
+
+sha512sums="
+e8d49c49a7675484ab2c55daa678da57923d2ad25416198bd7054785bb6a31ad5824f75f2397f947d67dd9c4ac44cfcfdd1263f8a9c89d44390b9634342b7836  194_git20240524-0.tar.gz
+"

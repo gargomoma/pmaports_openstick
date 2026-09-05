@@ -1,0 +1,87 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=ra1nsn0w
+pkgver=59
+pkgrel=0
+pkgdesc="Tethered booter for 64bit iOS devices vulnerable to checkm8"
+url="https://github.com/tihmstar/ra1nsn0w"
+arch="all"
+license="LGPL-2.1-or-later"
+makedepends="
+	autoconf
+	automake
+	clang
+	img1tool-dev
+	img3tool-dev
+	img4tool-dev
+	libfragmentzip-dev
+	libfwkeyfetch-dev
+	libgeneral-dev
+	libirecovery-dev
+	libpatchfinder-dev
+	libtool
+	lld
+	llvm-dev
+	m4
+	tsschecker-dev
+	"
+subpackages="$pkgname-dev $pkgname-ibootpatcher $pkgname-kernelpatcher"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz
+	0001-shim-strtoul_l.patch
+	"
+# No tests
+options="!check"
+
+# Requires clang
+CC=clang
+CXX=clang++
+LDFLAGS="$LDFLAGS -fuse-ld=lld -ljssy"
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	libtoolize
+	aclocal
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr \
+		--program-prefix=""
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+ibootpatcher() {
+	pkgdesc="Tool for patching iBoot"
+
+	amove usr/bin/iBootPatcher
+}
+
+kernelpatcher() {
+	pkgdesc="Tool for patching the XNU kernel"
+
+	amove usr/bin/kernelPatcher
+}
+
+dev() {
+	default_dev
+	amove usr/lib/*
+}
+
+sha512sums="
+fae1a2ecdf79d97ca237cbfb6bdd6bbc88695f8915108fe3e166200312b8ea87782db26a3e47f38b654f31999f9dfdc725333572ae6915633f405412fd09c2dd  59-0.tar.gz
+414c21cc6dee1cadf62c7368e1302242975e4dd680bbb1cc46a629403dcdde167c12c40944fe15de7df7d2748a020e2f2cd8d04525444b508a4d79d05a6478c2  0001-shim-strtoul_l.patch
+"

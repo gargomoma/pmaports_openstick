@@ -1,0 +1,46 @@
+From 0b5c9779ec776ea134dcf25c94a97ecf12caf657 Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Tue, 25 Mar 2025 17:39:12 -0400
+Subject: [PATCH] use remove enum-compat dep
+
+---
+ requirements.txt | 1 -
+ setup.py         | 2 +-
+ tox.ini          | 1 -
+ 3 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/requirements.txt b/requirements.txt
+index 3955f2f..95c8102 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,2 +1 @@
+ future==1.0.0
+-enum-compat==0.0.3
+diff --git a/setup.py b/setup.py
+index 7f79dfb..eefd35c 100644
+--- a/setup.py
++++ b/setup.py
+@@ -23,7 +23,7 @@ def read(*names, **kwargs):
+     ).read()
+ 
+ 
+-install_requires = ['enum-compat']
++install_requires = ['']
+ if version_info[0] < 3:
+     install_requires.append('future')
+ 
+diff --git a/tox.ini b/tox.ini
+index 94cf5dd..5942265 100644
+--- a/tox.ini
++++ b/tox.ini
+@@ -36,7 +36,6 @@ deps =
+     pytest
+     nose
+     future
+-    enum-compat
+     coverage
+ commands =
+     pytest -vv tests
+-- 
+2.49.0
+

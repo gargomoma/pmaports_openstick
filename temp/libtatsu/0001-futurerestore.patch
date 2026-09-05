@@ -1,0 +1,532 @@
+From 90fb0f833ef69bec08b577763c3196ab27bafdd8 Mon Sep 17 00:00:00 2001
+From: Cryptiiiic <liamwqs@gmail.com>
+Date: Thu, 2 Jan 2025 16:11:51 -0800
+Subject: [PATCH 1/2] Add futurerestore patches
+
+---
+ include/libtatsu/tss.h |   3 +
+ src/tss.c              | 207 ++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 197 insertions(+), 13 deletions(-)
+
+diff --git a/include/libtatsu/tss.h b/include/libtatsu/tss.h
+index cdfc204..96c0d85 100644
+--- a/include/libtatsu/tss.h
++++ b/include/libtatsu/tss.h
+@@ -32,6 +32,8 @@
+ extern "C" {
+ #endif
+ 
++extern const char* urls[10];
++
+ /* parameters */
+ LIBTATSU_API int tss_parameters_add_from_manifest(plist_t parameters, plist_t build_identity, bool include_manifest);
+ 
+@@ -58,6 +60,7 @@ LIBTATSU_API int tss_request_add_ap_img3_tags(plist_t request, plist_t parameter
+ 
+ /* i/o */
+ LIBTATSU_API plist_t tss_request_send(plist_t request, const char* server_url_string);
++LIBTATSU_API char *tss_request_send_raw(char *tss_request, const char* server_url_string, int *response_length);
+ 
+ /* response */
+ LIBTATSU_API int tss_response_get_ap_img4_ticket(plist_t response, unsigned char** ticket, unsigned int* length);
+diff --git a/src/tss.c b/src/tss.c
+index fdbdbf3..6bfb2f5 100644
+--- a/src/tss.c
++++ b/src/tss.c
+@@ -38,10 +38,24 @@
+ 
+ #include <curl/curl.h>
+ #include <plist/plist.h>
++#include <errno.h>
+ 
+ #include "common.h"
+ #include "libtatsu/tss.h"
+ 
++const char* urls[10] = {
++    "https://gs.apple.com/TSS/controller?action=2",
++    "https://gs.apple.com.akadns.net/TSS/controller?action=2",
++    "https://gs.apple.com.v.aaplimg.com/TSS/controller?action=2",
++    "http://gs.apple.com/TSS/controller?action=2",
++    "http://gs.apple.com.akadns.net/TSS/controller?action=2",
++    "http://gs.apple.com.v.aaplimg.com/TSS/controller?action=2",
++    "https://17.171.36.30/TSS/controller?action=2",
++    "https://17.151.36.30/TSS/controller?action=2",
++    "http://17.171.36.30/TSS/controller?action=2",
++    "http://17.151.36.30/TSS/controller?action=2"
++};
++
+ #define USER_AGENT_STRING "InetURL/1.0"
+ 
+ #define AUTH_VERSION "1033.0.6"
+@@ -778,10 +792,10 @@ int tss_request_add_ap_tags(plist_t request, plist_t parameters, plist_t overrid
+ 		}
+ 
+ 		/* skip components with IsFTAB:true */
+-		if (plist_dict_get_bool(info_dict, "IsFTAB")) {
+-			debug("DEBUG: %s: Skipping FTAB component '%s'\n", __func__, key);
+-			continue;
+-		}
++//		if (plist_dict_get_bool(info_dict, "IsFTAB")) {
++//			debug("DEBUG: %s: Skipping FTAB component '%s'\n", __func__, key);
++//			continue;
++//		}
+ 
+ 		/* copy this entry */
+ 		plist_t tss_entry = plist_copy(manifest_entry);
+@@ -975,6 +989,8 @@ int tss_request_add_se_tags(plist_t request, plist_t parameters, plist_t overrid
+ 	return 0;
+ }
+ 
++int savage_num = 0;
++
+ int tss_request_add_savage_tags(plist_t request, plist_t parameters, plist_t overrides, char **component_name)
+ {
+ 	plist_t node = NULL;
+@@ -1034,6 +1050,7 @@ int tss_request_add_savage_tags(plist_t request, plist_t parameters, plist_t ove
+ 
+ 	/* get the right component name */
+ 	comp_name = (isprod) ?  "Savage,B0-Prod-Patch" : "Savage,B0-Dev-Patch";
++        savage_num = (isprod) ? 0 : 1;
+ 	node = plist_dict_get_item(parameters, "Savage,Revision");
+ 	if (node && (plist_get_node_type(node) == PLIST_DATA)) {
+ 		uint64_t savage_rev_len = 0;
+@@ -1041,8 +1058,10 @@ int tss_request_add_savage_tags(plist_t request, plist_t parameters, plist_t ove
+ 		if (savage_rev_len > 0) {
+ 			if (((savage_rev[0] | 0x10) & 0xF0) == 0x30) {
+ 				comp_name = (isprod) ? "Savage,B2-Prod-Patch" : "Savage,B2-Dev-Patch";
++                                savage_num = (isprod) ? 2 : 3;
+ 			} else if ((savage_rev[0] & 0xF0) == 0xA0) {
+ 				comp_name = (isprod) ? "Savage,BA-Prod-Patch" : "Savage,BA-Dev-Patch";
++                                savage_num = (isprod) ? 4 : 5;
+ 			}
+ 		}
+ 	}
+@@ -1079,6 +1098,8 @@ int tss_request_add_savage_tags(plist_t request, plist_t parameters, plist_t ove
+ 	return 0;
+ }
+ 
++int yonkers_num = 0;
++
+ int tss_request_add_yonkers_tags(plist_t request, plist_t parameters, plist_t overrides, char **component_name)
+ {
+ 	plist_t node = NULL;
+@@ -1159,6 +1180,28 @@ int tss_request_add_yonkers_tags(plist_t request, plist_t parameters, plist_t ov
+ 	}
+ 
+ 	/* add Yonkers,SysTopPatch* */
++        char **yonkers_name = NULL;
++        plist_dict_get_item_key(comp_node, yonkers_name);
++        if(yonkers_name) {
++          yonkers_num = (int)strtol(*yonkers_name + strlen(*yonkers_name) - 1 , NULL, 10);
++          if(errno != 0) {
++            if((int64_t)(*yonkers_name + strlen(*yonkers_name) - 1) == (int64_t)'A') {
++              yonkers_num = 10;
++            } else if((int64_t)(*yonkers_name + strlen(*yonkers_name) - 1) == (int64_t)'B') {
++              yonkers_num = 11;
++            } else if((int64_t)(*yonkers_name + strlen(*yonkers_name) - 1) == (int64_t)'C') {
++              yonkers_num = 12;
++            } else if((int64_t)(*yonkers_name + strlen(*yonkers_name) - 1) == (int64_t)'D') {
++              yonkers_num = 13;
++            } else if((int64_t)(*yonkers_name + strlen(*yonkers_name) - 1) == (int64_t)'E') {
++              yonkers_num = 14;
++            } else if((int64_t)(*yonkers_name + strlen(*yonkers_name) - 1) == (int64_t)'F') {
++              yonkers_num = 15;
++            } else {
++              yonkers_num = -1;
++            }
++          }
++        }
+ 	if (comp_node != NULL) {
+ 		plist_t comp_dict = plist_copy(comp_node);
+ 		plist_dict_remove_item(comp_dict, "Info");
+@@ -1582,15 +1625,6 @@ plist_t tss_request_send(plist_t tss_request, const char* server_url_string)
+ 	unsigned int size = 0;
+ 	char curl_error_message[CURL_ERROR_SIZE];
+ 
+-	const char* urls[6] = {
+-		"https://gs.apple.com/TSS/controller?action=2",
+-		"https://gs.apple.com.akadns.net/TSS/controller?action=2",
+-		"https://gs.apple.com.v.aaplimg.com/TSS/controller?action=2",
+-		"http://gs.apple.com/TSS/controller?action=2",
+-		"http://gs.apple.com.akadns.net/TSS/controller?action=2",
+-		"http://gs.apple.com.v.aaplimg.com/TSS/controller?action=2"
+-	};
+-
+ 	plist_to_xml(tss_request, &request, &size);
+ 
+ 	tss_response* response = NULL;
+@@ -1682,6 +1716,9 @@ plist_t tss_request_send(plist_t tss_request, const char* server_url_string)
+ 		} else if (status_code == 126) {
+ 			// An internal error occured, most likely the request was malformed
+ 			break;
++                } else if (status_code == 128) {
++                        // ignoring error that occurs when saving blobs on certain A8(X) devices and earlier
++                        break;
+ 		} else {
+ 			error("ERROR: tss_send_request: Unhandled status code %d\n", status_code);
+ 			break;
+@@ -1724,6 +1761,150 @@ plist_t tss_request_send(plist_t tss_request, const char* server_url_string)
+ 	return tss_resp;
+ }
+ 
++char *tss_request_send_raw(char *tss_request, const char* server_url_string, int *response_length)
++{
++
++  char* request = NULL;
++  int status_code = -1;
++  int retry = 0;
++  int max_retries = 15;
++  unsigned int size = 0;
++  char curl_error_message[CURL_ERROR_SIZE];
++
++  if (response_length) *response_length = 0;
++
++  tss_response* response = NULL;
++  memset(curl_error_message, '\0', CURL_ERROR_SIZE);
++
++  while (retry++ < max_retries) {
++    response = NULL;
++    CURL* handle = curl_easy_init();
++    if (handle == NULL) {
++      break;
++    }
++    struct curl_slist* header = NULL;
++    header = curl_slist_append(header, "Cache-Control: no-cache");
++    header = curl_slist_append(header, "Content-type: text/xml; charset=\"utf-8\"");
++    header = curl_slist_append(header, "Expect:");
++
++    response = malloc(sizeof(tss_response));
++    if (response == NULL) {
++      fprintf(stderr, "Unable to allocate sufficient memory\n");
++      return NULL;
++    }
++
++    response->length = 0;
++    response->content = malloc(1);
++    response->content[0] = '\0';
++
++    /* disable SSL verification to allow download from untrusted https locations */
++    curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0);
++
++    curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, curl_error_message);
++    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, (curl_write_callback)&tss_write_callback);
++    curl_easy_setopt(handle, CURLOPT_WRITEDATA, response);
++    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, header);
++    curl_easy_setopt(handle, CURLOPT_POSTFIELDS, request);
++    curl_easy_setopt(handle, CURLOPT_USERAGENT, USER_AGENT_STRING);
++    curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, (long)strlen(request));
++    if (server_url_string) {
++      curl_easy_setopt(handle, CURLOPT_URL, server_url_string);
++      debug("Request URL set to %s\n", server_url_string);
++    } else {
++      int url_index = (retry - 1) % 6;
++      curl_easy_setopt(handle, CURLOPT_URL, urls[url_index]);
++      debug("Request URL set to %s\n", urls[url_index]);
++    }
++    if (debug_level >= 2) {
++      curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
++    }
++
++    debug("Sending TSS request attempt %d... ", retry);
++
++    curl_easy_perform(handle);
++    curl_slist_free_all(header);
++    curl_easy_cleanup(handle);
++
++    if (strstr(response->content, "MESSAGE=SUCCESS")) {
++      status_code = 0;
++      debug("response successfully received\n");
++      break;
++    }
++
++    if (response->length > 0) {
++      error("TSS server returned: %s\n", response->content);
++    }
++
++    char* status = strstr(response->content, "STATUS=");
++    if (status) {
++      sscanf(status+7, "%d&%*s", &status_code);
++    }
++    if (status_code == -1) {
++      error("%s\n", curl_error_message);
++      // no status code in response. retry
++      free(response->content);
++      free(response);
++      response = NULL;
++      sleep(2);
++      continue;
++    } else if (status_code == 8) {
++      // server error (invalid bb request?)
++      break;
++    } else if (status_code == 49) {
++      // server error (invalid bb data, e.g. BbSNUM?)
++      break;
++    } else if (status_code == 69 || status_code == 94) {
++      // This device isn't eligible for the requested build.
++      break;
++    } else if (status_code == 100) {
++      // server error, most likely the request was malformed
++      break;
++    } else if (status_code == 126) {
++      // An internal error occured, most likely the request was malformed
++      break;
++    } else if (status_code == 128) {
++      // ignoring error that occurs when saving blobs on certain A8(X) devices and earlier
++      break;
++    } else {
++      error("ERROR: tss_send_request: Unhandled status code %d\n", status_code);
++      break;
++    }
++  }
++
++  if (status_code != 0) {
++    if (response && strstr(response->content, "MESSAGE=") != NULL) {
++      char* message = strstr(response->content, "MESSAGE=") + strlen("MESSAGE=");
++      error("ERROR: TSS request failed (status=%d, message=%s)\n", status_code, message);
++    } else {
++      error("ERROR: TSS request failed: %s (status=%d)\n", curl_error_message, status_code);
++    }
++    free(request);
++    if (response) free(response->content);
++    if (response) free(response);
++    return NULL;
++  }
++
++  char* tss_data = strstr(response->content, "<?xml");
++  if (tss_data == NULL) {
++    error("ERROR: Incorrectly formatted TSS response\n");
++    free(request);
++    free(response->content);
++    free(response);
++    return NULL;
++  }
++
++  uint32_t tss_size = 0;
++  char *tss_resp = NULL;
++  tss_size = response->length - (tss_data - response->content);
++  tss_resp = response->content;
++  if (response_length) *response_length = tss_size;
++  free(response->content);
++  free(response);
++  free(request);
++
++  return tss_resp;
++}
++
+ static int tss_response_get_data_by_key(plist_t response, const char* name, unsigned char** buffer, unsigned int* length)
+ {
+ 	plist_t node = plist_dict_get_item(response, name);
+
+From 0791d07d95d84ff4aff1cda602ca4c01584602fb Mon Sep 17 00:00:00 2001
+From: Cryptiiiic <liamwqs@gmail.com>
+Date: Wed, 5 Mar 2025 13:41:58 -0800
+Subject: [PATCH 2/2] Fix raw and req/resp printing, update gitignore and tss
+ version.
+
+---
+ .gitignore             |  4 +++
+ dep_root/.keep         |  0
+ dep_root/include/.keep |  0
+ dep_root/lib/.keep     |  0
+ include/libtatsu/tss.h |  2 ++
+ src/tss.c              | 69 +++++++++++++++++++++++++++++++-----------
+ 6 files changed, 58 insertions(+), 17 deletions(-)
+ create mode 100644 dep_root/.keep
+ create mode 100644 dep_root/include/.keep
+ create mode 100644 dep_root/lib/.keep
+
+diff --git a/.gitignore b/.gitignore
+index 7fe49d4..5b5c317 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -36,3 +36,7 @@ src/libtatsu-1.0.pc
+ .idea/
+ .DS_Store
+ .vscode/
++*.zst
++dep_root/*
++dep_root/include/*
++dep_root/lib/*
+diff --git a/dep_root/.keep b/dep_root/.keep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/dep_root/include/.keep b/dep_root/include/.keep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/dep_root/lib/.keep b/dep_root/lib/.keep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/include/libtatsu/tss.h b/include/libtatsu/tss.h
+index 96c0d85..1637532 100644
+--- a/include/libtatsu/tss.h
++++ b/include/libtatsu/tss.h
+@@ -71,6 +71,8 @@ LIBTATSU_API int tss_response_get_blob_by_path(plist_t response, const char* pat
+ LIBTATSU_API int tss_response_get_blob_by_entry(plist_t response, const char* entry, unsigned char** blob);
+ 
+ LIBTATSU_API void tss_set_debug_level(int level);
++LIBTATSU_API void tss_set_print_tss_request(int enable);
++LIBTATSU_API void tss_set_print_tss_response(int enable);
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/src/tss.c b/src/tss.c
+index 6bfb2f5..4c9af0c 100644
+--- a/src/tss.c
++++ b/src/tss.c
+@@ -58,7 +58,7 @@ const char* urls[10] = {
+ 
+ #define USER_AGENT_STRING "InetURL/1.0"
+ 
+-#define AUTH_VERSION "1033.0.6"
++#define AUTH_VERSION "1049.100.21"
+ 
+ #ifdef _WIN32
+ #define TSS_CLIENT_VERSION_STRING "libauthinstall_Win-"AUTH_VERSION"" 
+@@ -74,6 +74,8 @@ typedef struct {
+ 
+ 
+ static int debug_level = 0;
++static int print_tss_request = 0;
++static int print_tss_response = 0;
+ 
+ static void error(const char* fmt, ...)
+ {
+@@ -107,6 +109,11 @@ static void debug_plist(plist_t plist)
+ 	plist_write_to_stream(plist, stderr, PLIST_FORMAT_XML, PLIST_OPT_NONE);
+ }
+ 
++static void stream_plist(plist_t plist)
++{
++	plist_write_to_stream(plist, stdout, PLIST_FORMAT_XML, PLIST_OPT_NONE);
++}
++
+ #define GET_RAND(min, max) ((rand() % (max - min)) + min)
+ 
+ static char *generate_guid(void)
+@@ -1616,8 +1623,6 @@ static size_t tss_write_callback(char* data, size_t size, size_t nmemb, tss_resp
+ 
+ plist_t tss_request_send(plist_t tss_request, const char* server_url_string)
+ {
+-	debug_plist(tss_request);
+-
+ 	char* request = NULL;
+ 	int status_code = -1;
+ 	int retry = 0;
+@@ -1625,7 +1630,10 @@ plist_t tss_request_send(plist_t tss_request, const char* server_url_string)
+ 	unsigned int size = 0;
+ 	char curl_error_message[CURL_ERROR_SIZE];
+ 
+-	plist_to_xml(tss_request, &request, &size);
++        if(print_tss_request) {
++          stream_plist(tss_request);
++        }
++        plist_to_xml(tss_request, &request, &size);
+ 
+ 	tss_response* response = NULL;
+ 	memset(curl_error_message, '\0', CURL_ERROR_SIZE);
+@@ -1754,7 +1762,9 @@ plist_t tss_request_send(plist_t tss_request, const char* server_url_string)
+ 	free(response->content);
+ 	free(response);
+ 
+-	debug_plist(tss_resp);
++        if(print_tss_response) {
++          stream_plist(tss_resp);
++        }
+ 
+ 	free(request);
+ 
+@@ -1763,15 +1773,29 @@ plist_t tss_request_send(plist_t tss_request, const char* server_url_string)
+ 
+ char *tss_request_send_raw(char *tss_request, const char* server_url_string, int *response_length)
+ {
+-
+-  char* request = NULL;
+   int status_code = -1;
+   int retry = 0;
+   int max_retries = 15;
+   unsigned int size = 0;
+   char curl_error_message[CURL_ERROR_SIZE];
+ 
+-  if (response_length) *response_length = 0;
++  int sz = 0;
++  if(!response_length) {
++    sz = strlen(tss_request) + 1;
++    response_length = &sz;
++  }
++
++  if(!tss_request) {
++    error("ERROR: Incorrectly formatted TSS request\n");
++    return NULL;
++  }
++
++  if(print_tss_request) {
++    plist_t request = NULL;
++    plist_from_xml(tss_request, *response_length, &request);
++    stream_plist(request);
++    plist_free(request);
++  }
+ 
+   tss_response* response = NULL;
+   memset(curl_error_message, '\0', CURL_ERROR_SIZE);
+@@ -1804,9 +1828,9 @@ char *tss_request_send_raw(char *tss_request, const char* server_url_string, int
+     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, (curl_write_callback)&tss_write_callback);
+     curl_easy_setopt(handle, CURLOPT_WRITEDATA, response);
+     curl_easy_setopt(handle, CURLOPT_HTTPHEADER, header);
+-    curl_easy_setopt(handle, CURLOPT_POSTFIELDS, request);
++    curl_easy_setopt(handle, CURLOPT_POSTFIELDS, tss_request);
+     curl_easy_setopt(handle, CURLOPT_USERAGENT, USER_AGENT_STRING);
+-    curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, (long)strlen(request));
++    curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, (long)*response_length);
+     if (server_url_string) {
+       curl_easy_setopt(handle, CURLOPT_URL, server_url_string);
+       debug("Request URL set to %s\n", server_url_string);
+@@ -1878,7 +1902,6 @@ char *tss_request_send_raw(char *tss_request, const char* server_url_string, int
+     } else {
+       error("ERROR: TSS request failed: %s (status=%d)\n", curl_error_message, status_code);
+     }
+-    free(request);
+     if (response) free(response->content);
+     if (response) free(response);
+     return NULL;
+@@ -1887,9 +1910,8 @@ char *tss_request_send_raw(char *tss_request, const char* server_url_string, int
+   char* tss_data = strstr(response->content, "<?xml");
+   if (tss_data == NULL) {
+     error("ERROR: Incorrectly formatted TSS response\n");
+-    free(request);
+-    free(response->content);
+-    free(response);
++    if (response) free(response->content);
++    if (response) free(response);
+     return NULL;
+   }
+ 
+@@ -1898,9 +1920,14 @@ char *tss_request_send_raw(char *tss_request, const char* server_url_string, int
+   tss_size = response->length - (tss_data - response->content);
+   tss_resp = response->content;
+   if (response_length) *response_length = tss_size;
+-  free(response->content);
+-  free(response);
+-  free(request);
++  if(print_tss_response) {
++    plist_t response_pl = NULL;
++    plist_from_xml(tss_resp, tss_size, &response_pl);
++    stream_plist(response_pl);
++    plist_free(response_pl);
++  }
++//  if (response) free(response->content);
++  if (response) free(response);
+ 
+   return tss_resp;
+ }
+@@ -2053,3 +2080,11 @@ void tss_set_debug_level(int level)
+ {
+ 	debug_level = level;
+ }
++
++void tss_set_print_tss_request(int enable) {
++  print_tss_request = enable;
++}
++
++void tss_set_print_tss_response(int enable) {
++    print_tss_response = enable;
++}

@@ -1,0 +1,56 @@
+From 1db14701ea635a7745bc84f73fe0f514a53f94d6 Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Tue, 5 Aug 2025 16:14:52 -0400
+Subject: [PATCH] rename liboffsetfinder64 to libpatchfinder
+
+---
+ configure.ac               | 4 ++--
+ iBoot64Patcher/Makefile.am | 4 ++--
+ iBoot64Patcher/main.cpp    | 2 +-
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index a0cf64f..be64052 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -26,9 +26,9 @@ CFLAGS+=" -std=c11"
+ 
+ # Checks for libraries.
+ LIBGENERAL_REQUIRES_STR="libgeneral >= 28"
+-LIBOFFSETFINDER64_REQUIRES_STR="liboffsetfinder64 >= 118"
++LIBOFFSETFINDER64_REQUIRES_STR="libpatchfinder >= 118"
+ PKG_CHECK_MODULES(libgeneral, $LIBGENERAL_REQUIRES_STR)
+-PKG_CHECK_MODULES(liboffsetfinder64, $LIBOFFSETFINDER64_REQUIRES_STR)
++PKG_CHECK_MODULES(libpatchfinder, $LIBOFFSETFINDER64_REQUIRES_STR)
+ 
+ # Checks for header files.
+ AC_CHECK_HEADERS([stdint.h stdlib.h string.h unistd.h])
+diff --git a/iBoot64Patcher/Makefile.am b/iBoot64Patcher/Makefile.am
+index 8c3ef5f..07cbfef 100644
+--- a/iBoot64Patcher/Makefile.am
++++ b/iBoot64Patcher/Makefile.am
+@@ -1,6 +1,6 @@
+-AM_CFLAGS = $(GLOBAL_CFLAGS) $(libgeneral_CFLAGS) $(liboffsetfinder64_CFLAGS)
++AM_CFLAGS = $(GLOBAL_CFLAGS) $(libgeneral_CFLAGS) $(libpatchfinder_CFLAGS)
+ AM_CXXFLAGS = $(AM_CFLAGS) $(GLOBAL_CXXFLAGS)
+-AM_LDFLAGS = $(libgeneral_LIBS) $(liboffsetfinder64_LIBS)
++AM_LDFLAGS = $(libgeneral_LIBS) $(libpatchfinder_LIBS)
+ 
+ bin_PROGRAMS = iBoot64Patcher
+ 
+diff --git a/iBoot64Patcher/main.cpp b/iBoot64Patcher/main.cpp
+index 4a06940..862508a 100644
+--- a/iBoot64Patcher/main.cpp
++++ b/iBoot64Patcher/main.cpp
+@@ -10,7 +10,7 @@
+ #include <string.h>
+ #include <stdint.h>
+ #include <stdlib.h>
+-#include <liboffsetfinder64/ibootpatchfinder64.hpp>
++#include <libpatchfinder/ibootpatchfinder/ibootpatchfinder64.hpp>
+ 
+ #define HAS_ARG(x,y) (!strcmp(argv[i], x) && (i + y) < argc)
+ 
+-- 
+2.50.1
+

@@ -1,0 +1,54 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=img1tool
+pkgver=14
+pkgrel=0
+pkgdesc="A tool for manipulating IMG1 files."
+url="https://github.com/tihmstar/img1tool"
+arch="all"
+license="LGPL-2.1-or-later"
+depends="python3"
+makedepends="
+	autoconf
+	automake
+	libgeneral-dev
+	libplist-dev
+	libtool
+	m4
+	openssl-dev
+	python3-dev
+	"
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz"
+# No tests
+options="!check"
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	libtoolize
+	aclocal
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+c0c4636159557d9a15e41d9b74e37d88b70c73b30d0c40423aead11560af2552b37437ac7077a5ebc2aa3461e01f3436e4c72dc9e7e094872e2490030ed47664  14-0.tar.gz
+"

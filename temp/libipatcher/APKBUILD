@@ -1,0 +1,67 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=libipatcher
+pkgver=96
+pkgrel=0
+pkgdesc="A convinient wrapper for iBoot32Patcher/iBoot64Patcher."
+url="https://github.com/tihmstar/libipatcher"
+arch="all"
+license="LGPL-2.1-or-later"
+depends=""
+makedepends="
+	autoconf
+	automake
+	clang
+	img3tool-dev
+	img4tool-dev
+	jssy-dev
+	libfragmentzip-dev
+	libgeneral-dev
+	libpatchfinder-dev
+	libtool
+	lld
+	llvm-dev
+	m4
+	"
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz
+	0001-Remove-git-submodule.patch
+	"
+# No tests
+options="!check"
+
+# Requires clang
+CC=clang
+CXX=clang++
+LD=lld
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	libtoolize
+	aclocal -I m4
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+bb6bf6257858c3a291fd13fd9d584d9fd7cb10c06b6b0546e03fb85df4b55e62bbc08fc5bc5d6b9246a8dee3cd667ab92c92315f480145f8321ecc9c622c0d12  96-0.tar.gz
+5eef69949bd43791c2a8ad49313e6f30ada2eeed633ea48312a09b4f9ba25f90a16668db8ae65870f6960b2c425dbc068e0f12039dcd651048a6a2861fa06e48  0001-Remove-git-submodule.patch
+"

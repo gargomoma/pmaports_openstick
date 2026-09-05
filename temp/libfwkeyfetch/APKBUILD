@@ -1,0 +1,64 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=libfwkeyfetch
+pkgver=6
+pkgrel=0
+pkgdesc="Small library to request iOS firmware keys"
+url="https://github.com/tihmstar/libfwkeyfetch"
+arch="all"
+license="LGPL-2.1-or-later"
+makedepends="
+	autoconf
+	automake
+	clang
+	curl-dev
+	jssy-dev
+	libfragmentzip-dev
+	libgeneral-dev
+	libtool
+	lld
+	llvm-dev
+	m4
+	"
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz
+	0001-include-external-jssy.patch
+	"
+# No tests
+options="!check"
+
+# Requires clang
+CC=clang
+CXX=clang++
+LDFLAGS="$LDFLAGS -fuse-ld=lld"
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	libtoolize
+	aclocal
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+4fd399cf1495b67e47b2e1385f4eb034c157dc94fe63a6ad36f431f2918bf754731931a189a9c768b0fa307f2c23b8c41617e8d2e59e104c6675d5cc394efdc5  6-0.tar.gz
+a0ba62532e9227f7913356253cbe7e663b7d8cb9bc25536a74798bb4c32d1ce3c69b437d52b61e3ece39fa345e9b416e0634c301b7e6348c09162da28f6a58be  0001-include-external-jssy.patch
+"

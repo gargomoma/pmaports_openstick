@@ -1,0 +1,35 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=py3-lzss
+pkgver=0.3.8
+pkgrel=0
+pkgdesc="LZSS library for CPython"
+url="https://github.com/m1stadev/pylzss"
+# Includes C code
+arch="all"
+license="GPL-3.0-or-later AND LGPL-3.0-or-later"
+depends="python3"
+makedepends="
+	py3-gpep517
+	py3-setuptools
+	py3-wheel
+	python3-dev
+	"
+source="$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/pylzss-$pkgver"
+# No tests
+options="!check"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+2b5a4739d696e497baa49bb0a80a278efbfc4441b64254a02a1c73dc438370225f0f08d089db9724317746712c858ce1826777b62bc8cf7cfc4558f4cfd7422a  py3-lzss-0.3.8.tar.gz
+"

@@ -1,0 +1,47 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=py3-remotezip
+pkgver=0.12.3
+pkgrel=0
+pkgdesc="Python module to access single members of a zip archive."
+url="https://github.com/gtsystem/python-remotezip"
+arch="noarch"
+license="MIT"
+depends="
+	py3-requests
+	py3-requests-mock
+	python3
+	"
+makedepends="
+	py3-gpep517
+	py3-requests
+	py3-requests-mock
+	py3-setuptools
+	py3-wheel
+	python3-dev
+"
+checkdepends="py3-pytest"
+subpackages="$pkgname-pyc"
+source="$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/python-remotezip-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	cd $builddir
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+ab8b9b1d324174b403effb56a7aaba50da5c586b91eb49a931672d7fe7da156e9bc0d006847ce8f1c724be6c4bb32fd27208cb27944a71d0a735f85d49c5c2af  py3-remotezip-0.12.3.tar.gz
+"

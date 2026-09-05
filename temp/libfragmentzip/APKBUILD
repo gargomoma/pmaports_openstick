@@ -1,0 +1,51 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=libfragmentzip
+pkgver=76
+pkgrel=0
+pkgdesc="A library allowing to download single files from a remote zip archive"
+url="https://github.com/tihmstar/libfragmentzip"
+arch="all"
+license="LGPL-3.0-or-later"
+makedepends="
+	autoconf
+	automake
+	curl-dev
+	libgeneral-dev
+	libtool
+	m4
+"
+subpackages="$pkgname-dev"
+source="$url/archive/refs/tags/$pkgver.zip"
+# No tests
+options="!check"
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	libtoolize
+	aclocal
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+3078f640bee86fcf82ba892e73fbf9b6af7813ecfa15f4e84a8b7103a49324e70e105be0e8f3a6c450a0a79567768a397d00c3729e1c7bf61ae460ed7902dec1  76.zip
+"

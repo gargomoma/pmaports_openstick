@@ -1,0 +1,80 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=tsschecker
+pkgver=343_git20240806
+_commit=d3140ead31b56ec474e09d8c5d7bff0ed94203ed
+pkgrel=0
+pkgdesc="A powerful tool to check tss signing status of various devices and firmware"
+url="https://github.com/tihmstar/tsschecker"
+arch="all"
+license="LGPL-3.0-or-later"
+makedepends="
+	autoconf
+	autoconf-archive
+	automake
+	clang
+	curl-dev
+	jssy
+	jssy-dev
+	libfragmentzip-dev
+	libgeneral-dev
+	libirecovery-dev
+	libplist-dev
+	libtatsu-dev
+	libtool
+	libzip-dev
+	lld
+	llvm-dev
+	m4
+	openssl-dev
+	zlib-dev
+"
+subpackages="$pkgname-dev"
+source="$url/archive/$_commit.tar.gz
+	0001-Remove-git-submodule.patch
+	0002-Remove-local-header-include.patch
+	0003-Fix-missing-includes.patch
+	"
+builddir="$srcdir/$pkgname-$_commit"
+# No tests
+options="!check"
+
+# Requires clang
+CC=clang
+CXX=clang++
+LD=lld
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	export LDFLAGS="$LDFLAGS -ljssy"
+	libtoolize
+	aclocal -I m4
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr \
+		--program-prefix=""
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+6c4e2cbdf0584ba697da9e27e249716f05e5baab989bb4fb4a77c7d758a6189e92cafeb85a5264e9cb4e7e9796cbcac25dceeb56b3b7ee4193cff8a19b362727  d3140ead31b56ec474e09d8c5d7bff0ed94203ed.tar.gz
+daed08d8f7dc8238e2624b03306ed99f58636b2818fe63703d033d31cd27db2cbe9d402c2482415cdaac68cef3dd4ab5088a47d59f4ca0054b1342a009bf9173  0001-Remove-git-submodule.patch
+991fcffe353d68f5b2f2e64a97ab8f3da673d188a029ed7cb6934a559f2e1b2da0782bdd684215e2736875b8857af2e4460e65ef8b25855636b34d66700b8ccc  0002-Remove-local-header-include.patch
+4eab6b87a0714e07184d73aa6422d1bf513ff82405cb52091672b64729403afffdec1d715e8b60786840705a9a7b38cd88ed4501101885e5e5fd15a13ce98536  0003-Fix-missing-includes.patch
+"

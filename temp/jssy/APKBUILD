@@ -1,0 +1,50 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=jssy
+pkgver=0_git20201219
+_commit=6de3dc6b853d9338b971c1bea0c41465276e640a
+pkgrel=0
+pkgdesc="Tiny json parser written in C."
+url="https://github.com/tihmstar/jssy"
+arch="all"
+license="MIT"
+depends=""
+makedepends="
+	cmake
+	samurai
+	"
+subpackages="$pkgname-dev"
+source="$url/archive/$_commit.tar.gz
+	0001-Port-to-cmake.patch
+	0002-Fix-wrong-types-and-c-includes.patch
+	"
+builddir="$srcdir/$pkgname-$_commit/$pkgname"
+# No tests
+options="!check"
+
+prepare() {
+	cd ../
+
+	patch -p1 < $srcdir/0001-Port-to-cmake.patch
+	patch -p1 < $srcdir/0002-Fix-wrong-types-and-c-includes.patch
+}
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=None \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=/usr/lib
+	cmake --build build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	install -Dm644 $builddir/jssy.h \
+		$pkgdir/usr/include/jssy.h	
+}
+
+sha512sums="
+7b929798882bd2e1d75e1d5485aab7bd8e72627ad3611ecab40133baada0397ef2e4e5dd36a655843e91a2764642c511f9a173381e1de25295fa2910baf07f9d  6de3dc6b853d9338b971c1bea0c41465276e640a.tar.gz
+6f89aaa15e8763cdb219099d9ee0d9fdf2f1e81443e74fcd7d931409632f1677879a50c01e000c14f37d8652aeccee7f0450890cb3363e6180ed8cf4aa9cd7fc  0001-Port-to-cmake.patch
+9d65249fc84d1041b9866eac25fca34bc20f7eecedf690cbdda8ec74f557f6ec643f08d5898cd427dd7b841976f20eff43dc88403381f9e5ec7305177b115fcb  0002-Fix-wrong-types-and-c-includes.patch
+"

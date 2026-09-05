@@ -1,0 +1,26 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=kairos
+pkgver=0.2.1_git20220918
+_commit=e3fb437c5f20630eff99c30871f1460b0fd6406b
+pkgrel=0
+pkgdesc="64-bit iOS boot image patcher written in C"
+url="https://github.com/dayt0n/kairos"
+arch="all"
+license="GPL-3.0-or-later"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/$_commit.tar.gz"
+# No tests
+options="!check"
+builddir="$srcdir/$pkgname-$_commit"
+
+build() {
+	make
+}
+
+package() {
+	install -Dm755 "$builddir"/"$pkgname" \
+		"$pkgdir"/usr/bin/"$pkgname"
+}
+
+sha512sums="
+d12a9df3ed822613ca1d0fb58c089da6ae2e204e33fc480bdfa327f4253f30588936dff87db087bd5398f73f2ea528cd5ed2bba2b695977c6ad589ff0f971339  0.2.1_git20220918-0.tar.gz
+"

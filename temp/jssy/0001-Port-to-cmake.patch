@@ -1,0 +1,37 @@
+From 8f28c89cf6e8a08af9bf185804c50a0717fe6ca0 Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Wed, 2 Apr 2025 14:51:05 -0400
+Subject: [PATCH 1/2] Port to cmake
+
+---
+ jssy/CMakeLists.txt | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 jssy/CMakeLists.txt
+
+diff --git a/jssy/CMakeLists.txt b/jssy/CMakeLists.txt
+new file mode 100644
+index 0000000..5b664b2
+--- /dev/null
++++ b/jssy/CMakeLists.txt
+@@ -0,0 +1,18 @@
++cmake_minimum_required( VERSION 3.8 )
++
++set( CMAKE_CXX_STANDARD 11 )
++
++project( jssy )
++
++add_library( jssy SHARED jssy.c jssy.cpp )
++target_include_directories( jssy PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )
++
++if( BUILD_EXE )
++    add_executable( jssy_exe cppmain.cpp cmain.c )
++    target_link_libraries( jssy_exe jssy )
++endif()
++
++include(GNUInstallDirs)
++install(TARGETS jssy
++    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+-- 
+2.49.0
+

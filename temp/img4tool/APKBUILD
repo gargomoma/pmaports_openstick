@@ -1,0 +1,55 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=img4tool
+pkgver=212
+pkgrel=0
+pkgdesc="A tool for manipulating IMG4, IM4M and IM4P files."
+url="https://github.com/tihmstar/img4tool"
+arch="all"
+license="LGPL-3.0-or-later"
+makedepends="
+	autoconf
+	automake
+	libgeneral-dev
+	libplist-dev
+	libtool
+	lzfse
+	lzfse-dev
+	m4
+	openssl-dev
+	"
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz"
+# No tests
+options="!check"
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	libtoolize
+	aclocal
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr \
+		--program-prefix=""
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+07534a66dfa76a15b211864281da3c509eeeca13ee1f36980184029a73f3149aee00f7c77f351a29f3f1b173b75a5d250798c5f2233ed19bd91c6646f799add3  212-0.tar.gz
+"

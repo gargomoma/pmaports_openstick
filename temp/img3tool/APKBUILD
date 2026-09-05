@@ -1,0 +1,52 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=img3tool
+pkgver=10
+pkgrel=0
+pkgdesc="A tool for manipulating IMG3 files."
+url="https://github.com/tihmstar/img3tool"
+arch="all"
+license="LGPL-3.0-or-later"
+makedepends="
+	autoconf
+	automake
+	libgeneral-dev
+	libplist-dev
+	libtool
+	m4
+	openssl-dev
+	"
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz"
+# No tests
+options="!check"
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	libtoolize
+	aclocal
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+564a12e65f4668a8e15d7320c9cee13e59f67fc293765985e3dfd59494c48f73d2b5843b43672028aa942f772fd8124b41a75ee6a935fbdfcd439af8422e6c1e  10-0.tar.gz
+"

@@ -1,0 +1,79 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=m1n1-idevice
+pkgver=0_git20250323
+_commit="f9e9cae6cff756fd49ebcf97790ff72230a01720"
+pkgrel=0
+pkgdesc="m1n1 with more support for A7-A11, T2 SoCs"
+url="https://github.com/HoolockLinux/m1n1"
+arch="aarch64"
+license="MIT"
+makedepends="
+	cargo
+	imagemagick
+	inkscape
+	postmarketos-artwork-icons
+	rust
+	rustup
+	"
+subpackages="$pkgname-udev:_udev:noarch"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz
+	0001-rust-vendor-deps-with-git.patch
+	"
+builddir="$srcdir/m1n1-$_commit"
+# !check: No tests
+# net:    cargo fetch and rustup
+options="!check net"
+
+prepare() {
+	default_prepare
+
+	cd $builddir/rust
+	cargo fetch --locked
+
+	# Needs a target not in Alpine
+	rustup-init \
+		-y \
+		-c std \
+		--target $CARCH-unknown-none-softfloat
+	. $HOME/.cargo/env
+
+	# Generate logo
+	cd $builddir/data
+	rm -r *.png
+	rm -r *.bin
+	inkscape -w 48 -h 48 /usr/share/pixmaps/postmarketos-logo.svg \
+		-o bootlogo_48.png
+	inkscape -w 128 -h 128 /usr/share/pixmaps/postmarketos-logo.svg \
+		-o bootlogo_128.png
+	inkscape -w 256 -h 256 /usr/share/pixmaps/postmarketos-logo.svg \
+		-o bootlogo_256.png
+	./makelogo.sh
+}
+
+build() {
+	CHAINLOADING=1 make
+}
+
+package() {
+	# Install Darwin-compatible macho
+	install -Dm644 $builddir/build/m1n1.macho \
+		$pkgdir/usr/lib/m1n1/m1n1-idevice.macho
+
+	# Install Linux-compatible bin
+	install -Dm644 $builddir/build/m1n1.bin \
+		$pkgdir/usr/lib/m1n1/m1n1-idevice.bin
+}
+
+_udev() {
+	pkgdesc="$pkgname (udev rules)"
+	install_if="$pkgname=$pkgver-r$pkgrel udev"
+
+	mkdir -p $subpkgdir/usr/lib/udev/
+	install -Dm644 $builddir/udev/80-m1n1.rules \
+		$subpkgdir/usr/lib/udev/
+}
+
+sha512sums="
+0a25ce924672e6e68c652dcf91847de6d85d52ecb7375bff8d855fd087efc1427d4863a93981cf39f6731b75a36b4d3e76d312d009a45c996e3ee484b43b1d57  m1n1-idevice-f9e9cae6cff756fd49ebcf97790ff72230a01720.tar.gz
+19cd522ce1ce851e796d0605a0c94216bd9f4dee3f4e184df35ca7fee18f000531118e0b68879bdab5a0c00868878f4800d909217bc0205c1f1dcde2164c846f  0001-rust-vendor-deps-with-git.patch
+"

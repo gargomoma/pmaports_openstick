@@ -1,0 +1,39 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=py3-returns
+pkgver=0.24.0
+pkgrel=0
+pkgdesc="Make your functions return something meaningful, typed, and safe!"
+url="https://github.com/dry-python/returns"
+arch="noarch"
+license="BSD-2-Clause"
+depends="
+	python3
+	"
+makedepends="
+	py3-gpep517
+	py3-poetry-core
+	py3-setuptools
+	py3-wheel
+	python3-dev
+	"
+checkdepends="py3-pytest"
+subpackages="$pkgname-pyc"
+source="$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/returns-$pkgver"
+# Tests require circular dependency
+options="!check"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+0688f42e232e66644acd3a52190a7da6448d24e47fc3d011124c19f10c3bc2d96ea28242054d9f17794f4dcc291f2f9f43d0fa5f5d2fd571196c0031a9b03eef  py3-returns-0.24.0.tar.gz
+"

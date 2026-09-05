@@ -1,0 +1,73 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=iboot64patcher
+pkgver=14_git20240922
+_commit=ad4716a52ba87fcab5579b27f1df7d33a2f000fd
+pkgrel=0
+pkgdesc="A reboot of iBoot32Patcher with twice the amount of bits"
+url="https://github.com/tihmstar/iBoot64Patcher"
+arch="all"
+license="LGPL-2.1-or-later"
+depends="libusb"
+makedepends="
+	autoconf
+	automake
+	clang
+	libgeneral-dev
+	libpatchfinder-dev
+	libtool
+	lld
+	llvm
+	"
+
+# img3tool-dev
+# img4tool-dev
+# libinsn-dev
+# libplist-dev
+# libpatchfinder-dev
+# openssl-dev
+
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/$_commit.tar.gz
+	0001-rename-liboffsetfinder64-to-libpatchfinder.patch
+	"
+# No tests
+options="!check"
+builddir="$srcdir/iBoot64Patcher-$_commit"
+
+CC=clang
+CXX=clang++
+LD=lld
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	# export CFLAGS="$CFLAGS -I/usr/include/cctools"
+	# export CXXFLAGS="$CXXFLAGS -I/usr/include/cctools"
+	libtoolize
+	aclocal
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+27b8e9cbdd3a1cbb7063ba70cecbe3ac0668d19a96b4ca794fa5518c0aaa7b15b21e5661fa2887e253bb9270e907b2678f88c129ba1c58cb527d3d918b7fdab6  14_git20240922-0.tar.gz
+9446cda1c9a4b8339134e4d9a23e80a6b1df34c94e9a7456dc138a4c0e95478d8bbd4ba0347081a0360cf135a0d8bedb5b43d5fbf37973bdaffff9b0738cf047  0001-rename-liboffsetfinder64-to-libpatchfinder.patch
+"

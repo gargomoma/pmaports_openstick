@@ -1,0 +1,57 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=py3-uv-dynamic-versioning
+pkgver=0.6.0
+pkgrel=0
+pkgdesc="Dynamic versioning based on VCS tags for uv/hatch project"
+url="https://github.com/ninoseki/uv-dynamic-versioning"
+arch="noarch"
+license="MIT"
+depends="
+	py3-dunamai
+	py3-gitpython
+	py3-pydantic
+	py3-returns
+	py3-tomlkit
+	python3
+	"
+makedepends="
+	py3-dunamai
+	py3-gpep517
+	py3-hatchling
+	py3-gitpython
+	py3-pydantic
+	py3-setuptools
+	py3-tomlkit
+	py3-wheel
+	python3-dev
+	"
+checkdepends="git py3-pytest py3-returns"
+subpackages="$pkgname-pyc"
+source="$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/uv-dynamic-versioning-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	git init
+	git add .
+	git config user.email "test@alpinelinux.org"
+	git config user.name "Alpine Test"
+	git commit -m "test"
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+e063b260dd28aa70cc15493b162b3b1acc93b1b46f4a1164d813efccfaac14ec0bb842aaf8b7fea693ab33874752d7016f222774440250e968da4dc5e47f34f8  py3-uv-dynamic-versioning-0.6.0.tar.gz
+"

@@ -1,0 +1,65 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=libpatchfinder
+pkgver=170
+pkgrel=0
+pkgdesc="An arm offsetfinder."
+url="https://github.com/tihmstar/libpatchfinder"
+arch="all"
+license="LGPL-2.1-or-later"
+makedepends="
+	autoconf
+	automake
+	cctools-dev
+	clang
+	img3tool-dev
+	img4tool-dev
+	libgeneral-dev
+	libinsn-dev
+	libtool
+	lld
+	llvm
+	m4
+	openssl-dev
+	"
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz"
+# No tests
+options="!check"
+
+# Requires Clang
+CC=clang
+CXX=clang++
+LD=lld
+
+prepare() {
+	default_prepare
+
+	sed -i -e \
+		"s/git rev-list --count HEAD | tr -d \\'\\\n\\'/printf $pkgver/g" \
+		$builddir/configure.ac
+}
+
+build() {
+	export CFLAGS="$CFLAGS -I/usr/include/cctools"
+	export CXXFLAGS="$CXXFLAGS -I/usr/include/cctools"
+	libtoolize
+	aclocal
+	autoconf
+	autoheader
+	automake --add-missing
+	autoreconf -i
+	./configure \
+		--build=$CBUILD \
+		--host=$CBUILD \
+		--target=$CTARGET \
+		--prefix=/usr
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+727ddd80277572c8d56d51bc9227982e190ba7f1e7cdea65d8a26d1a07bb526ef80ef04fbe14b6dfa33cf4c4342935b39f1fed59ac53dc9fded342396d41d2f3  170-0.tar.gz
+"

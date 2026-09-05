@@ -1,0 +1,35 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=gaster
+pkgver=0_git20230202
+_commit="7fffffff38a1bed1cdc1c5bae0df70f14395129b"
+pkgrel=0
+pkgdesc="Checkm8 experiment to understand AP/SEP internals."
+url="https://github.com/0x7ff/gaster"
+arch="all"
+license="Apache-2.0"
+depends="
+	libusb
+	openssl
+	"
+makedepends="
+	libusb-dev
+	openssl-dev
+	xxd
+	"
+source="$url/archive/$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+# No tests
+options="!check"
+
+build() {
+	make libusb
+}
+
+package() {
+	install -Dm755 $builddir/$pkgname \
+		$pkgdir/usr/bin/$pkgname
+}
+
+sha512sums="
+f7a0bd8e3a63b6a63ed50ebee0fa5906a432d2f5a271868cacc2b05c9fc0566bd2279c82d9bb23e6dc1a9a607d6ab7f1e448c888f9830929155b304a4edef47c  7fffffff38a1bed1cdc1c5bae0df70f14395129b.tar.gz
+"

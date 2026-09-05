@@ -1,0 +1,25 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=trustcache
+pkgver=2.0
+pkgrel=0
+pkgdesc="Tool to interact with trustcaches"
+url="https://github.com/CRKatri/trustcache"
+arch="all"
+license="BSD-2-Clause"
+makedepends="libmd-dev openssl-dev"
+subpackages="$pkgname-doc"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+# No tests
+options="!check"
+
+build() {
+	make PREFIX=/usr
+}
+
+package() {
+	make PREFIX=/usr DESTDIR=$pkgdir install
+}
+
+sha512sums="
+6ce8736b94334546872fbe026314c9d1c12033f70d4a5ddf6bc12b4d8ae58aca5ef49aba41052dcf7d9117be9a84263f8e4cd5b30137cf23b76ed9cfbe6d55f1  2.0-0.tar.gz
+"

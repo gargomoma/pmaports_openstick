@@ -1,0 +1,395 @@
+From 3aaa9af45a7369527416a5c1df6eac91f1fd28d3 Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Wed, 2 Apr 2025 14:51:30 -0400
+Subject: [PATCH 2/2] Fix wrong types and c++ includes
+
+---
+ jssy/cmain.c  | 120 ++++++++++++++++++--------------------
+ jssy/helper.h |  29 +++++----
+ jssy/jssy.cpp | 158 +++++++++++++++++++++++---------------------------
+ 3 files changed, 149 insertions(+), 158 deletions(-)
+
+diff --git a/jssy/cmain.c b/jssy/cmain.c
+index 7936316..288a599 100644
+--- a/jssy/cmain.c
++++ b/jssy/cmain.c
+@@ -6,73 +6,69 @@
+ //  Copyright © 2017 tihmstar. All rights reserved.
+ //
+ 
+-#include <stdio.h>
+ #include "jssy.h"
++#include <assert.h>
++#include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <assert.h>
+ 
+ #include "jssy_create.h"
+ 
++int main(int argc, const char *argv[]) {
++  char *buf = NULL;
++  size_t size = 0;
++  FILE *f = fopen("/tmp/firmwares.json", "r");
++  fseek(f, 0, SEEK_END);
++  size = ftell(f);
++  fseek(f, 0, SEEK_SET);
++
++  buf = malloc(size);
++  fread(buf, 1, size, f);
++  fclose(f);
++
++  long ret;
++  ret = jssy_parse(buf, size, NULL, 0);
++  assert(ret > 0);
++  size_t tokensSize = ret * sizeof(jssytok_t);
++  jssytok_t *tokens = malloc(tokensSize);
++
++  ret = jssy_parse(buf, size, tokens, tokensSize);
++  printf("ret=%ld\n", ret);
++
++  char *ppp = jssy_dump((jssy_create_tok_t)tokens);
++
++  size_t len = strlen(ppp);
++
++  size_t z = 0;
++  char *p = &ppp[z];
++  char *b = &buf[z];
++
++  while (*p && *b) {
++    do {
++      p++;
++      b++;
++      z++;
++    } while (*p == *b);
++
++    if (strncmp(p, "0", 1) == 0 && strncmp(b, "false", 5) == 0) {
++      b += 4;
++      continue;
++    }
++
++    if (strncmp(p, "1", 1) == 0 && strncmp(b, "true", 4) == 0) {
++      b += 3;
++      continue;
++    }
++
++    printf("");
++  }
++
++  return 1;
++
++  jssytok_t *devs = jssy_dictGetValueForKey(tokens, "devices");
+ 
+-int main(int argc, const char * argv[]) {
+-    char *buf = NULL;
+-    size_t size = 0;
+-    FILE *f = fopen("/tmp/firmwares.json","r");
+-    fseek(f, 0, SEEK_END);
+-    size = ftell(f);
+-    fseek(f, 0, SEEK_SET);
+-    
+-    buf = malloc(size);
+-    fread(buf, 1, size, f);
+-    fclose(f);
+-        
+-    long ret;
+-    ret = jssy_parse(buf, size, NULL, 0);
+-    assert(ret > 0);
+-    size_t tokensSize = ret * sizeof(jssytok_t);
+-    jssytok_t *tokens = malloc(tokensSize);
+-    
+-    ret = jssy_parse(buf, size, tokens, tokensSize);
+-    printf("ret=%d\n",ret);
+-    
+-    char *ppp = jssy_dump((jssy_create_tok_t) tokens);
+-   
+-    size_t len = strlen(ppp);
+-    
+-    size_t z = 0;
+-    char *p = &ppp[z];
+-    char *b = &buf[z];
+-
+-    while (*p && *b) {
+-        do {
+-            p++;
+-            b++;
+-            z++;
+-        }
+-        while (*p == *b);
+-        
+-        if (strncmp(p, "0", 1) == 0 && strncmp(b, "false", 5) == 0) {
+-            b+=4;
+-            continue;
+-        }
+-
+-        if (strncmp(p, "1", 1) == 0 && strncmp(b, "true", 4) == 0) {
+-            b+=3;
+-            continue;
+-        }
+-
+-        printf("");
+-    }    
+-    
+-    return 1;
+-    
+-    jssytok_t *devs = jssy_dictGetValueForKey(tokens, "devices");
+-    
+-    
+-    
+-    printf("done\n");
+-    free(tokens);
+-    free(buf);
+-    return 0;
++  printf("done\n");
++  free(tokens);
++  free(buf);
++  return 0;
+ }
+diff --git a/jssy/helper.h b/jssy/helper.h
+index cd8232f..246c465 100644
+--- a/jssy/helper.h
++++ b/jssy/helper.h
+@@ -9,20 +9,27 @@
+ #ifndef helper_h
+ #define helper_h
+ 
++#define reterror(err) throw jssyException(__LINE__, err)
++#define assure(cond)                                                           \
++  if ((cond) == 0)                                                             \
++  throw jssyException(__LINE__, "assure failed")
++#define retassure(cond, err)                                                   \
++  if ((cond) == 0)                                                             \
++  throw jssyException(__LINE__, err)
+ 
+-#define reterror(err) throw jssyException(__LINE__,err)
+-#define assure(cond) if ((cond) == 0) throw jssyException(__LINE__, "assure failed")
+-#define retassure(cond, err) if ((cond) == 0) throw jssyException(__LINE__,err)
++#include <exception>
++#include <string>
++
++class jssyException : public std::exception {
++  std::string _err;
++  int _code;
+ 
+-class jssyException : public std::exception{
+-    std::string _err;
+-    int _code;
+ public:
+-    jssyException(int code, const std::string &err) : _err(err), _code(code) {};
+-    jssyException(const std::string &err) : _err(err), _code(0) {};
+-    jssyException(int code) : _code(code) {};
+-    const char *what(){return _err.c_str();}
+-    int code(){return _code;}
++  jssyException(int code, const std::string &err) : _err(err), _code(code) {};
++  jssyException(const std::string &err) : _err(err), _code(0) {};
++  jssyException(int code) : _code(code) {};
++  const char *what() { return _err.c_str(); }
++  int code() { return _code; }
+ };
+ 
+ #endif /* helper_h */
+diff --git a/jssy/jssy.cpp b/jssy/jssy.cpp
+index 664a6da..91eb2b4 100644
+--- a/jssy/jssy.cpp
++++ b/jssy/jssy.cpp
+@@ -6,124 +6,112 @@
+ //  Copyright © 2017 tihmstar. All rights reserved.
+ //
+ 
++#include "helper.h"
+ #include "jssy.hpp"
+ #include <fstream>
+-#include "helper.h"
+ 
+-extern "C"{
++extern "C" {
+ #include <string.h>
+ }
+ 
+ using namespace std;
+ using namespace jssycpp;
+ 
+-std::string ReplaceAll(std::string str, const std::string& from, const std::string& to) {
+-    size_t start_pos = 0;
+-    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+-        str.replace(start_pos, from.length(), to);
+-        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+-    }
+-    return str;
++std::string ReplaceAll(std::string str, const std::string &from,
++                       const std::string &to) {
++  size_t start_pos = 0;
++  while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
++    str.replace(start_pos, from.length(), to);
++    start_pos +=
++        to.length(); // Handles case where 'to' is a substring of 'from'
++  }
++  return str;
+ }
+ 
+-jssy::jssy(string filename){
+-    fstream file;
+-    file.open(filename);
+-        
+-    std::string buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+-    file.close();
+-    
+-    assure((_cnt = c::jssy_parse(buffer.c_str(), buffer.size(), NULL, NULL)) > 0);
+-    
+-    assure(_token = (c::jssytok_t*)malloc(_cnt * sizeof(c::jssytok_t)));
+-    
+-    assure((_cnt = c::jssy_parse(buffer.c_str(), buffer.size(), (c::jssytok_t*)_token, _cnt * sizeof(c::jssytok_t))) > 0);
+-}
++jssy::jssy(string filename) {
++  fstream file;
++  file.open(filename);
+ 
++  std::string buffer((std::istreambuf_iterator<char>(file)),
++                     std::istreambuf_iterator<char>());
++  file.close();
+ 
+-jssy::jssy(const c::jssytok_t *token) :_token(token), _cnt(0) {}
+-jssy::jssy(const jssy& token) : _token(token._token),_cnt(0) {}
++  assure((_cnt = c::jssy_parse(buffer.c_str(), buffer.size(), NULL, 0)) > 0);
+ 
++  assure(_token = (c::jssytok_t *)malloc(_cnt * sizeof(c::jssytok_t)));
+ 
+-jssy::~jssy(){
+-    if (_cnt)
+-        free((c::jssytok_t*)_token);
++  assure((_cnt = c::jssy_parse(buffer.c_str(), buffer.size(),
++                               (c::jssytok_t *)_token,
++                               _cnt * sizeof(c::jssytok_t))) > 0);
+ }
+ 
+-c::jssytype_t jssy::type() const{
+-    return _token->type;
+-}
++jssy::jssy(const c::jssytok_t *token) : _token(token), _cnt(0) {}
++jssy::jssy(const jssy &token) : _token(token._token), _cnt(0) {}
+ 
+-size_t jssy::size() const{
+-    return _token->size;
++jssy::~jssy() {
++  if (_cnt)
++    free((c::jssytok_t *)_token);
+ }
+ 
+-std::string jssy::stringValue() const{
+-    retassure(_token->type == c::JSSY_STRING || _token->type == c::JSSY_DICT_KEY, "not a string");
+-    string rt(_token->value,_token->size);
+-    rt = ReplaceAll(rt, "\\\"", "\"");
+-    rt = ReplaceAll(rt, "\\\\", "\\");
+-    rt = ReplaceAll(rt, "\\\t", "\t");
+-    rt = ReplaceAll(rt, "\\\r", "\r");
+-    rt = ReplaceAll(rt, "\\\n", "\n");
+-    return rt;
+-}
++c::jssytype_t jssy::type() const { return _token->type; }
+ 
+-jssy jssy::subval() const{
+-    assure(_token->type == c::JSSY_DICT_KEY);
+-    return {_token->subval};
+-}
++size_t jssy::size() const { return _token->size; }
+ 
+-double jssy::numval() const{
+-    retassure(_token->type == c::JSSY_PRIMITIVE, "not a number");
+-    return _token->numval;
++std::string jssy::stringValue() const {
++  retassure(_token->type == c::JSSY_STRING || _token->type == c::JSSY_DICT_KEY,
++            "not a string");
++  string rt(_token->value, _token->size);
++  rt = ReplaceAll(rt, "\\\"", "\"");
++  rt = ReplaceAll(rt, "\\\\", "\\");
++  rt = ReplaceAll(rt, "\\\t", "\t");
++  rt = ReplaceAll(rt, "\\\r", "\r");
++  rt = ReplaceAll(rt, "\\\n", "\n");
++  return rt;
+ }
+ 
+-jssy::operator double() const{
+-    return numval();
++jssy jssy::subval() const {
++  assure(_token->type == c::JSSY_DICT_KEY);
++  return {_token->subval};
+ }
+ 
+-jssy::operator string() const{
+-    return stringValue();
++double jssy::numval() const {
++  retassure(_token->type == c::JSSY_PRIMITIVE, "not a number");
++  return _token->numval;
+ }
+ 
+-jssy::operator bool() const{
+-    return _token;
+-}
++jssy::operator double() const { return numval(); }
+ 
+-jssy::iterator jssy::begin() const{
+-    return {(*this)[0],_token->size,_token->type == c::JSSY_DICT};
+-}
++jssy::operator string() const { return stringValue(); }
+ 
+-jssy::iterator jssy::end() const{
+-    return {NULL,0,0};
+-}
+-
+-jssy jssy::operator [](int index) const{
+-    retassure(_token->type == c::JSSY_ARRAY || _token->type == c::JSSY_DICT, "not a list");
+-    size_t s = _token->size;
+-    const c::jssytok_t *cur = _token->subval;
+-    while (index--) {
+-        assure(s--);
+-        cur=cur->next;
+-    }
+-    return {cur};
+-}
++jssy::operator bool() const { return _token; }
+ 
+-jssy jssy::operator [](string key) const{
+-    retassure(_token->type == c::JSSY_DICT, "not a dict");
+-    
+-    c::jssytok_t *tmp = _token->subval;
+-    for (size_t i = 0; i< _token->size; i++){
+-        if (tmp->size == key.size() && strncmp(tmp->value, key.c_str(), tmp->size) == 0)
+-            return {tmp->subval};
+-        tmp = tmp->next;
+-    }
+-    return {NULL};
++jssy::iterator jssy::begin() const {
++  return {(*this)[0], _token->size, _token->type == c::JSSY_DICT};
+ }
+ 
++jssy::iterator jssy::end() const { return {NULL, 0, 0}; }
+ 
++jssy jssy::operator[](int index) const {
++  retassure(_token->type == c::JSSY_ARRAY || _token->type == c::JSSY_DICT,
++            "not a list");
++  size_t s = _token->size;
++  const c::jssytok_t *cur = _token->subval;
++  while (index--) {
++    assure(s--);
++    cur = cur->next;
++  }
++  return {cur};
++}
+ 
++jssy jssy::operator[](string key) const {
++  retassure(_token->type == c::JSSY_DICT, "not a dict");
+ 
+-
+-
++  c::jssytok_t *tmp = _token->subval;
++  for (size_t i = 0; i < _token->size; i++) {
++    if (tmp->size == key.size() &&
++        strncmp(tmp->value, key.c_str(), tmp->size) == 0)
++      return {tmp->subval};
++    tmp = tmp->next;
++  }
++  return {NULL};
++}
+-- 
+2.49.0
+

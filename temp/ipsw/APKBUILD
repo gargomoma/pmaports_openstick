@@ -1,0 +1,59 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=ipsw
+pkgver=3.1.623
+pkgrel=0
+pkgdesc="iOS/macOS research swiss army knife"
+url="https://github.com/blacktop/ipsw"
+arch="all"
+license="MIT"
+depends="libusb"
+makedepends="
+	bash
+	fd
+	go
+	libusb-dev
+	"
+checkdepends=""
+install=""
+subpackages="$pkgname-doc $pkgname-daemon"
+source="https://github.com/blacktop/$pkgname/archive/v$pkgver/$pkgname-$pkgver.tar.gz"
+builddir="$srcdir/ipsw-$pkgver"
+# net: go downloads packages from the internet
+# !check: no tests
+options="net !check"
+
+export GOCACHE="${GOCACHE:-"$srcdir/go-cache"}"
+export GOTMPDIR="${GOTMPDIR:-"$srcdir"}"
+export GOMODCACHE="${GOMODCACHE:-"$srcdir/go"}"
+
+build() {
+	go build ./cmd/ipsw
+	go build ./cmd/ipswd
+	make docs
+}
+
+package() {
+	# install binaries
+	bins="ipsw ipswd"
+	for i in $bins; do
+		install -Dm755 "$builddir"/"$i" \
+			"$pkgdir"/usr/bin/"$i"
+	done
+
+	# install documentation
+	mkdir -p "$pkgdir"/usr/share/doc/"$pkgname"
+	mv "$builddir"/www/docs/* \
+		"$pkgdir"/usr/share/doc/"$pkgname"/
+	install -Dm644 "$builddir"/LICENSE \
+		"$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
+}
+
+daemon() {
+	pkgdesc="$pkgdesc (daemon)"
+
+	amove usr/bin/ipswd
+}
+
+sha512sums="
+18b990fc204efd3cabac26bb59cfb21714ff12bde7d9b9f6f3ee5d875d22d28082c5e3fe0cf680f5ae15fc26841bd442b6c71da2fe511000307ce3fd85e5ed7b  ipsw-3.1.623.tar.gz
+"

@@ -1,0 +1,50 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=py3-lzfse
+pkgver=0.4.2
+pkgrel=0
+_lzfsever=1.0
+pkgdesc="Python bindings for the LZFSE reference implementation"
+url="https://github.com/m1stadev/lzfse"
+# Includes C code
+arch="all"
+license="MIT AND BSD-3-CLAUSE"
+depends="python3"
+makedepends="
+	lzfse
+	lzfse-dev
+	py3-gpep517
+	py3-setuptools
+	py3-wheel
+	python3-dev
+	"
+source="$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz
+	https://github.com/lzfse/lzfse/archive/refs/tags/lzfse-$_lzfsever.tar.gz
+	"
+builddir="$srcdir/lzfse-$pkgver"
+# No tests
+options="!check"
+
+LDFLAGS="$LDFLAGS -llzfse"
+
+prepare() {
+	default_prepare
+
+	cp -r $srcdir/lzfse-lzfse-$_lzfsever/* \
+		$builddir/lzfse/
+}
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+9242d11e50154e2acd971cd0356cd51f5392900adf67470d5aeed90ca145c9a44eb6345b4cadcfa316523c07961498f9d6e35eef24cbcdd62477879300094461  py3-lzfse-0.4.2.tar.gz
+9d7ca44e6d3d2bdf4b82b0eb66c14922369b8b6fe2cf891187a77c6708b8d26c2c1b2ccddec6059e85dbbbb37c497419549f02812b5f34d06238ac246a8cf912  lzfse-1.0.tar.gz
+"

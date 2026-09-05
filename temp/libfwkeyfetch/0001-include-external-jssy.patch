@@ -1,0 +1,47 @@
+From 015b88892c813c523575dc18be1d46384ed752ae Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Mon, 10 Nov 2025 14:54:44 -0500
+Subject: [PATCH] include external jssy
+
+Signed-off-by: Aster Boese <asterboese@mailbox.org>
+---
+ libfwkeyfetch/Makefile.am       | 9 ++-------
+ libfwkeyfetch/libfwkeyfetch.cpp | 2 +-
+ 2 files changed, 3 insertions(+), 8 deletions(-)
+
+diff --git a/libfwkeyfetch/Makefile.am b/libfwkeyfetch/Makefile.am
+index 2cbee45..da322a3 100644
+--- a/libfwkeyfetch/Makefile.am
++++ b/libfwkeyfetch/Makefile.am
+@@ -1,13 +1,8 @@
+-AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/external/jssy/jssy/ $(libcurl_CFLAGS) $(libfragmentzip_CFLAGS) $(libgeneral_CFLAGS)
++AM_CFLAGS = -I$(top_srcdir)/include $(libcurl_CFLAGS) $(libfragmentzip_CFLAGS) $(libgeneral_CFLAGS)
+ AM_LDFLAGS = -L$(top_srcdir)/libfwkeyfetch $(libcurl_LIBS) $(libfragmentzip_LIBS) $(libgeneral_LIBS)
+ 
+-noinst_LTLIBRARIES = libjssy.la
+-
+ lib_LTLIBRARIES = libfwkeyfetch.la
+ 
+-libjssy_la_CFLAGS = $(AM_CFLAGS)
+-libjssy_la_SOURCES = $(top_srcdir)/external/jssy/jssy/jssy.c
+-
+ libfwkeyfetch_la_CXXFLAGS = $(AM_CFLAGS)
+-libfwkeyfetch_la_LIBADD = libjssy.la $(AM_LDFLAGS)
++libfwkeyfetch_la_LIBADD = $(AM_LDFLAGS)
+ libfwkeyfetch_la_SOURCES = libfwkeyfetch.cpp
+diff --git a/libfwkeyfetch/libfwkeyfetch.cpp b/libfwkeyfetch/libfwkeyfetch.cpp
+index 60c7819..c473d2f 100644
+--- a/libfwkeyfetch/libfwkeyfetch.cpp
++++ b/libfwkeyfetch/libfwkeyfetch.cpp
+@@ -25,7 +25,7 @@
+ #endif //HAVE_LIBFRAGMENTZIP
+ 
+ extern "C" {
+-#include "jssy.h"
++#include <jssy.h>
+ }
+ 
+ #ifdef WITH_REMOTE_KEYS
+-- 
+2.51.1
+

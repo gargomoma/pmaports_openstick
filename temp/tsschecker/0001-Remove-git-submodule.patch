@@ -1,0 +1,24 @@
+From a698ddbda29f20d7cefb157420ec9a42a643ef40 Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Wed, 2 Apr 2025 15:52:51 -0400
+Subject: [PATCH] Remove git submodule
+
+---
+ tsschecker/Makefile.am | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/tsschecker/Makefile.am b/tsschecker/Makefile.am
+index 7265325..6f955f5 100644
+--- a/tsschecker/Makefile.am
++++ b/tsschecker/Makefile.am
+@@ -11,7 +11,6 @@ libtsschecker_la_CFLAGS = $(AM_CFLAGS)
+ libtsschecker_la_CXXFLAGS = $(AM_CXXFLAGS)
+ libtsschecker_la_LDFLAGS = $(AM_LDFLAGS)
+ libtsschecker_la_SOURCES = 	tsschecker.cpp \
+-							../external/jssy/jssy/jssy.c \
+ 							TssRequest.cpp \
+ 							TSSException.cpp \
+ 							FirmwareAPI.cpp \
+-- 
+2.49.0
+

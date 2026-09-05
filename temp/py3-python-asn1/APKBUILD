@@ -1,0 +1,55 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=py3-python-asn1
+pkgver=2.7.1
+pkgrel=0
+pkgdesc="A simple ASN.1 encoder and decoder for Python 2.7 and 3.5+"
+url="https://github.com/andrivet/python-asn1"
+arch="noarch"
+license="MIT"
+depends="
+	py3-future
+	py3-typing-extensions
+	python3
+	"
+makedepends="
+	py3-gpep517
+	py3-setuptools
+	py3-wheel"
+checkdepends="
+	py3-coverage
+	py3-nose
+	py3-pytest
+	py3-tox
+	"
+subpackages="$pkgname-pyc"
+source="$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz
+	0001-use-tox-offline.patch
+	0002-use-remove-enum-compat-dep.patch
+	"
+builddir="$srcdir/python-asn1-$pkgver"
+# net: tox always seems to call the network, even when it shouldn't
+# !check: fails to find environments in config file
+options="net !check"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m tox -e test
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+ddc01c56e84f3e2296220fc08469b85d7dc2b22e8591b909899255fe87c9699e3c46dc9bd160d36b2268c850c09f294afb7357138f0b12ae20ab058733c8391b  py3-python-asn1-2.7.1.tar.gz
+40500edfd428dab01449696cabd52034a8b464f42feb7d61411dc0aeb4cb45c55f51e1f3bb77adac022a0a03446a50b11cbe0b28c6a01dc43f007cc449b6aad4  0001-use-tox-offline.patch
+b0556cc99e9961da628c0b4960e25894e752d0c0ac051a78c2a1ba4b1c0ce79291eddf5d49c4c764b92d2b3e0be0021ef632dbd09e814e3bb46ecf6cee790830  0002-use-remove-enum-compat-dep.patch
+"

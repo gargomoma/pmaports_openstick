@@ -1,0 +1,26 @@
+From a4ec504ba115a0e0d125ace90896c8ddb0cb36c0 Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Tue, 25 Mar 2025 17:16:10 -0400
+Subject: [PATCH] use tox offline
+
+---
+ tox.ini | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/tox.ini b/tox.ini
+index 4c73c57..94cf5dd 100644
+--- a/tox.ini
++++ b/tox.ini
+@@ -23,6 +23,9 @@ python =
+   3.13: py313
+ 
+ [testenv]
++allowlist_externals =
++    coverage
++    pytest
+ setenv =
+     PYTHONPATH={toxinidir}/tests
+     PYTHONUNBUFFERED=yes
+-- 
+2.49.0
+

@@ -1,0 +1,25 @@
+From 72c96318491479680babca0a0d835819ccc81b61 Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Wed, 2 Apr 2025 16:05:47 -0400
+Subject: [PATCH] Remove local header include
+
+---
+ tsschecker/FirmwareAPI_IPSWME.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tsschecker/FirmwareAPI_IPSWME.cpp b/tsschecker/FirmwareAPI_IPSWME.cpp
+index 20a4ffb..bcfa956 100644
+--- a/tsschecker/FirmwareAPI_IPSWME.cpp
++++ b/tsschecker/FirmwareAPI_IPSWME.cpp
+@@ -14,7 +14,7 @@
+ #include <sys/stat.h>
+ 
+ extern "C"{
+-#include "../external/jssy/jssy/jssy.h"
++#include <jssy.h>
+ }
+ 
+ using namespace tihmstar::tsschecker;
+-- 
+2.49.0
+

@@ -1,0 +1,68 @@
+From d415c08d0c03812a655bac9dfca85dd5793e78b4 Mon Sep 17 00:00:00 2001
+From: Aster Boese <asterboese@mailbox.org>
+Date: Mon, 10 Nov 2025 16:42:09 -0500
+Subject: [PATCH] shim strtoul_l
+
+musl doesn't have strtoul_l, so shim it
+---
+ ra1nsn0w/main.cpp             | 2 +-
+ ra1nsn0w/ra1nsn0w_plugins.cpp | 2 +-
+ tools/iBootPatcher/main.cpp   | 2 +-
+ tools/kernelPatcher/main.cpp  | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/ra1nsn0w/main.cpp b/ra1nsn0w/main.cpp
+index bc58251..cf8ace8 100644
+--- a/ra1nsn0w/main.cpp
++++ b/ra1nsn0w/main.cpp
+@@ -35,7 +35,7 @@ extern "C"{
+ #endif //WITH_PLUGIN_SUPPORT
+ 
+ #ifndef HAVE_STRTOUL_L
+-#define strtoul_l _strtoul_l
++#define strtoul_l(s, p, base, l) strtoul(s, p, base)
+ #endif
+ 
+ #ifndef LC_GLOBAL_LOCALE
+diff --git a/ra1nsn0w/ra1nsn0w_plugins.cpp b/ra1nsn0w/ra1nsn0w_plugins.cpp
+index dd0384c..9c5efc6 100644
+--- a/ra1nsn0w/ra1nsn0w_plugins.cpp
++++ b/ra1nsn0w/ra1nsn0w_plugins.cpp
+@@ -223,7 +223,7 @@ static const char helpScreenKernelPatches[] =
+ 
+ 
+ #ifndef HAVE_STRTOUL_L
+-#define strtoul_l _strtoul_l
++#define strtoul_l(s, p, base, l) strtoul(s, p, base)
+ #endif
+ 
+ #ifndef LC_GLOBAL_LOCALE
+diff --git a/tools/iBootPatcher/main.cpp b/tools/iBootPatcher/main.cpp
+index 33ee9d0..6c92b37 100644
+--- a/tools/iBootPatcher/main.cpp
++++ b/tools/iBootPatcher/main.cpp
+@@ -31,7 +31,7 @@ extern "C"{
+ #endif //WITH_PLUGIN_SUPPORT
+ 
+ #ifndef HAVE_STRTOUL_L
+-#define strtoul_l _strtoul_l
++#define strtoul_l(s, p, base, l) strtoul(s, p, base)
+ #endif
+ 
+ #ifndef LC_GLOBAL_LOCALE
+diff --git a/tools/kernelPatcher/main.cpp b/tools/kernelPatcher/main.cpp
+index a24b914..1ae429a 100644
+--- a/tools/kernelPatcher/main.cpp
++++ b/tools/kernelPatcher/main.cpp
+@@ -32,7 +32,7 @@ extern "C"{
+ #endif //WITH_PLUGIN_SUPPORT
+ 
+ #ifndef HAVE_STRTOUL_L
+-#define strtoul_l _strtoul_l
++#define strtoul_l(s, p, base, l) strtoul(s, p, base)
+ #endif
+ 
+ #ifndef LC_GLOBAL_LOCALE
+-- 
+2.51.1
+

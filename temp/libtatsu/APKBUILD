@@ -1,0 +1,51 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=libtatsu
+pkgver=1.0.4
+pkgrel=0
+pkgdesc="Library handling the communication with Apple's Tatsu Signing Server (TSS)"
+url="https://github.com/libimobiledevice/libtatsu"
+arch="all"
+license="LGPL-2.1-only"
+depends=""
+makedepends="
+	automake
+	autoconf
+	curl-dev
+	libplist-dev
+	libtool
+	openssl-dev
+"
+subpackages="$pkgname-dev"
+source="https://github.com/libimobiledevice/$pkgname/archive/refs/tags/$pkgver.zip
+	0001-futurerestore.patch
+"
+# No tests
+options="!check"
+
+prepare() {
+	default_prepare
+
+	echo "$pkgver" > $builddir/.tarball-version
+	cd "$builddir" && ./autogen.sh
+}
+
+build() {
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix="$pkgdir"/usr \
+		--mandir=/usr/share/man \
+		--sysconfdir=/etc \
+		--docdir=/usr/share/doc/procps \
+		--datarootdir=/usr/share \
+	make
+}
+
+package() {
+	make install
+}
+
+sha512sums="
+4995d73829fa50cfb79c8ed78b6facecad3f3d2e2ab9c272ebddeacec0fc6c2fec8925099345b0c18ab51782898404e0baec487fc6b727d6bfa784948c4e5ded  1.0.4.zip
+bba63983264904edbf8423287ed763bd92cea144e7dc0b6cb64439abd7ee463ef8c7c612d7b84d26ebc4f1ef08892245344a5bc23c377f962b03443c565f11a6  0001-futurerestore.patch
+"

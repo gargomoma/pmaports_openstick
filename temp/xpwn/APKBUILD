@@ -1,0 +1,60 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=xpwn
+pkgver=0_git20230503
+_commit=1761ad435514c7dfbad19dab9225f295184073b8
+pkgrel=0
+pkgdesc="A NOR firmware loader and custom IPSW generator"
+url="https://github.com/lunaynx/xpwn"
+arch="all"
+license="GPL-3.0-or-later"
+depends="libusb"
+makedepends="
+	bzip2-dev
+	clang
+	cmake
+	libpng-dev
+	libusb-dev
+	lld
+	llvm
+	openssl-dev
+	samurai
+	zlib-dev
+	"
+subpackages="$pkgname-dev"
+source="$pkgver-$pkgrel.tar.gz::$url/archive/$_commit.tar.gz"
+# No tests
+options="!check"
+builddir="$pkgname-$_commit"
+
+export CC=clang
+export CXX=clang++
+export LD=lld
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_BUILD_SHARED_LIBS=on
+	cmake --build build
+}
+
+package() {
+	# cmake --install is broken
+	# DESTDIR="$pkgdir" cmake --install build
+
+	install -Dm755 "$builddir"/build/hfs/hfsplus \
+		"$pkgdir"/usr/bin/hfsplus
+	install -Dm755 "$builddir"/build/hdutil/hdutil \
+		"$pkgdir"/usr/bin/hdutil
+	install -Dm755 "$builddir"/build/dmg/dmg \
+		"$pkgdir"/usr/bin/dmg
+	_ipsw_patch_bins="ticket validate imagetool xpwntool ipsw"
+	for i in $_ipsw_patch_bins; do
+		install -Dm755 "$builddir"/build/ipsw-patch/$i \
+			"$pkgdir"/usr/bin/$i
+	done
+}
+
+sha512sums="
+6a4e79ff501dc7d7ae7ba61cbba3f69c6108bd73647f8beb9c13e739a251a0a96b10895d8e0418d008f047e3f7bb2677a5fb646361c62978aca5a06fc073c077  0_git20230503-0.tar.gz
+"

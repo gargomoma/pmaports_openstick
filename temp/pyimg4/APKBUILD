@@ -1,0 +1,65 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=pyimg4
+pkgver=0.8.7
+pkgrel=0
+pkgdesc="A Python library/CLI tool for parsing Apple's Image4 format."
+url="https://github.com/m1stadev/PyIMG4"
+arch="noarch"
+license="MIT"
+depends="
+	py3-click
+	py3-hatchling
+	py3-lzfse
+	py3-lzss
+	py3-pycryptodome
+	py3-python-asn1
+	py3-remotezip
+	py3-uv-dynamic-versioning
+	python3
+	"
+makedepends="
+	lzfse-dev
+	py3-gpep517
+	py3-hatchling
+	py3-lzfse
+	py3-lzss
+	py3-poetry-dynamic-versioning
+	py3-pycryptodome
+	py3-python-asn1
+	py3-remotezip
+	py3-setuptools
+	py3-uv-dynamic-versioning
+	py3-wheel
+	python3-dev
+	"
+checkdepends="
+	py3-pytest
+	"
+subpackages="$pkgname-pyc"
+source="$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz
+	0001-revert-dbe8d48.patch
+	"
+builddir="$srcdir/PyIMG4-$pkgver"
+
+build() {
+	export UV_DYNAMIC_VERSIONING_BYPASS="$pkgver"
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	 python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+c5943df060131b282fb164fff2770b64e5790bc357e25cd729a8d597a7ae85e111b9469bfaf31df872123f956b41e3d822c21bf4fe6a74de3ae0515d9260dedc  pyimg4-0.8.7.tar.gz
+c7e3b2dfb1cd48e36e6515fe844a329e2647d2f712e99771c8c8ba00f4e1ca2d9a2eecf24ea516efaa7d37df41d99a5e8723d3c92886f9ddfe16bbd0b6477b4d  0001-revert-dbe8d48.patch
+"
