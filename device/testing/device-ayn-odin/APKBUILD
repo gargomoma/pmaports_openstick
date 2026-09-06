@@ -2,8 +2,8 @@
 maintainer="Stefan Hansson <newbyte@postmarketos.org>"
 pkgname=device-ayn-odin
 pkgdesc="AYN Odin"
-pkgver=8
-pkgrel=1
+pkgver=9
+pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
 arch="aarch64"
@@ -18,7 +18,6 @@ depends="
 	alsa-ucm-conf-sdm845
 	rmtfs
 	soc-qcom
-	soc-qcom-pd-mapper
 	soc-qcom-qbootctl
 	systemd-boot
 "
