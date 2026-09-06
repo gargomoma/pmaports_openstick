@@ -56,5 +56,12 @@ rc-update -q add postmarketos-zram-swap default
 rc-update -qq del tmpfs default || true
 # To disable mounting /tmp as tmpfs, set tmpfs_size=0 in /etc/conf.d/tmpfs
 rc-update -q add tmpfs boot
+# sysusers.d and tmpfiles.d are hard dependencies of the rootfs and should
+# always be enabled, so forcing this on upgrade will not impact users
+rc-update -q add systemd-tmpfiles-setup boot
+rc-update -q add systemd-tmpfiles-clean shutdown
+rc-update -q add systemd-sysusers sysinit
+rc-update -q add systemd-tmpfiles-setup-dev-early sysinit
+rc-update -q add systemd-tmpfiles-setup-dev sysinit
 
 exit 0
