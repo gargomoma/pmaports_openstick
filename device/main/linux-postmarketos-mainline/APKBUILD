@@ -1,8 +1,8 @@
 # Co-Maintainer: Achill Gilgenast <achill@achill.org>
 maintainer="Aelin <aelin@postmarketos.org>"
 pkgname=linux-postmarketos-mainline
-pkgver=7.2
-pkgrel=0
+pkgver=7.3_rc2
+pkgrel=1
 _rel=${pkgver#*_p}
 _kver=${pkgver%_p*}
 _kver=${_kver//_/-}
@@ -59,11 +59,15 @@ makedepends="
 # Nathan's fork, he does not have time to upstream them right now but would be
 # happy if someone else did:
 # https://lore.kernel.org/linuxppc-dev/aXs8sgAcci9FKKpx@luna/
+#
+# Patch #3 is in kbuild-next and fixes compilation issues on x86
 source="
 	$pkgname-$pkgver.tar.gz::https://git.kernel.org/torvalds/t/linux-${pkgver/_/-}.tar.gz
 
 	0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
 	0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
+
+	0003-kbuild-dont-delete-in-flight-filechk.patch
 
 	config-mainline.aarch64
 	config-mainline.armv7
@@ -119,14 +123,15 @@ package() {
 }
 
 sha512sums="
-52d5aa7f94f6aa6141debf4ceb4fc7a2e75505a7cd38b8854e501be83c2b57863020f463f2fdb2fc93667e6cfe13274d077e5207a611e4797bd9404ee0e64c58  linux-postmarketos-mainline-7.2.tar.gz
+a378128cc439112fbf9b69f45e57ee613930e6a3f4f0ec107ffc3cee9a62e6665c9508347c783fd084169214075012c5f41aaedde4840ae26e0030213ce2d798  linux-postmarketos-mainline-7.3_rc2.tar.gz
 1f11df2480e9f691573283597160b4c806e492cdca4825f3acb3afb70bde43abfab487bcde1f5553b431a702a0039479d041b0ce7859970e706b5a51d2ad8fb0  0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
 302c20c85559fc9b3b2420ed25be1bfbb76c87f2a470e4141c32e9542cf1f5c6b3b5a7847231a3eaa0f6bc0e5942d0c1599e807175dcf5e63469704c3d6adde3  0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
-f9ae52489f6b9e6fef64952943cd09732a5bef90a0e8765db03c256483028368687d6d5a1d80dd813a513e7e80d91f8b47f49b91cff67266b76f1d6275a7fea0  config-mainline.aarch64
-88650b838e74f8ee3d0e6b54646ed617c3daa7146cae41aafd760a5481b83d7f19a64d914c229f6ca8b52cd1b1a9fce0139c17b2db08287769e4229d3861e178  config-mainline.armv7
-d64b85970e6e447d6934806c02634aecf0d7759ecfe88b69c74a065e662e49a620010b924adc7be38997d5d4f7722bef3bb3574ab66c4cd85b95b1468ba3acd4  config-mainline.loongarch64
-51eb802321f13d4cf7a96c26d6a6602c44396f3b24ee82dfdd11029ec4609527b2692248026e83295c2ec4fd242d67a47abc93ad31578ba172e94f8606d6948f  config-mainline.ppc64le
-c475314dfa6d050fc6bf21369ba9fdf35a48ff40c225d7525bcb2b1b2409a825bd73fddb5fb92122bd7fbd675efd3f2d442033aecaec0829b58ed0ba61f9ec0a  config-mainline.riscv64
-04be62991aa58f3e7a449c3a7b14c9b813c0a8d6efeafa86a0fd7d6233286f90682bd3e9282cd1756939c91eef951d919eba03289bcd04199b8460baf066c98a  config-mainline.x86
-83e1879eb9f9bab959ab4d0abc7e3dda8c1e0057483eb809f8a6eb11d178ec8612a773be5a6efaa42b17d4489e743ba9be62eba57cfa8a5cb517d58d65ea5170  config-mainline.x86_64
+d4d7b0f4328fee89ffea6f115670da81a88df13b2390fa0b761e2f747134d2398e3a7b07b206ea9b5ea33c162a4ea3b6fdf3e298f6a668636cedad298fc94893  0003-kbuild-dont-delete-in-flight-filechk.patch
+eeedc2f8fa9200619a29313d3f0146b32d01d2f398d91b807264721173571bcfda96c762be771f0682311570795384ed109b2434e54975ddeb7d40267116ca59  config-mainline.aarch64
+c261951922a7e8c2b2eb9935a14565e70be004390e5fc8ef3db3950c3b0847fce05cfe0814f27628d9c022a6f99116867d8b8ebc8cb6dc3f2f3adb4863c79218  config-mainline.armv7
+8bdee23f74bbf871ab593c8e218f83a0ae0cc546e8c7557c4a6e9b2e1ba2be1126babe98eede8dbf52ac7fe690c1d76fb7e7a96eed4769b9539bb4ffc015ae2b  config-mainline.loongarch64
+ab84bf3d28ba8fa9368f01b15b2beb2595ee19b001c5bfd180f202fb4e1a3f2371d4c67a3fc6be488ce74b5dce3cc82aeabca4e39244252114cf2b5bb3d80d29  config-mainline.ppc64le
+fb3c9c683120524f4ee5034085571841d552984fa63ed0266daa7a2041670e2a693e193c637e837a76099f423f95cfde0a4c1f79267016774e04b3c12c148cde  config-mainline.riscv64
+6bde53f0f7fdda0883545d6cd3f034c608761475b0c573619a4d11cd05a4daa3d02f8ed4b91b3c4ccf0251d44187c6dd716d261628bb1390f6e6e4174274a67d  config-mainline.x86
+c10363c53328f954084d3095adb3832f2c958aca37d51e0d24c82cfdeb502f80a1a70f4d80c5eede3c8a64b2ae8059ab14314471945ee8fbc879a4eb755b4b37  config-mainline.x86_64
 "
