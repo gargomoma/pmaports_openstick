@@ -4,7 +4,7 @@ maintainer="Achill Gilgenast <achill@achill.org>"
 pkgname=networkmanager
 _pkgver=1.58.0
 pkgver=9999$_pkgver
-pkgrel=0
+pkgrel=1
 pkgdesc="Network Management daemon"
 url="https://wiki.gnome.org/Projects/NetworkManager"
 # armhf: pmb#2618
@@ -27,6 +27,7 @@ makedepends="
 	libnl3-dev
 	libnvme-dev
 	libpsl-dev
+	libselinux-dev
 	libxslt
 	linux-headers
 	meson
@@ -120,7 +121,7 @@ build() {
 		-Dpppd=/usr/sbin/pppd \
 		-Dpppd_plugin_dir=/usr/lib/pppd/2.5.1 \
 		-Dqt=false \
-		-Dselinux=false \
+		-Dselinux=true \
 		-Dsystemdsystemunitdir=/usr/lib/systemd/system \
 		-Dsystemdsystemgeneratordir=/usr/lib/systemd/system-generators \
 		-Dudev_dir=/usr/lib/udev \
