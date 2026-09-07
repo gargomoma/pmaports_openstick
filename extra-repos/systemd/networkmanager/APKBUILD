@@ -1,10 +1,10 @@
 # Forked from Alpine to build with systemd support.
 # integrates with logind for sleepmonitor and sessionmonitor.
-maintainer=""
+maintainer="Achill Gilgenast <achill@achill.org>"
 pkgname=networkmanager
-_pkgver=1.56.1
+_pkgver=1.58.0
 pkgver=9999$_pkgver
-pkgrel=1
+pkgrel=0
 pkgdesc="Network Management daemon"
 url="https://wiki.gnome.org/Projects/NetworkManager"
 # armhf: pmb#2618
@@ -13,12 +13,15 @@ license="GPL-2.0-or-later"
 depends_dev="$pkgname=$pkgver-r$pkgrel libnm=$pkgver-r$pkgrel"
 makedepends="
 	bash
+	bpftool
+	clang
 	curl-dev
 	dbus-glib-dev
 	gettext-dev
 	gnutls-dev
 	gobject-introspection-dev
 	jansson-dev
+	libbpf-dev
 	libgudev-dev
 	libndp-dev
 	libnl3-dev
@@ -111,7 +114,6 @@ build() {
 		-Diptables=/sbin/iptables \
 		-Diwd=true \
 		-Dlibaudit=no \
-		-Dmodify_system=true \
 		-Dnft=/usr/sbin/nft \
 		-Dofono=true \
 		-Dpolkit=true \
@@ -120,6 +122,7 @@ build() {
 		-Dqt=false \
 		-Dselinux=false \
 		-Dsystemdsystemunitdir=/usr/lib/systemd/system \
+		-Dsystemdsystemgeneratordir=/usr/lib/systemd/system-generators \
 		-Dudev_dir=/usr/lib/udev \
 		-Dvapi=true \
 		-Dsession_tracking=systemd \
@@ -241,7 +244,7 @@ _default_plugin() {
 }
 
 sha512sums="
-4c1e3c2d701a2d1239be72f4923479d542ed5c8467661cd900595a56501468d22ef129c06005e5937cd5d2b0927c46996653f87a4ac4aa1ccc57caf617425711  networkmanager-1.56.1.tar.gz
+0fef52aa7d911ddac016f86773e029ff767ba3b2a95e92750c2bebb04b2f35bdbd46263f83dbabe384780ea18da2431246cafc1e87d66cbb6cb20956d397a40e  networkmanager-1.58.0.tar.gz
 0f79016bf717dea43830962f524deae8d1cedc274376e40bd912ebe63208c5b1c3b7a5aa14379da19020c587dbd5588df2f0066ca1540070a226983a43e4159b  networkmanager.conf
 9820ed2ead0af689644842de57657bb10330a1eaff0e85b21ae9913f55e399e47d8b41b0a12956f30de80272b4424c6e55f33acbc88e156879003a260bf576f6  networkmanager.rules
 d1d23a2409f325814b2e361b886217efc0140af152723dfc5d049b1b6880ccc104d5c117d52fed6d0d87f46a1d477376592ba58531d383d9590cdf6af0b2b5f9  0001-hack-wifi-Disable-WPA-PSK-SHA256-for-brcmfmac-in-AP-.patch
