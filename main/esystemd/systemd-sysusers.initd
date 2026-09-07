@@ -9,7 +9,7 @@ depend() {
 start() {
 	if [ -x /usr/lib/sysusers.d ]; then
 		ebegin "Creating system users from sysusers.d"
-		/usr/bin/systemd-sysusers --create
+		/usr/bin/systemd-sysusers
 		eend $?
 	fi
 }
