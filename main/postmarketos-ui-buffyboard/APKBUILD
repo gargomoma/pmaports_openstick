@@ -1,14 +1,13 @@
 # Reference: https://postmarketos.org/uipkg
 maintainer="exkc <exkc@exkc.moe>"
 pkgname=postmarketos-ui-buffyboard
-pkgver=2
-pkgrel=2
+pkgver=4
+pkgrel=0
 pkgdesc="Plain framebuffer console with modern touchscreen keyboard support"
 url="https://gitlab.postmarketos.org/postmarketOS/buffybox"
 arch="all"
 license="GPL-3.0-or-later"
 depends="
-	dnsmasq
 	buffyboard
 	postmarketos-base-ui
 	postmarketos-base-ui-audio
@@ -16,7 +15,7 @@ depends="
 	"
 subpackages="$pkgname-openrc $pkgname-systemd"
 source="buffyboard.init buffyboard.service"
-options="!check" # No tests
+options="!check pmb:default-openrc pmb:support-openrc pmb:support-systemd" # No tests
 
 package() {
 	install -Dm755 "$srcdir"/buffyboard.init "$pkgdir"/etc/init.d/buffyboard
@@ -24,14 +23,12 @@ package() {
 }
 
 openrc() {
-	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	default_openrc
 	install="$subpkgname.post-install $subpkgname.pre-deinstall $subpkgname.post-upgrade"
 	depends="
 		openrc
 		networkmanager-openrc
-	"
-
-	mkdir -p "$subpkgdir"
+		"
 }
 
 sha512sums="

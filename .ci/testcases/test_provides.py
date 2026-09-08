@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright 2023 Oliver Smith
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
@@ -34,15 +33,31 @@ def apkbuild_check_provides(path, apkbuild, version, pkgname, subpkgname=None):
     for provide in apkbuild["provides"]:
         # Having provides entries without version is valid if the
         # provider_priorty is also set (pma#1766)
-        if apkbuild["provider_priority"]:
+        # We use `is not None` here to allow priorities of 0, as
+        # otherwise Python would interpret 0 to mean False and the
+        # check would fail.
+        if apkbuild["provider_priority"] is not None:
             continue
         # Otherwise the version =$pkgver-r$pkgrel needs to be set. pmbootstrap
         # already replaces the variables, so we check against the inserted
         # values here.
         if not provide.endswith(f"={version}"):
+            # alsa-ucm-conf is a bit of a special case, since many packages
+            # provide it. And we need to make sure that the provide has a
+            # version below that of upstream
+            if provide.startswith("alsa-ucm-conf"):
+                if not provide.startswith("alsa-ucm-conf=0."):
+                    error = f"error in alsa-ucm-conf provider for {path}\n."
+                    error += "The alsa-ucm-conf provider version must start"
+                    error += " with '0.' to not replace the normal upstream"
+                    error += " alsa-ucm-conf in other devices"
+                    ret.append(error)
+                continue
             # Valid version strings, per the APKBUILD reference, are fine. This regex
             # attempts to detect those.
-            pattern = r'^\d+(\.\d+)*[a-z]?(_(?:alpha|beta|pre|rc|cvs|svn|git|hg|p)\d*)*-r\d+$'
+            pattern = (
+                r"^\d+(\.\d+)*[a-z]?(_(?:alpha|beta|pre|rc|cvs|svn|git|hg|p)\d*)*-r\d+$"
+            )
             [provide_no_ver, provide_ver] = provide.split("=", 1)
             if not re.match(pattern, provide_ver):
                 error = f"error in , provide_ver{path}:\n"
@@ -60,7 +75,9 @@ def apkbuild_check_provides(path, apkbuild, version, pkgname, subpkgname=None):
                 error += " version on purpose, you also need to set a"
                 error += " provider_priority (pma#1766).\n"
                 error += "Reference:"
-                error += " https://wiki.alpinelinux.org/wiki/APKBUILD_Reference#provides"
+                error += (
+                    " https://wiki.alpinelinux.org/wiki/APKBUILD_Reference#provides"
+                )
                 error += f"\nVERSION: {provide_no_ver}"
                 ret += [error]
     return ret
@@ -80,8 +97,9 @@ def test_provides():
             if not subpkg_data:
                 # default packaging function like -doc
                 continue
-            errors += apkbuild_check_provides(path_rel, subpkg_data, version,
-                                              pkgname, subpkg)
+            errors += apkbuild_check_provides(
+                path_rel, subpkg_data, version, pkgname, subpkg
+            )
 
     if errors:
         for error in errors:

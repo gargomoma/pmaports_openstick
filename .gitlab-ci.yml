@@ -30,10 +30,6 @@ workflow:
     # Run scheduled pipeline for autoupdate or manually triggered pipeline
     - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
 
-# Some packages have their own yaml files defining tests. All of these should contain
-# only jobs which extend the .package-test job!
-include: "**/.gitlab-ci.yml"
-
 # device documentation
 wiki:
   stage: lint
@@ -111,6 +107,9 @@ pytest-commits:
 
 # APKBUILD linting
 aport-lint:
+  # alpine:latest doesn't have the most recent atools-go, which means we would
+  # miss some linting rules that were added upstream. Use alpine:edge instead.
+  image: alpine:edge
   stage: lint
   rules:
     - if: *mr_rule
@@ -146,10 +145,25 @@ kernel-kconfig:
       allow_failure: true
     - if: *mr_rule
       changes:
-        - device/*/linux-*/config-*
+        - device/*/linux-*/APKBUILD
   script:
     - .ci/lib/gitlab_prepare_ci.sh
     - .ci/kconfig.sh
+
+# validate generic kernel kconfig
+generate-all-kconfigs:
+  stage: lint
+  rules:
+    - if: *mr_rule
+      changes:
+      - kconfig-generic.toml
+      - kconfigcheck.toml
+  script:
+    - .ci/check-generic-kconfig.sh
+  artifacts:
+    when: always
+    paths:
+      - kconfig-*.log
 
 # Verify checksums
 verify-checksums:
@@ -171,6 +185,18 @@ mr-settings:
   script:
     - wget -q "https://gitlab.postmarketos.org/postmarketOS/ci-common/-/raw/main/check_mr_settings.py"
     - python3 ./check_mr_settings.py
+
+pmbootstrap minimum version:
+  stage: lint
+  rules:
+    - if: *mr_rule
+      changes:
+        - .ci/check-pmbootstrap-min-version.sh
+        - .gitlab-ci.yml
+        - pmaports.cfg
+  script:
+    - .ci/lib/gitlab_prepare_ci.sh
+    - .ci/check-pmbootstrap-min-version.sh
 
 # Calculate build of changed aports using a dynamic downstream pipelines:
 # https://docs.gitlab.com/ci/pipelines/downstream_pipelines/#dynamic-child-pipelines
@@ -260,10 +286,24 @@ auto-update:
       - log_testsuite_pmaports.txt
       - pmbootstrap.cfg
 
-# Template for package test jobs defined per-package
-.package-test:
+cross-gcc-tests:
   stage: test
+  tags: [qemu]
+  before_script:
+    - wget "https://gitlab.postmarketos.org/postmarketOS/ci-common/-/raw/main/install_pmbootstrap.sh"
+    - sh ./install_pmbootstrap.sh
+  script:
+    - su pmos -c "pmbootstrap build gcc-aarch64"
+    - su pmos -c "pmbootstrap build --arch=aarch64 hello-world --force"
+    - su pmos -c "pmbootstrap build --arch=aarch64 iskey --force"
+    - su pmos -c "pmbootstrap build --arch=aarch64 mkbootimg-osm0sis --force"
+    - su pmos -c "pmbootstrap build --arch=aarch64 gcc-x86_64"
   rules:
     - if: *mr_rule
-  before_script:
-    - .ci/lib/gitlab_prepare_ci.sh
+      changes:
+        - cross/gcc-x86_64/APKBUILD
+  artifacts:
+    when: always
+    paths:
+      - log.txt
+    expire_in: 1 week

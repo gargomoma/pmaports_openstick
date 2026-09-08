@@ -2,7 +2,7 @@
 maintainer="Ferass El Hafidi <funderscore@postmarketos.org>"
 pkgname=device-amlogic-aarch64-tvbox
 pkgdesc="Amlogic AArch64 TV box"
-pkgver=12
+pkgver=19
 pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
@@ -10,6 +10,7 @@ arch="aarch64"
 options="!check !archcheck"
 depends="
 	dtc
+	linux-firmware-meson
 	postmarketos-base
 	soc-amlogic-aarch64
 	u-boot-tools
@@ -22,13 +23,17 @@ source="
 	modules-initfs
 "
 subpackages="
+	$pkgname-kernel-fiberhome-hg680p:kernel_fiberhome_hg680p
 	$pkgname-kernel-p201:kernel_p201
 	$pkgname-kernel-p212:kernel_p212
 	$pkgname-kernel-p241:kernel_p241
 	$pkgname-kernel-p281:kernel_p281
+	$pkgname-kernel-sei510:kernel_sei510
 	$pkgname-kernel-ugoos-am3:kernel_ugoos_am3
 	$pkgname-kernel-videostrong-kii-pro:kernel_videostrong_kii_pro
 	$pkgname-kernel-xiaomi-aquaman:kernel_xiaomi_aquaman
+	$pkgname-kernel-xiaomi-once:kernel_xiaomi_once
+	$pkgname-kernel-zte-b860h:kernel_zte_b860h
 "
 provides="device-amlogic-tvbox=$pkgver-r$pkgrel"
 replaces="device-amlogic-tvbox"
@@ -53,31 +58,45 @@ aml_boot_prep() {
 	chmod 644 "$2"/usr/share/u-boot/amlogic-tvbox/boot-image.its # Perms fixup
 }
 
+kernel_fiberhome_hg680p() {
+	pkgdesc="Kernel for FiberHome HG680-P (S905X)"
+	depends="linux-firmware-rtlwifi linux-postmarketos-amlogic u-boot-amlogic-s905x-tv"
+	aml_boot_prep "meson-gxl-s905x-fiberhome-hg680p.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
 kernel_p201() {
-	pkgdesc="Kernel for Amlogic P201-based TV box (S905)"
+	pkgdesc="Kernel for Amlogic P201-based TV box (S905) [ONLY FOR TESTING]"
 	depends="linux-postmarketos-amlogic u-boot-amlogic-s905-tv"
 	aml_boot_prep "meson-gxbb-p201.dtb" "$subpkgdir"
 	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
 }
 
 kernel_p212() {
-	pkgdesc="Kernel for Amlogic P212-based TV box (S905X)"
+	pkgdesc="Kernel for Amlogic P212-based TV box (S905X) [ONLY FOR TESTING]"
 	depends="linux-postmarketos-amlogic u-boot-amlogic-s905x-tv"
 	aml_boot_prep "meson-gxl-s905x-p212.dtb" "$subpkgdir"
 	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
 }
 
 kernel_p241() {
-	pkgdesc="Kernel for Amlogic P241-based TV box (S805X/S805Y)"
+	pkgdesc="Kernel for Amlogic P241-based TV box (S805X/S805Y) [ONLY FOR TESTING]"
 	depends="linux-postmarketos-amlogic u-boot-amlogic-s905x-tv"
 	aml_boot_prep "meson-gxl-s805x-p241.dtb" "$subpkgdir"
 	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
 }
 
 kernel_p281() {
-	pkgdesc="Kernel for Amlogic P281-based TV box (S905W)"
+	pkgdesc="Kernel for Amlogic P281-based TV box (S905W) [ONLY FOR TESTING]"
 	depends="linux-postmarketos-amlogic u-boot-amlogic-s905x-tv"
 	aml_boot_prep "meson-gxl-s905w-p281.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_sei510() {
+	pkgdesc="Kernel for SEI Robotics SEI510-based TV box (S905X2) [ONLY FOR TESTING]"
+	depends="linux-postmarketos-amlogic u-boot-amlogic-s905x2-tv"
+	aml_boot_prep "meson-g12a-sei510.dtb" "$subpkgdir"
 	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
 }
 
@@ -98,14 +117,28 @@ kernel_videostrong_kii_pro() {
 
 kernel_xiaomi_aquaman() {
 	pkgdesc="Kernel for Xiaomi Mi TV Stick (S805Y)"
-	depends="linux-postmarketos-amlogic soc-amlogic-aarch64-boot linux-firmware-meson linux-firmware-brcm linux-firmware-rtl_bt"
+	depends="linux-postmarketos-amlogic soc-amlogic-aarch64-boot linux-firmware-brcm linux-firmware-rtl_bt"
 	aml_boot_prep "meson-gxl-s805y-xiaomi-aquaman.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_xiaomi_once() {
+	pkgdesc="Kernel for Xiaomi Mi Box 3 (S905X)"
+	depends="linux-firmware-brcm linux-postmarketos-amlogic u-boot-amlogic-s905x-tv"
+	aml_boot_prep "meson-gxl-s905x-xiaomi-once.dtb" "$subpkgdir"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_zte_b860h() {
+	pkgdesc="Kernel for ZTE B860H V1/V2 (S905X)"
+	depends="linux-postmarketos-amlogic u-boot-amlogic-s905x-tv"
+	aml_boot_prep "meson-gxl-s905x-zte-b860h.dtb" "$subpkgdir"
 	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
 }
 
 sha512sums="
 17e803e341c362f54df2116125549ededc41deb89cd6f57974133e18053b30af35fc2b60cdb732b10efadf95234f154bdd7b32410c139f0166adfe9b4ffe02dd  boot-image.its
-566aa71f4d36c5834abb69a88f6d2606f91ad92168c6f971de9148c3c9c99b13a316a2591b95e96a43ec3ff6a45341017495ac28599e50f041985a0f1cb5f3eb  deviceinfo
-9b9c3d26f5dea76d58b7966d1a9ed7e19941d67d8b2fc4d8577aa11900b26a0f9230e158f3f3a99250624bd269da86c1ed1a1095530af0155eae008fd6c9646d  kernel-cmdline.conf
+6eec3f25b4157de4d0ca86dd8e31ba0411419fb98ff841e486cfc2d841bb0673bd99cdb6a108bf039c26cb7bae30e239d3392c4f704cee782f1ffd2b984de7f2  deviceinfo
+274a58cae87b2357f1a30c0463b2728d4dbea1a9c7bd3a17a62b22cd947ef8169c39bb21a480ba3d2dfae1fddcec3812d43dfdd7e44e81619124d6551a1611e2  kernel-cmdline.conf
 52948c2884a6f6384e12b7a598f70878526d0d3293c214425170145231144ec7de805c038641741a4a5d75b50e554f6a3fa3769784a674217ed032f9b6a233c8  modules-initfs
 "

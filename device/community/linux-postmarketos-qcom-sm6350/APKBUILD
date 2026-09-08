@@ -1,7 +1,7 @@
 maintainer="Luca Weiss <luca@lucaweiss.eu>"
 _flavor="postmarketos-qcom-sm6350"
 pkgname=linux-$_flavor
-pkgver=7.0.0
+pkgver=7.2.0
 pkgrel=0
 pkgdesc="Mainline Kernel fork for SM6350/SM7225 devices"
 arch="aarch64"
@@ -11,16 +11,20 @@ license="GPL-2.0-only"
 options="!strip !check !tracedeps
 	pmb:cross-native
 	pmb:kconfigcheck-community
+	pmb:kconfigcheck-uefi
 	"
 makedepends="
 	bison
 	clang
+	elfutils-dev
 	findutils
 	flex
 	installkernel
+	linux-headers
 	lld
 	llvm
 	openssl-dev
+	pahole
 	perl
 	python3
 	zstd
@@ -49,14 +53,19 @@ build() {
 }
 
 package() {
-	install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+	# ZBOOT EFI decompressor for EFI booting
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+		"$pkgdir/boot/linux.efi"
+
+	# Old GZIP'd kernel image for boot.img compatibility
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
 		"$pkgdir/boot/vmlinuz"
 
 	make modules_install dtbs_install \
 		ARCH="$_carch" \
 		LLVM=1 \
 		INSTALL_PATH="$pkgdir"/boot/ \
-		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
 		INSTALL_MOD_STRIP=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
 	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
@@ -66,6 +75,6 @@ package() {
 }
 
 sha512sums="
-c81f5d1ec474a2414661a51017906bff877d5b8634a51f0042ca3021537f9649de5646bc44730ceb12f4596774ab8563a8c05a6f8159507c66a18b07c817642b  linux-v7.0.0-sm6350.tar.gz
-a1f6cfb8534dcf0b6403534bd7590c0b101596a875327299f2a2c5f8b296ceaa2f8707ccc9121961ae37f5f9726e4c9359589bffb2cf3e4ed88bdfbe0cc3581e  config-postmarketos-qcom-sm6350.aarch64
+2247377b260eba48a3bc2840fe8a55cec82c391949b59dc83093af27cdec66245efb8f3c7fc4e105fa8b1da090335cacad8bcc6cfa128dd25ff7b473297f2530  linux-v7.2.0-sm6350.tar.gz
+e20a5b4921cd0a496ed95422696e5e93a9c717c8b903b4877166f34c7c773b02adceb8edd6394648ed95e7d55f066dcf89c64df3ffe9fb6cb6565335e8d51631  config-postmarketos-qcom-sm6350.aarch64
 "

@@ -1,12 +1,13 @@
 # Forked from Alpine to add systemd!
 maintainer="team/kde <bribbers@disroot.org>"
 pkgname=plasma-workspace
-_pkgver=6.6.4
+_pkgver=6.7.4
 pkgver=9999$_pkgver
 pkgrel=0
 pkgdesc="KDE Plasma Workspace"
 # armhf blocked by qt6-qtdeclarative
-arch="all !armhf"
+# riscv64: slow Alpine builders
+arch="all !armhf !riscv64"
 url="https://kde.org/plasma-desktop/"
 license="(GPL-2.0-only OR GPL-3.0-only) AND LGPL-2.1-or-later AND GPL-2.0-or-later AND MIT AND LGPL-2.1-only AND LGPL-2.0-or-later AND (LGPL-2.1-only OR LGPL-3.0-only) AND LGPL-2.0-only"
 depends="
@@ -29,7 +30,6 @@ depends="
 depends_dev="
 	baloo-dev
 	breeze-dev
-	eudev-dev
 	gpsd-dev
 	icu-dev
 	iso-codes-dev
@@ -84,6 +84,7 @@ depends_dev="
 	qt6-qtlocation-dev
 	qt6-qtpositioning-dev
 	qt6-qtwayland-dev
+	systemd-dev
 	wayland-dev
 	wayland-protocols
 	zlib-dev
@@ -117,7 +118,9 @@ subpackages="
 	$pkgname-x11
 	"
 _repo_url="https://invent.kde.org/plasma/plasma-workspace.git"
-source="https://download.kde.org/$_rel/plasma/$_pkgver/plasma-workspace-$_pkgver.tar.xz"
+source="https://download.kde.org/$_rel/plasma/$_pkgver/plasma-workspace-$_pkgver.tar.xz
+	org.kde.timezone.rules
+	"
 builddir="$srcdir/$pkgname-$_pkgver"
 
 replaces="xdg-desktop-portal-kde<=6.1.5-r0"
@@ -197,6 +200,8 @@ check() {
 
 package() {
 	DESTDIR="$pkgdir" cmake --install build
+
+	install -Dm644 "$srcdir"/org.kde.timezone.rules "$pkgdir"/usr/share/polkit-1/rules.d/org.kde.timezone.rules
 }
 
 x11() {
@@ -208,5 +213,6 @@ x11() {
 }
 
 sha512sums="
-52040f299962d5471c32a30e5d27c739608fe677bd262c5ec9377044c5dddd41629521a825214a33fc20e16c2e0d1737e6c5ef5fdc722fb13665721d8117be9a  plasma-workspace-6.6.4.tar.xz
+130521e5f15f4229541bcff6ced0a63f17b2880131908cd2f14e1989b873ace1ca67e8c81116fce7f01531b6f846f4fef74b0ff83a55067c97be7e65b6ea536d  plasma-workspace-6.7.4.tar.xz
+672bde528ca9a3c07fa80b0a26d29becc3c158389e3c8d273c829264cc7f8f5ba502e71715c2eacd76c77e90f461dd0238bb7e31876070eb8b7df767d6f3aa53  org.kde.timezone.rules
 "

@@ -1,6 +1,6 @@
 maintainer="Clayton Craft <clayton@craftyguy.net>"
 pkgname=linux-postmarketos-asahi
-pkgver=6.19.12_p1
+pkgver=7.1.10_p1
 pkgrel=0
 _rel=${pkgver#*_p}
 _kver=${pkgver%_p*}
@@ -17,6 +17,9 @@ options="!strip
 	!tracedeps
 	pmb:cross-native
 	pmb:kconfigcheck-community
+	pmb:kconfigcheck-lockdown
+	pmb:kconfigcheck-rust
+	pmb:kconfigcheck-selinux
 	pmb:kconfigcheck-uefi
 	pmb:kconfigcheck-virt
 "
@@ -53,10 +56,9 @@ source="
 	$pkgname-$_asahiver.tar.gz::https://github.com/AsahiLinux/linux/archive/refs/tags/asahi-$_asahiver.tar.gz
 	config-postmarketos-asahi.aarch64
 
-	0001-nvmem-apple-spmi-nvmem-Fix-CFI-failures.patch
+	enable-dynamic-ftrace.patch
 "
 builddir="$srcdir/linux-asahi-$_asahiver"
-_defconfig="defconfig"
 
 prepare() {
 	default_prepare
@@ -77,7 +79,7 @@ package() {
 		ARCH="$_carch" \
 		LLVM=1 \
 		INSTALL_PATH="$pkgdir"/boot/ \
-		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_PATH="$pkgdir/usr" \
 		INSTALL_MOD_STRIP=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-asahi
 
@@ -88,7 +90,7 @@ package() {
 }
 
 sha512sums="
-9b7965690f107c5f039c83dc190b674db4427490e82fe225dfdb5b637eb9462de173fa746e2af085ddac8eedf5b22129f0041c7a3fe7ecbaa3ef9b809e22782c  linux-postmarketos-asahi-6.19.12-1.tar.gz
-bfa1a11fed7f6b08873e85a550f74ec76943e22b777f8c4210ca07d7a8c9861cda78c832373ccff0a581c729c68a25ac220b42c6eff0bf951122800e1b034dbc  config-postmarketos-asahi.aarch64
-8d205300cfabe192b53ed1cc644b087e76421eb973e1b2a31d657e4f2676badebdfcf6b0865569c43b4b904935435f6e729c3a8d4a6221fb5792e40ec1017a0f  0001-nvmem-apple-spmi-nvmem-Fix-CFI-failures.patch
+de0ac7bffbd301b8c69264df3ac3268f69beba63a479d8d8adbe04a9803999cddbb9437ef77bcb350deb7995903619d50cff6c7031159b1958567554a6fd52c2  linux-postmarketos-asahi-7.1.10-1.tar.gz
+2b2a2edae121c6053395f0a017c818c1741527d90bc277ac1fef36a4e10d4f75cbe3277acf4f28157d3d49852de95ad962b720b6235a617b154311916d9e7433  config-postmarketos-asahi.aarch64
+e8b595f3e076896dc38f249c8908d58e2e6a858eaa77fe1e680f27db0e76d3d74c0b5dfebb7a4c57d546fee0b0f6eb81a38b20dfd72f985c9d02f28d79a5eceb  enable-dynamic-ftrace.patch
 "

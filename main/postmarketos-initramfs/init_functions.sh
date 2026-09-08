@@ -21,6 +21,10 @@ deviceinfo_create_initfs_extra="${deviceinfo_create_initfs_extra:-}"
 deviceinfo_no_framebuffer="${deviceinfo_no_framebuffer:-}"
 deviceinfo_rootfs_image_sector_size="${deviceinfo_rootfs_image_sector_size:-}"
 
+# Default to no splash unless set on the kernel cmdline. Plymouth will not
+# display a splash if this param is missing from the cmdline
+nosplash="${nosplash:-y}"
+
 # Does word start with prefix?
 startswith() {
 	local word="$1" prefix="$2"
@@ -75,8 +79,8 @@ parse_cmdline_item() {
 			# shellcheck disable=SC2034
 			force_partition_resize=y
 			;;
-		pmos.nosplash | PMOS_NOSPLASH)
-			nosplash=y
+		splash)
+			nosplash=n
 			;;
 		pmos.root | pmos_root)
 			root_path="$value"
@@ -100,6 +104,10 @@ parse_cmdline_item() {
 			# after this script.
 			# shellcheck disable=SC2034
 			log_info=y
+			;;
+		cryptkey)
+			# shellcheck disable=SC2034
+			cryptkey="$value"
 			;;
 		[![:alpha:]_]* | [[:alpha:]_]*[![:alnum:]_]*)
 			# invalid shell variable, ignore it
@@ -196,7 +204,7 @@ parse_cmdline() {
 }
 
 # Redirect stdout/stderr to the log file, as well as to the kernel via
-# syslog. Additionally, if pmos.nosplash is set and there are no active
+# syslog. Additionally, if nosplash is set and there are no active
 # consoles, try to be helpful by logging to tty0 and the devices serial
 # port.
 setup_log() {
@@ -220,7 +228,7 @@ setup_log() {
 			log_targets="$log_targets $console"
 		fi
 
-		# If pmos.nosplash is set but there's no active console, let's try to be helpful by at least
+		# If nosplash is set but there's no active console, let's try to be helpful by at least
 		# logging the initramfs output to the consoles we can find.
 		# TODO: This could be further improved by reading /dev/kmsg and outputting it as well which
 		# might help with debugging on bootloaders that do force console=null
@@ -358,7 +366,7 @@ mount_subpartitions() {
 		[ -e "$x" ] && android_parts="$android_parts $x"
 	done
 
-	local losetup_args="--show -Pfv --direct-io=on"
+	local losetup_args="--show -Pf --direct-io=on"
 	if [ -n "$deviceinfo_rootfs_image_sector_size" ]; then
 		losetup_args="$losetup_args --sector-size $deviceinfo_rootfs_image_sector_size"
 	fi
@@ -408,7 +416,7 @@ mount_subpartitions() {
 				if [ -n "$PMOS_ROOT" ]; then
 					break
 				fi
-				[ -n "$SUBPARTITION_LOOP" ] && losetup -vd "$SUBPARTITION_LOOP"
+				[ -n "$SUBPARTITION_LOOP" ] && losetup -d "$SUBPARTITION_LOOP"
 				SUBPARTITION_DEV=""
 				SUBPARTITION_LOOP=""
 			fi
@@ -577,13 +585,13 @@ check_filesystem() {
 	esac
 
 	if [ "$status" = "fail" ]; then
-		show_splash "WARNING: filesystem needs manual repair (fsck) ($partition)\\nhttps://postmarketos.org/troubleshooting\\n\\nBoot anyways by pressing Volume-Up or Left-Shift..."
+		splash_set_warning "Filesystem needs manual repair (fsck) ($partition)\nhttps://postmarketos.org/troubleshooting\n\nBoot anyways by pressing Volume-Up or Left-Shift..."
 		while ! iskey KEY_LEFTSHIFT KEY_VOLUMEUP ; do
 			:
 		done
 	fi
 
-	show_splash "Loading..."
+	splash_set_message "Loading"
 }
 
 # $1: path
@@ -638,7 +646,7 @@ extract_initramfs_extra() {
 	initramfs_extra="$1"
 	if [ ! -e "$initramfs_extra" ]; then
 		echo "ERROR: initramfs-extra not found!"
-		show_splash "ERROR: initramfs-extra not found\\nhttps://postmarketos.org/troubleshooting"
+		splash_set_error "initramfs-extra not found\nhttps://postmarketos.org/troubleshooting"
 		fail_halt_boot
 	fi
 	echo "Extract $initramfs_extra"
@@ -657,7 +665,7 @@ wait_partition() {
 		return
 	fi
 
-	show_splash "Waiting for $description partition..."
+	splash_set_message "Waiting for $description partition"
 	for _ in $(seq 1 30); do
 		sleep 1
 		$findfunc partition
@@ -667,7 +675,7 @@ wait_partition() {
 		check_keys ""
 	done
 
-	show_splash "ERROR: $description partition not found!\\nhttps://postmarketos.org/troubleshooting"
+	splash_set_error "$description partition not found!\nhttps://postmarketos.org/troubleshooting"
 	fail_halt_boot
 }
 
@@ -724,7 +732,7 @@ mount_root_partition() {
 			;;
 		*)
 			echo "ERROR: Detected unsupported '$type' filesystem ($partition)."
-			show_splash "ERROR: unsupported '$type' filesystem ($partition)\\nhttps://postmarketos.org/troubleshooting"
+			splash_set_error "Unsupported '$type' filesystem ($partition)\nhttps://postmarketos.org/troubleshooting"
 			fail_halt_boot
 			;;
 	esac
@@ -740,7 +748,7 @@ mount_root_partition() {
 
 	if ! mount -t "$type" -o rw"$rootfsopts" "$partition" /sysroot; then
 		echo "ERROR: unable to mount root partition!"
-		show_splash "ERROR: unable to mount root partition\\nhttps://postmarketos.org/troubleshooting"
+		splash_set_error "Unable to mount root partition\nhttps://postmarketos.org/troubleshooting"
 		fail_halt_boot
 	fi
 
@@ -753,7 +761,7 @@ mount_root_partition() {
 	fi
 
 	if ! [ -e /sysroot/etc/os-release ]; then
-		show_splash "ERROR: root partition does not contain a root filesystem\\nhttps://postmarketos.org/troubleshooting"
+		splash_set_error "Root partition does not contain a root filesystem\nhttps://postmarketos.org/troubleshooting"
 		fail_halt_boot
 	fi
 }
@@ -905,6 +913,11 @@ start_unudhcpd() {
 	[ "$(pidof unudhcpd)" ] && return
 
 	local usb_iface
+	# Don't run if there's no USB gadget.
+	if [ -z "$(cat "$CONFIGFS/g1/UDC" 2>/dev/null)" ] &&
+		! [ -e /sys/class/android_usb/android0 ]; then
+		return
+	fi
 
 	# Skip if disabled
 	# shellcheck disable=SC2154
@@ -1046,13 +1059,19 @@ setup_usb_storage_configfs() {
 }
 
 debug_shell() {
+	splash_hide
 	echo "Entering debug shell"
 	# if we have a UDC it's already been configured for USB networking
 	local have_udc
 	have_udc="$(cat $CONFIGFS/g1/UDC)"
 
+	# Use USB ACM gadget if no UDC is available,
+	# if UDC is available use configured USB networking,
+	# but DHCP server needs to be started
 	if [ -n "$have_udc" ]; then
 		setup_usb_acm_configfs
+	else
+		start_unudhcpd
 	fi
 
 	# mount pstore, if possible
@@ -1149,7 +1168,7 @@ debug_shell() {
 	fi
 
 	# Getty on the display
-	hide_splash
+	splash_hide
 	# Spawn buffyboard if the device might not have a physical keyboard
 	# buffyboard is only available with merged initramfs-extra!
 	if command -v buffyboard 2>/dev/null && \
@@ -1195,7 +1214,7 @@ debug_shell() {
 	rmdir "$CONFIGFS/g1/functions/$CONFIGFS_MASS_STORAGE_FUNCTION"
 	setup_usb_configfs_udc
 
-	show_splash "Loading..."
+	splash_set_message "Loading"
 
 	pkill -f buffyboard || true
 }
@@ -1206,6 +1225,7 @@ check_keys() {
 		# If the user is pressing either the left control key or the volume down
 		# key then drop to a debug shell.
 		if iskey KEY_LEFTCTRL KEY_VOLUMEDOWN; then
+			beebzzr -b 2 -d 100 &
 			debug_shell
 		# If instead they're pressing left shift or volume up, then fail boot
 		# and dump logs
@@ -1221,30 +1241,76 @@ check_keys() {
 	done
 }
 
-# $1: Message to show
-show_splash() {
-	info "SPLASH: $1"
+# Show the Plymouth splash screen
+# Uses: nosplash
+# Sets: (none)
+# Returns: 0
+splash_show() {
 	if [ "$nosplash" = "y" ]; then
 		return
 	fi
 
-	hide_splash
-
-	# shellcheck disable=SC2154,SC2059
-	/usr/bin/pbsplash -s /usr/share/pbsplash/pmos-logo-text.svg \
-		-b "$VERSION | Linux $(uname -r) | $deviceinfo_codename" \
-		-m "$(printf "$1")" >/dev/null &
+	if plymouth --ping 2>/dev/null; then
+		plymouth show-splash
+	fi
 }
 
-hide_splash() {
+# Hide the Plymouth splash screen
+# Uses: nosplash
+# Sets: (none)
+# Returns: 0
+splash_hide() {
 	if [ "$nosplash" = "y" ]; then
 		return
 	fi
-	killall pbsplash 2>/dev/null
 
-	while pgrep pbsplash >/dev/null; do
-		sleep 0.01
-	done
+	if plymouth --ping 2>/dev/null; then
+		plymouth hide-splash
+	fi
+}
+
+# Set the Plymouth message
+# Uses: (none)
+# Sets: (none)
+# $1: message text to display, may be multiline with \n
+# Returns: 0
+splash_set_message() {
+	info "SPLASH: $1"
+	splash_show
+	if plymouth --ping 2>/dev/null; then
+		# Use printf to convert \n to literal newlines for multiline messages
+		plymouth display-message --text "$(printf '%b' "$1")"
+	fi
+}
+
+# Set an error on the Plymouth splash
+# Uses: (none)
+# Sets: (none)
+# $1: error text to display
+# Returns: 0
+splash_set_error() {
+	info "SPLASH ERROR: $1"
+	splash_show
+	if plymouth --ping 2>/dev/null; then
+		plymouth update --status="error"
+		# Use printf to convert \n to literal newlines for multiline messages
+		plymouth display-message --text "$(printf '%b' "$1")"
+	fi
+}
+
+# Set a warning on the Plymouth splash
+# Uses: (none)
+# Sets: (none)
+# $1: warning text to display
+# Returns: 0
+splash_set_warning() {
+	info "SPLASH WARNING: $1"
+	splash_show
+	if plymouth --ping 2>/dev/null; then
+		plymouth update --status="warning"
+		# Use printf to convert \n to literal newlines for multiline messages
+		plymouth display-message --text "$(printf '%b' "$1")"
+	fi
 }
 
 set_framebuffer_mode() {
@@ -1366,6 +1432,7 @@ export_logs() {
 }
 
 fail_halt_boot() {
+	beebzzr -b 3 -d 250 &
 	export_logs
 	debug_shell
 	echo "Looping forever"

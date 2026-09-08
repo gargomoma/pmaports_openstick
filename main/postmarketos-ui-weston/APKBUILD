@@ -1,15 +1,14 @@
 # Reference: https://postmarketos.org/uipkg
 maintainer="Bart Ribbers <bribbers@disroot.org>"
 pkgname=postmarketos-ui-weston
-pkgver=6
-pkgrel=11
+pkgver=7
+pkgrel=0
 pkgdesc="(Wayland) Reference compositor (demo, not a phone interface)"
 url="https://postmarketos.org"
 arch="noarch"
 license="GPL-3.0-or-later"
 depends="
 	bluez
-	dnsmasq
 	elogind
 	postmarketos-base-ui
 	postmarketos-base-ui-audio
@@ -31,7 +30,7 @@ _pmb_recommends="htop
 	"
 subpackages="$pkgname-openrc"
 source="start_weston.sh weston.ini.default"
-options="!check pmb:drm" # Meta package, no test suite
+options="!check pmb:drm pmb:default-openrc pmb:support-openrc pmb:support-systemd" # Meta package, no test suite
 
 package() {
 	install -Dm755 "$srcdir"/start_weston.sh \

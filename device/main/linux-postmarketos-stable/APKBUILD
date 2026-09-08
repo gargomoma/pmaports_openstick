@@ -1,7 +1,7 @@
 # Co-Maintainer: Achill Gilgenast <achill@achill.org>
 maintainer="Aelin <aelin@postmarketos.org>"
 pkgname=linux-postmarketos-stable
-pkgver=7.0.1
+pkgver=7.2.4
 pkgrel=0
 _kver=${pkgver%.*}
 pkgdesc="Stable Kernel"
@@ -19,12 +19,14 @@ options="
 	pmb:generic-kernel
 	pmb:kconfigcheck-community
 	pmb:kconfigcheck-immutable
+	pmb:kconfigcheck-lockdown
 	pmb:kconfigcheck-rust
 	pmb:kconfigcheck-selinux
 	pmb:kconfigcheck-uefi
 	pmb:kconfigcheck-virt
 "
 makedepends="
+	bash
 	bison
 	clang
 	clang-libclang
@@ -32,6 +34,8 @@ makedepends="
 	elfutils-dev
 	findutils
 	flex
+	grep
+	kmod
 	linux-headers
 	lld
 	llvm
@@ -58,8 +62,7 @@ source="
 	linux-$_kver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$_kver.tar.xz
 
 	0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
-	0002-WIP-arch-powerpc-boot-Use-z-notext-for-pseries-image.patch
-	0003-WIP-arch-powerpc-boot-Add-z-norelro.patch
+	0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
 
 	config-stable.aarch64
 	config-stable.armv7
@@ -70,7 +73,6 @@ source="
 	config-stable.x86_64
 "
 builddir="$srcdir/linux-$_kver"
-_defconfig="defconfig"
 
 if [ "${pkgver%.0}" = "$pkgver" ]; then
 	# Prepend to apply first
@@ -109,28 +111,27 @@ package() {
 	make modules_install $_install \
 		ARCH="$_carch" \
 		LLVM=1 \
-		INSTALL_PATH="$pkgdir"/boot/ \
-		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
 		INSTALL_MOD_STRIP=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
 
-	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
 
-	install -D "$builddir"/include/config/kernel.release \
-		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+	install -Dm644 "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/"$_flavor"/kernel.release
 }
 
 sha512sums="
-6811a2509d4f5df2723252d096f8cf7e37ab4673d1d969006c7403d0b3c5664b0aa9f22ce0136531812cb9c17a9d961faf888faf9082e90a0692953fc431651e  patch-7.0.1.patch.xz
-8c85b708342f8f09ca25b2234b22e93b62b144a9ef919fbb21827f52fa47498e778c79db1559524dd7fb360f95b2ce174171443c1859656c281be41d2b6c5a0b  linux-7.0.tar.xz
+e5b244c7b7c652d55114e4f440be7ac8eca617bbcc704ce9528bdfd793934449c6fdca3424d8e17ef6b6c053952c2aec860e34701d2b6ff9a2d09b1e52d76773  patch-7.2.4.patch.xz
+47e63679363261a864d271277340a6f2d45f544e1a056be4159df081f4f6537d0efa865c4af26611ab33a3079ee65db88ec2f6bc0e5fff43e0c043cde0cd91e1  linux-7.2.tar.xz
 1f11df2480e9f691573283597160b4c806e492cdca4825f3acb3afb70bde43abfab487bcde1f5553b431a702a0039479d041b0ce7859970e706b5a51d2ad8fb0  0001-WIP-arch-powerpc-boot-Support-LLVM-1-in-wrapper-scri.patch
-26521a9c9ea769534095dc4e306babadc8bcbaf03d7faa523c377e41ba0f742ecd0490fa27791d895f729c3ae8845297dca59b4db2475e7f078e689c447430bc  0002-WIP-arch-powerpc-boot-Use-z-notext-for-pseries-image.patch
-302c20c85559fc9b3b2420ed25be1bfbb76c87f2a470e4141c32e9542cf1f5c6b3b5a7847231a3eaa0f6bc0e5942d0c1599e807175dcf5e63469704c3d6adde3  0003-WIP-arch-powerpc-boot-Add-z-norelro.patch
-c51f0bb564af356c55e528b8a5cd5e8fb3bbd34f6a87fdc0a2ca856c755d07f0406302fb8bbec61fd1f22cae964e4aab8778855a1da97e740501ddc3c6808ed0  config-stable.aarch64
-bad85a36aeed56967e88aa40768dbeae5399965ab0bedb340f2778932cfa11c848c37ee22c138957860431afe25e48ce0fac38010a0296f807b351b4333cda58  config-stable.armv7
-7d166cc901c002e0b745b5ac26355e921d12dec4f3dffc60a95e6ac400b7e9d63f9f30cb737f0d23b132938a1cb1999a9c2c6ab30a82cac79b7879574c228187  config-stable.loongarch64
-ae7173c51e49a463cb28db67d65d9cd6cb851a43fdd34eba5fa83d1d91972f8677bc76c4f4dbf4303685e0788494d356c9116896865ac6ffc98ea04c9f8f72c9  config-stable.ppc64le
-cb9d19427d034b7d9e99efbe47fb1faedd2a4be97fcefc09b14067c38af523d69b1bcaf6014f94bdd8098b590d2a61383119c6e03309e3f2b3d322c4c8e1c859  config-stable.riscv64
-b99be8cc54985b8943e7cb0e9670e2e016e81f80d0dfb0d82e633e164bae348e23971c8b765d0505c27f1c0d5734a862dbae3fbbcaa0e6003d0069367b0c416b  config-stable.x86
-984a4184447cf945d70e0b12ed77ededc16266ef1cb7ef3946dc3bd1531742b874e7e82e61faccde9952d9759f17c95b18e1960ebb27c3c8282222ae5ca0bab6  config-stable.x86_64
+302c20c85559fc9b3b2420ed25be1bfbb76c87f2a470e4141c32e9542cf1f5c6b3b5a7847231a3eaa0f6bc0e5942d0c1599e807175dcf5e63469704c3d6adde3  0002-WIP-arch-powerpc-boot-Add-z-norelro.patch
+c2e0675054be393e62d0478b99da0526033cbdc6fb00e791ee2661012479ff59cdc9479fd026d4b8fa42c3cd7a70f67f03579642840252ae4c1861dcc58cc000  config-stable.aarch64
+5a03e6f91aaebf6ced0375fa0d4341aabaa21ce1582a3a4f37ea8a7147d0c773a232dcdab951ae3e24dd5d0121c7b20ad74e878994a135818fbbc5dfb939ab16  config-stable.armv7
+69b840ec55f1162377bec79e64a5b01f77a2d7598b0a02e23e4d47c35f5ece81adfaf949ec11252d4a57a1f44e78f516ce52fa9548d44901881f1350ea88370e  config-stable.loongarch64
+f8119d9cb306c0baeda5533399f3f17f7c4aceb27885f5e3be0b6e943eaf2ee54cc782175717a5dcbd1d968ffb0f4b3885e1d3ed5408d5182f99bf5dda7fb0d5  config-stable.ppc64le
+c02b7380032c803d1609d45d4c00cc240c5c12beff2e1f2d8807fa52c0525b3739cdeb15feb674e064ca170424c1e828804be26beaa11b84f8cf299d8ec4f97c  config-stable.riscv64
+e750b66f1df0887ff1b2c89515ec9ad355e7e0176fb8430e4d8cc170b05c8f91baad7fe85420d4d3a8e5d097aca962b343dbe9804e7bab83f024d343a54f52e0  config-stable.x86
+33175d7706837fee79df1f905201f8bfe485e8d9ac2b4ecd81f04d565331db0d17257efbf065b5b0723b823350c08d497e5a7135d5df424a051a8a7ea76c0cf2  config-stable.x86_64
 "

@@ -54,7 +54,14 @@ sed -i -e "s% /boot ext2 defaults 0 0$% /boot ext2 nodev,nosuid,noexec 0 0%g" /e
 rc-update -q add postmarketos-zram-swap default
 # We once enabled tmpfs in default, when it needs bootmisc: pma#2473
 rc-update -qq del tmpfs default || true
-# To disable mounting /tmp as tmpfs deviceinfo_tmp_as_tmpfs_size="0"
+# To disable mounting /tmp as tmpfs, set tmpfs_size=0 in /etc/conf.d/tmpfs
 rc-update -q add tmpfs boot
+# sysusers.d and tmpfiles.d are hard dependencies of the rootfs and should
+# always be enabled, so forcing this on upgrade will not impact users
+rc-update -q add systemd-tmpfiles-setup boot
+rc-update -q add systemd-tmpfiles-clean shutdown
+rc-update -q add systemd-sysusers sysinit
+rc-update -q add systemd-tmpfiles-setup-dev-early sysinit
+rc-update -q add systemd-tmpfiles-setup-dev sysinit
 
 exit 0

@@ -1,6 +1,8 @@
 atmel-mxt-ts
 edt-ft5x06
 goodix-ts
+led-class-multicolor
+leds-qcom-lpg
 msm
 novatek-nvt-ts
 panel-boe-bs052fhm-a00-6c01
@@ -35,6 +37,9 @@ panel-motorola-river-hx83112b-tianma
 panel-motorola-river-nt36672a-tianma
 panel-samsung-s6e3fa7
 panel-tianma-tl052vdxp02
+panel-vsmart-casuarina-ft8006p-hlt
+panel-vsmart-casuarina-ft8006p-truly
+panel-vsmart-casuarina-icnl9911s-byd
 panel-xiaomi-boe-ili9885
 panel-xiaomi-ebbg-r63350
 panel-xiaomi-nt35532
@@ -56,6 +61,8 @@ panel-xiaomi-tianma-nt35596
 panel-xiaomi-ysl-hx8394f
 panel-xiaomi-ysl-ili7807d
 panel-xiaomi-ysl-ili9881c
+pwm-bl
+qcom-pbs
 rmi-core
 rmi-i2c
 s6sy761

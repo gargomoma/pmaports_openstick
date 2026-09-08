@@ -11,6 +11,7 @@ deviceinfo_dtb="exynos4412-i9300"
 deviceinfo_getty="ttySAC2;115200"
 deviceinfo_arch="armv7"
 deviceinfo_flash_kernel_on_update="true"
+deviceinfo_flash_sparse="true"
 
 # Device related
 deviceinfo_drm="true"
@@ -19,6 +20,7 @@ deviceinfo_external_storage="true"
 deviceinfo_screen_width="720"
 deviceinfo_screen_height="1280"
 deviceinfo_create_initfs_extra="true"
+deviceinfo_initfs_compression="lzma"
 
 # Bootloader related
 deviceinfo_flash_method="heimdall-bootimg"

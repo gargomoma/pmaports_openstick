@@ -9,9 +9,9 @@ if mount | grep "on /lib" ; then
     exit 0
 fi
 
-if [ -d /bin -a ! -L /bin ] || \
-       [ -d /sbin -a ! -L /sbin ] || \
-       [ -d /lib -a ! -L /lib ]; then
+if [ -d /bin ] && [ ! -L /bin ] || \
+       [ -d /sbin ] && [ ! -L /sbin ] || \
+       [ -d /lib ] && [ ! -L /lib ]; then
     echo "INFO: /usr merge dryrun to check for errors"
     if merge-usr --dryrun ; then
         echo "INFO: Doing the /usr merge"
@@ -21,8 +21,8 @@ if [ -d /bin -a ! -L /bin ] || \
         echo "* ERROR: The /usr merge was not attempted due to filesystem"
         echo "* conflicts. Your installation might have deviated from stock in"
         echo "* unsupported ways. If you can resolve the conflicts yourself,"
-        echo "* you can try running 'doas merge-usr --dryrun', and if there are"
-        echo "* no more conflicts, 'doas merge-usr'. Otherwise, feel free to"
+        echo "* you can try running 'sudo merge-usr --dryrun', and if there are"
+        echo "* no more conflicts, 'sudo merge-usr'. Otherwise, feel free to"
         echo "* ask for help commenting in"
         echo "* https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/6389"
         exit 1

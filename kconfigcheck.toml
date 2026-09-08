@@ -12,6 +12,7 @@
 # much effort. Device maintainers may fix it up afterwards and add it back.
 community = [
 	"category:default",
+	"category:accessibility",
 	"category:community_various",
 	"category:containers",
 	"category:debug",
@@ -60,12 +61,14 @@ DM_CRYPT = "y"
 FB = "y"
 INPUT_EVDEV = "m"
 KINETO_GAN = "n"
+NLS_ASCII = "y" # required to mount FAT32
 PFT = "n"
 SEC_RESTRICT_ROOTING = "n"
 SYN_COOKIES = "y"
 SYSVIPC = "y"
 TMPFS_POSIX_ACL = "y"
 USE_VFB = "n"
+VFAT_FS = "y"
 VT = "y"
 ["category:default".">=4.3.0"."all"]
 DRM_FBDEV_EMULATION = "y"
@@ -80,6 +83,9 @@ DEVPTS_MULTIPLE_INSTANCES = "y"
 ["category:default"."<4.14.0"."all"]
 SAMSUNG_TUI = "n"
 TZDEV = "n"
+["category:default".">=5.1.0"."all"]
+RD_ZSTD = "y"
+DECOMPRESS_ZSTD = "y" # Different from MODULE_DECOMPRESS
 ["category:default"."<5.2.0"."armhf armv7 x86"]
 LBDAF = "y"
 ["category:default".">=5.2.0"."all"]
@@ -106,18 +112,32 @@ PSI_DEFAULT_DISABLED = "n"
 UDMABUF = "y"
 ["category:default".">=5.14.0"."all"]
 # systemd (kernel version is "recommended baseline")
+IPC_NS = "y"
+NET_NS = "y"
+PID_NS = "y"
+USER_NS = "y"
+UTS_NS = "y"
+# DEBUG_INFO_DWARF5 conflicts with DEBUG_INFO_BTF on kernel versions lower
+# than 5.18.0. Just disable BTF entirely for such old kernels to not deal
+# with debugging DWARF4.
+["category:default".">=5.18.0"."all"]
 BPF = "y"
 BPF_JIT = "y"
 BPF_LSM = "y"
-IPC_NS = "y"
-KPROBES = "y"
+DEBUG_INFO_BTF = "y"
+DEBUG_INFO_BTF_MODULES = "y"
+DEBUG_INFO_DWARF5 = "y"
+DEBUG_INFO_REDUCED = "n"
+FTRACE = "y" # Required by KPROBE_EVENTS
 KPROBE_EVENTS = "y"
-NET_NS = "y"
-PID_NS = "y"
+KPROBES = "y"
 SECURITY = "y"
 SECURITYFS = "y"
-USER_NS = "y"
-UTS_NS = "y"
+SECURITY_PATH = "y"
+["category:default".">=5.14.0"."loongarch64 ppc64le x86 x86_64"]
+# ARM and riscv64 lack CFI+dynamic ftrace support, see:
+# https://gitlab.postmarketos.org/postmarketOS/pmaports/-/work_items/4411#note_544158
+DYNAMIC_FTRACE_WITH_DIRECT_CALLS = "y"
 
 ["category:netmount".">=0.0.0"."all"]
 CACHEFILES = "m"
@@ -132,7 +152,6 @@ NFS_FS = "m"
 NFS_FSCACHE = "y"
 NFS_V3 = "m"
 NFS_V4 = "m"
-NFS_V4_1 = "y"
 NFS_V4_2 = "y"
 NFSD = "m"
 NFSD_V3_ACL = "y"
@@ -142,13 +161,33 @@ NFSD_BLOCKLAYOUT = "y"
 NFSD_SCSILAYOUT = "y"
 NFSD_V4_2_INTER_SSC = "y"
 RPCSEC_GSS_KRB5 = "m"
+["category:netmount".">=6.15.0"."all"]
+CRYPTO_KRB5 = "m"
+["category:netmount"."<7.2_rc1"."all"]
 RPCSEC_GSS_KRB5_ENCTYPES_AES_SHA1 = "y"
 RPCSEC_GSS_KRB5_ENCTYPES_AES_SHA2 = "y"
 RPCSEC_GSS_KRB5_ENCTYPES_CAMELLIA = "y"
 ["category:netmount"."<7.0"."all"]
 CRYPTO_AES_TI = "m"
+NFS_V4_1 = "y"
 ["category:netmount".">=0.0.0"."aarch64"]
 CRYPTO_AES_ARM64_CE_BLK = "y"
+
+# accessibility: kernel interfaces and accessibility device drivers
+["category:accessibility".">=0.0.0"."all"]
+ACCESSIBILITY = "y"
+A11Y_BRAILLE_CONSOLE = "y"
+SPEAKUP = "m"
+SPEAKUP_SYNTH_ACNTSA = "m"
+SPEAKUP_SYNTH_APOLLO = "m"
+SPEAKUP_SYNTH_AUDPTR = "m"
+SPEAKUP_SYNTH_BNS = "m"
+SPEAKUP_SYNTH_DECTLK = "m"
+SPEAKUP_SYNTH_DECEXT = "m"
+SPEAKUP_SYNTH_LTLK = "m"
+SPEAKUP_SYNTH_SOFT = "m"
+SPEAKUP_SYNTH_SPKOUT = "m"
+SPEAKUP_SYNTH_TXPRT = "m"
 
 # waydroid: android compatibility layer
 ["category:waydroid".">=0.0.0"."all"]
@@ -164,6 +203,7 @@ CGROUP_BPF = "y"
 CROSS_MEMORY_ATTACH = "y"
 FUSE_FS = "m"
 IP_NF_MANGLE = "m"
+MISC_FILESYSTEMS = "y" # Required by SQUASHFS
 NETFILTER_XTABLES = "m"
 NETFILTER_XT_MATCH_COMMENT = "m"
 SQUASHFS = "m"
@@ -173,8 +213,6 @@ TMPFS_XATTR = "y"
 TUN = "m"
 VETH = "m"
 VLAN_8021Q = "m"  # prerequisite for bridge
-["category:waydroid"."<5.18"."all"]
-ASHMEM = "y"
 ["category:waydroid".">=6.9"."all"]
 IP_NF_IPTABLES_LEGACY = "m"
 ["category:waydroid".">=6.17"."all"]
@@ -304,6 +342,9 @@ CGROUP_BPF = "y" # Needed for docker
 NFT_FIB_IPV4 = "m"  # Docker (optional)
 NFT_FIB_IPV6 = "m"  # Docker, optional
 NFT_FIB = "m"  # Docker (optional)
+NFT_FIB_INET = "m"  # Netavark (podman)
+NFT_FIB_NETDEV = "m"  # Netavark (podman)
+NF_TABLES_NETDEV = "y"  # Netavark (podman)
 ["category:containers".">=0.0.0"."x86 x86_64"]
 HUGETLB_PAGE = "y"
 CGROUP_HUGETLB = "y"  # Optional section
@@ -352,16 +393,18 @@ NF_CONNTRACK_MARK = "y"
 
 # filesystems
 ["category:filesystems".">=0.0.0"."all"]
-# Note: These are builtin, not modules, because it reduces the overall
+# Note: EXT4 is builtin, not a module, because it reduces the overall
 # vmlinuz+initramfs size for devices with small boot partitions.
 # See: https://gitlab.postmarketos.org/postmarketOS/pmaports/-/merge_requests/7136#note_505237
-BTRFS_FS = "y"
+BTRFS_FS = "m"
 BTRFS_FS_POSIX_ACL = "y"
 EXFAT_FS = "m"
 EXT4_FS = "y"
-F2FS_FS = "y"
+F2FS_FS = "m"
 UDF_FS = "m"
 XFS_FS = "m"
+ISO9660_FS = "m"
+JOLIET = "y"
 EROFS_FS = "m"
 EROFS_FS_ZIP = "y"
 EROFS_FS_ZIP_LZMA = "y"
@@ -421,8 +464,7 @@ PSTORE = "y"
 EFI_ESRT = "y"
 EFI_VARS_PSTORE = "y"
 EFI_RUNTIME_WRAPPERS = "y"
-VFAT_FS = "y"
-NLS_ASCII = "y"
+EFIVAR_FS = "y"
 ["category:uefi".">=0.0.0"."x86_64"]
 EFI_MIXED = "y"
 ["category:uefi".">=0.0.0"."aarch64 armv7"]
@@ -433,8 +475,12 @@ EFI_PARAMS_FROM_FDT = "y"
 EFI_ZBOOT = "y"
 # Devices that used to run windows may still want to access
 # the windows partition (e.g. to retrieve firmware on WoA)
-["category:uefi".">=0.0.0"."aarch64 x86_64"]
+["category:uefi"."<7.1_rc1"."aarch64 x86_64"]
 NTFS3_FS = "m"
+# The improved NTFS driver that is faster and more correct
+# than NTFS3 is only available since 7.1-rc1
+["category:uefi".">=7.1_rc1"."aarch64 x86_64"]
+NTFS_FS = "m"
 
 ["category:input".">=0.0.0"."all"]
 BT = "m" # Required by BT_HIDP
@@ -588,6 +634,7 @@ SPI = "y" # Required by HID_GOODIX_SPI
 HID_GOODIX_SPI = "m"
 
 ["category:usb".">=0.0.0"."all"]
+BLK_DEV_SR = "m" # CD/DVD drives (including over USB)
 DRM = "y" # Dependency of DRM_UDL
 DRM_UDL = "m"  # DisplayLink - connecting displays via USB
 SND_USB_AUDIO = "m"  # USB audio devices
@@ -605,28 +652,32 @@ USB_NET_RNDIS_HOST = "m"  # USB Ethernet via RNDIS
 HW_RANDOM_VIRTIO = "m"
 ["category:virt".">=0.0.0"."aarch64 loongarch64 ppc64le riscv64 s390x x86 x86_64"]
 KVM = "y"
+["category:virt".">=0.0.0"."x86 x86_64"]
+KVM_AMD = "m"
+KVM_INTEL = "m"
+
 VIRTUALIZATION = "y"
 
 ["category:debug".">=0.0.0"."all"]
-FTRACE = "y" # Required by DEBUG_FTRACE
 FUNCTION_TRACER = "y" # Required by DEBUG_FTRACE
 DYNAMIC_DEBUG = "y"  # Enable debug dynamically
 DYNAMIC_FTRACE = "y"  # Enable function tracing dynamically
 
 # Device specific settings to prevent regressions
-["category:librem5".">=0.0.0"."aarch64"]
-RS9116_FLASH_MODE = "n"  # pma!2059
 ["category:pinephonepro".">=0.0.0"."aarch64"]
 LEDS_GROUP_MULTICOLOR = "y"  # pma!5991
 
 # Required for immutable image booting
-["category:immutable".">=0.0.0"."aarch64 armv7 armhf loongarch64 riscv64 x86 x86_64"]
-EFIVAR_FS = "m"
 ["category:immutable".">=0.0.0"."all"]
 DM_VERITY = "m"
 
 ["category:hardening".">=0.0.0"."all"]
+# LSM can be enabled here, since if any of the listed LSMs are missing, they will be skipped
+LSM = "landlock,lockdown,yama,loadpin,safesetid,selinux,smack,tomoyo,ipe,bpf"
 SECURITY_DMESG_RESTRICT = "y"
+SECURITY_LOCKDOWN_LSM = "y"
+SECURITY_LOCKDOWN_LSM_EARLY = "y" # Ensure kernel lockdown starts early in boot
+SECURITY_YAMA = "y"
 
 # In 6.18+, CFI_CLANG is CFI
 ["category:hardening".">=6.18_rc1"."x86_64 aarch64 armv7 riscv64"]
@@ -656,9 +707,18 @@ SHADOW_CALL_STACK = "y"
 ["category:hardening".">=6.7.0"."riscv64"]
 SHADOW_CALL_STACK = "y"
 
-["category:rust".">=6.1.0"."all"]
-DEBUG_INFO_BTF = "n" # Conflicts with LTO when Rust is enabled
-DEBUG_INFO_BTF_MODULES = "n" # Conflicts with LTO when Rust is enabled
+# Arches come from https://docs.kernel.org/rust/arch-support.html
+# riscv64 and armv7 do not set SanitizerSet::KCFI, so we cannot use them with
+# our current CFI setup. loongarch64 is an exception because it doesn't have
+# CFI support at all.
+["category:rust".">=6.1.0"."x86_64"]
+RUST = "y"
+["category:rust".">=6.8.0"."loongarch64"]
+RUST = "y"
+["category:rust".">=6.9.0"."aarch64"]
+RUST = "y"
+["category:rust".">=0.0.0"."aarch64 loongarch64 x86_64"]
+MODVERSIONS = "n"
 
 # SELinux support, separate from hardening to keep it opt-in for now
 ["category:selinux".">=0.0.0"."all"]
@@ -667,7 +727,14 @@ AUDIT = "y" # Required by SELinux
 SECURITY_NETWORK = "y" # Required by SELinux
 SECURITY_SELINUX = "y"
 SECURITY_SELINUX_BOOTPARAM = "y"
-LSM = "landlock,lockdown,yama,loadpin,safesetid,selinux,smack,tomoyo,ipe,bpf"
+
+# Enforce kernel lockdown, separate from hardening to keep it opt-in for now
+["category:lockdown".">=0.0.0"."all"]
+# NOTE: Enforcing integrity like this removes the ability to disable
+# lockdown on the cmdline. This makes it harder for attackers to disable
+# lockdown, but also makes it harder for users as well, since only a
+# rebuild of the kernel can disable it.
+LOCK_DOWN_KERNEL_FORCE_INTEGRITY = "y" 
 
 # Wine / Proton support
 ["category:wine".">=6.14.0"."all"]

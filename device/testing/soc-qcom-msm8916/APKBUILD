@@ -1,8 +1,8 @@
 maintainer="Nikita Travkin <nikita@trvn.ru>"
 pkgname=soc-qcom-msm8916
 pkgdesc="Common package for Qualcomm MSM8916 devices"
-pkgver=25
-pkgrel=2
+pkgver=27
+pkgrel=0
 url="https://postmarketos.org"
 license="BSD-3-Clause"
 arch="aarch64 armv7"
@@ -36,8 +36,7 @@ package() {
 # version for now. Once all the UCM refactoring upstream has settled down a bit
 # we can investigate how to integrate it properly for upstreaming.
 ucm() {
-	provides="alsa-ucm-conf"
-	provider_priority=1
+	provides="alsa-ucm-conf=0.$pkgver-r$pkgrel" # versioned provides need to be below default version
 
 	cd "$srcdir/alsa-ucm-conf-$_ucm_commit"
 	mkdir -p "$subpkgdir"/usr/share/alsa
@@ -50,7 +49,8 @@ rproc() {
 	depends="msm-modem msm-modem-uim-selection q6voiced"
 	replaces="$pkgname-modem $pkgname-rproc_none $pkgname-rproc_no_modem $pkgname-rproc_all"
 
-	install -Dm644 "$srcdir"/q6voiced.conf "$subpkgdir"/etc/conf.d/q6voiced
+	install -Dm644 "$srcdir"/q6voiced.conf \
+		-t "$subpkgdir"/usr/share/q6voiced/
 }
 
 rproc_openrc() {

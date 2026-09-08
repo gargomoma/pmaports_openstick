@@ -1,10 +1,8 @@
-# Contributor: Quade Curry <qc8086@qc8086.com>
-# Contributor: Sebastian Fleer <dev@dwurp.de>
 maintainer="Antoine Martin (ayakael) <dev@ayakael.net>"
 pkgname=linux-postmarketos-rockchip
-pkgver=6.19.12
+pkgver=7.0.8
 _kernver=${pkgver%.*}
-pkgrel=0
+pkgrel=2
 pkgdesc="Mainline kernel for rockchip devices"
 arch="aarch64"
 _carch="arm64"
@@ -82,7 +80,7 @@ package() {
 		ARCH="$_carch" \
 		LLVM=1 \
 		INSTALL_PATH="$pkgdir"/boot/ \
-		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
 		INSTALL_MOD_STRIP=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
 	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
@@ -92,9 +90,9 @@ package() {
 }
 
 sha512sums="
-375caad1de11ef1466f7e2fa85775e990f215bae0e269d4a97661c936f633df40c51af849880ef05c4cd323cf1d27804b72222cb12df98af021623742e000330  linux-postmarketos-rockchip-6.19.12.patch.xz
-01b29c7f4e5bc0c9802794c2cd027fece825f90417be229a71e60eefce530010d5d301749c54ae744e9d4a483518e769e2bb7e6e9209687681ad7fff11c3ed86  linux-6.19.tar.xz
-7117f1d9355bfa033dc0fbe823fc9e06cf5ff8cf261f6159e7f27b7a481e974c5806d2e2b5baaba948e7e0d293430df7950c0f4b4cd337cdf21a31415b5692d9  rk3566-pinenote-support.patch
+cd7fbd0834ae8558fc0e9ff75591cb60cb4e1aa6beb65976ea515be1c002d9158c134a4f5b7cff56ee53639a3d20d390b2accc44a4b229e8a3a913b8c556fb15  linux-postmarketos-rockchip-7.0.8.patch.xz
+8c85b708342f8f09ca25b2234b22e93b62b144a9ef919fbb21827f52fa47498e778c79db1559524dd7fb360f95b2ce174171443c1859656c281be41d2b6c5a0b  linux-7.0.tar.xz
+fefa9bea73bbc03477447b2c8ec03af7c13ad73e520751f89bbff81a7abc00a19a498f390dab6f2de3e59bb0ca9f4003b5f6c919ba5d48e5f52d5365d97b16b6  rk3566-pinenote-support.patch
 665bdc843912a22bc9f1840bf89195f6cccabd2b8ca3313f3c61b5503c84f98395e3de0d28bc31cbc9f1b4be4a41a483db156fad353506bb5be7abdc22e46501  rk3566-pinenote-ultra-suspend.patch
-800c3c60817c0f193ae467d1ab216c3c742c4d5f7a12e6ed86c18788a389a22cecf0d4b59ecee93c2e1d2841db7014435f9a149c8e988745ca42b74154d6821a  config-postmarketos-rockchip.aarch64
+0d17866138c8ea1273b2ef9830256d0015d94f540d6c6c8c2d8864a90ee16f4b3b9dde4b5772dd1d27775e2d6a55c788be1f3632141059abb5a34f3c30ad13aa  config-postmarketos-rockchip.aarch64
 "

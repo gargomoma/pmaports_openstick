@@ -1,8 +1,9 @@
 # Reference: https://postmarketos.org/uipkg
+# Co-Maintainer: Aster Boese (@JustSoup321) <asterboese@mailbox.org>
 maintainer="Bart Ribbers <bribbers@disroot.org>"
 pkgname=postmarketos-ui-plasma-mobile
 pkgver=6
-pkgrel=9
+pkgrel=10
 pkgdesc="(Wayland) Mobile variant of KDE Plasma"
 url="https://wiki.postmarketos.org/wiki/Plasma_Mobile"
 # armhf blocked by pmaports#75
@@ -29,6 +30,7 @@ _pmb_recommends="
 	qmlkonsole
 	spacebar
 	ttyescape
+	vvmplayer
 	"
 source="
 	kscreenlockerrc
@@ -49,7 +51,7 @@ install="
 	$pkgname-systemd.post-upgrade
 	"
 replaces="plasma-mobile plasma-mobile-meta"
-options="!check pmb:drm pmb:systemd"
+options="!check pmb:drm pmb:default-systemd pmb:support-systemd"
 
 package() {
 	install -Dm644 \
@@ -82,7 +84,7 @@ extras() {
 extras_web() {
 	pkgdesc="Meta package for additional Plasma mobile apps relying on qtwebengine"
 	install_if="$pkgname-extras=$pkgver-r$pkgrel"
-	_pmb_recommends="
+	depends="
 		arianna
 		koko
 		neochat
@@ -95,14 +97,14 @@ extras_web() {
 
 angelfish() {
 	install_if="$pkgname=$pkgver-r$pkgrel"
-	_pmb_recommends="angelfish"
+	depends="angelfish"
 
 	mkdir -p "$subpkgdir"
 }
 
 firefox() {
 	install_if="$pkgname=$pkgver-r$pkgrel"
-	_pmb_recommends="firefox-esr mobile-config-firefox"
+	depends="firefox-esr mobile-config-firefox"
 
 	mkdir -p "$subpkgdir"
 }

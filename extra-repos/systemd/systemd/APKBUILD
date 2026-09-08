@@ -1,22 +1,36 @@
-# Contributor: Jakub Panek <me@panekj.dev>
 # Co-Maintainer: Achill Gilgenast <achill@achill.org>
+# Co-Maintainer: Oliver Smith <ollieparanoid@postmarketos.org>
 
 #########################################################
 # Make sure to upgrade systemd-stage0 at the same time! #
 #########################################################
 
+# This is also used by upstream systemd CI with mkosi.
+# On upstream mkosi build, the following environment variables may be set:
+# $_systemd_upstream              : set to 1,
+# $_meson_extra_configure_options : set to extra meson config options,
+# $_meson_builddir                : set to the path to the meson build directory ($BUILDDIR in mkosi scripts),
+# $_upstream_srcdir               : set to the path to the upstream systemd source directory ($SRCDIR in mkosi scripts),
+
 maintainer="Clayton Craft <craftyguy@postmarketos.org>"
 pkgname=systemd
-pkgver=260.1
+pkgver=262_rc1
 _pkgver="${pkgver/_/-}"
-pkgrel=6
+# pkgrel must match systemd-stage0!
+pkgrel=1
 pkgdesc="System and service manager"
 url="https://github.com/systemd/systemd"
 # armhf: no linux-stable
 arch="all !armhf"
 license="MIT AND GPL-2.0-only AND LGPL-2.1-or-later"
 # crossdirect disabled because of "ERROR: Problem encountered: unable to determine gperf len type"
-options="pmb:strict !pmb:crossdirect"
+options="!pmb:crossdirect"
+
+_bootloader="enabled"
+case "$CARCH" in
+	# ppc64le s390x: no EFI support
+	ppc64le|s390x) _bootloader="disabled" ;;
+esac
 
 triggers="$pkgname.trigger=/usr/lib/systemd/catalog:\
 /usr/lib/udev/hwdb.d:\
@@ -30,13 +44,17 @@ triggers="$pkgname.trigger=/usr/lib/systemd/catalog:\
 /etc/systemd/system:\
 /etc/systemd/user
 "
-checkdepends="grep postmarketos-release"
+checkdepends="cpio grep postmarketos-release"
+# clang: used for bpf compilation. this is the default compiler
+# grep: test-kernel-install requires 'grep -G', which is not supported by BusyBox grep.
 makedepends="
 	acl
 	acl-dev
 	audit-dev
 	bash
 	bash-completion
+	bpftool
+	bzip2-dev
 	clang
 	cmake
 	coreutils
@@ -45,9 +63,11 @@ makedepends="
 	elfutils
 	glib-dev
 	gperf
+	grep
 	kmod-dev
 	libapparmor-dev
-	libbz2
+	libarchive-dev
+	libbpf-dev
 	libcap-dev
 	libfido2-dev
 	libgcc
@@ -55,14 +75,14 @@ makedepends="
 	libintl
 	libiptcdata-dev
 	libmicrohttpd-dev
-	libpwquality
+	libpwquality-dev
 	libqrencode-dev
 	libseccomp-dev
 	libselinux-dev
+	libucontext-dev
 	libxkbcommon-dev
 	linux-pam-dev
 	linux-stable-dev
-	llvm21
 	lz4-dev
 	meson
 	musl-dev
@@ -74,15 +94,32 @@ makedepends="
 	py3-lxml
 	python3-dev
 	rsync
+	tpm2-tss-dev
+	tpm2-tss-esys
 	tpm2-tss-mu
+	tpm2-tss-rc
+	tpm2-tss-tcti-device
 	tzdata
 	util-linux-dev
 	xz-dev
+	zlib-dev
 	zstd-dev
 
 	dbus-dev
 	polkit-dev
 	"
+
+# valgrind-dev: not available on armhf and loongarch64.
+case "$CARCH" in
+	armhf|loongarch64) ;;
+	*) makedepends="$makedepends valgrind-dev" ;;
+esac
+
+# xen-dev: available only on aarch64, armv7, and x86_64.
+case "$CARCH" in
+	aarch64|armv7|x86_64) makedepends="$makedepends xen-dev" ;;
+esac
+
 # NOTE: these are dlopened and have to be listed explicitly since abuild cannot detect these dependencies
 # See:
 #  - https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/3992
@@ -93,28 +130,39 @@ depends="
 	cryptsetup-libs
 	kmod-libs
 	libapparmor
+	libarchive
 	libblkid
+	libbpf
+	libbz2
 	libcap2
 	libdw
 	libelf
+	libfdisk
 	libfido2
 	libgcrypt
 	libidn2
 	libmount
+	libpwquality
 	libqrencode
 	libseccomp
+	libselinux
 	libxkbcommon
 	linux-pam
 	lz4-libs
 	p11-kit
 	pcre2
+	tpm2-tss-esys
+	tpm2-tss-mu
+	tpm2-tss-rc
+	tpm2-tss-tcti-device
 	xz-libs
+	zlib
 	zstd-libs
 	"
 
 # provides=openrc and openrc-settingsd to prevent those packages
 # getting pulled in, as there are some conflicts (dbus)
-provides="busctl eudev openrc-settingsd=$pkgver-r$pkgrel systemd-stage0=$pkgver-r$pkgrel"
+provides="busctl openrc-settingsd=$pkgver-r$pkgrel systemd-stage0=$pkgver-r$pkgrel"
 provider_priority=100
 
 install="$pkgname.pre-install"
@@ -123,6 +171,7 @@ subpackages="
 	$pkgname-dbg
 	$pkgname-dev
 	$pkgname-doc
+	$pkgname-tests
 	$pkgname-x11
 
 	$pkgname-udevd
@@ -155,14 +204,33 @@ subpackages="
 	$pkgname-zsh-completion
 	"
 
-source="$pkgname-$pkgver.tar.gz::https://github.com/systemd/systemd/archive/refs/tags/v$_pkgver.tar.gz
-	wired.network
+if [ "$_systemd_upstream" = 1 ]; then
+	if [ "$_bootloader" = enabled ]; then
+		makedepends="
+			$makedepends
+			py3-pefile
+			py3-pytest
+			"
 
-	41416.patch
-	41418.patch
-	41419.patch
-	41483.patch
+		subpackages="
+			$subpackages
+			$pkgname-boot
+			$pkgname-ukify
+			"
+
+		_meson_extra_configure_options="
+			$_meson_extra_configure_options
+			-Dukify=enabled
+			"
+	fi
+fi
+
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/systemd/systemd/archive/refs/tags/v$_pkgver.tar.gz
+	wired.network
 	"
+builddir=${_upstream_srcdir:-"$srcdir/$pkgname-$_pkgver"}
+_meson_builddir=${_meson_builddir:-build}
 
 _bashcomp="usr/share/bash-completion/completions"
 _zshcomp="usr/share/zsh/site-functions"
@@ -186,13 +254,6 @@ _default_zshcomp() {
 }
 
 build() {
-	local bootloader="enabled"
-	case "$CARCH" in
-		# ppc64le s390x: no EFI support
-		# armv7 x86: build broken for 32-bit
-		armv7|ppc64le|s390x|x86) bootloader="disabled" ;;
-	esac
-
 	# TODO: after usr-merge completion: remove hardcoded "-D*-path" options
 	abuild-meson \
 		-Dlibc=musl \
@@ -210,22 +271,28 @@ build() {
 		-Dsetfont-path=/usr/bin/setfont \
 		-Dnologin-path=/sbin/nologin \
 		\
+		-Dldconfig=false \
+		\
+		-Dcompat-sysv-interfaces=false \
+		\
 		-Ddebug-shell=/bin/ash \
 		-Dpolkit=enabled \
 		-Dpam=enabled \
 		-Dpamlibdir=/usr/lib/security \
 		-Dpamconfdir=/usr/lib/pam.d \
 		-Dinstall-sysconfdir=false \
+		-Dinstall-tests=true \
 		\
 		-Dsysupdate=enabled \
 		-Dsysupdated=enabled \
 		-Dimportd=enabled \
 		\
-		-Dbootloader="$bootloader" \
+		-Dbootloader="$_bootloader" \
 		-Dinitrd=true \
 		-Dhibernate=false \
-		-Dselinux=disabled \
-		-Dsysvinit-path="" \
+		-Dselinux=enabled \
+		-Dukify=disabled \
+		-Dtpm2=enabled \
 		\
 		-Dhomed=disabled \
 		-Duserdb=false \
@@ -252,19 +319,20 @@ build() {
 		-Ddns-servers="9.9.9.10#dns10.quad9.net 149.112.112.10#dns10.quad9.net 2620:fe::10#dns10.quad9.net 2620:fe::fe:10#dns10.quad9.net" \
 		-Dntp-servers="0.pool.ntp.org 1.pool.ntp.org 2.pool.ntp.org 4.pool.ntp.org" \
 		\
-		-Dbpf-framework=disabled\
+		-Dbpf-framework=enabled \
 		-Dvmlinux-h=provided \
 		-Dvmlinux-h-path="$(find /usr/src -path "/usr/src/linux-headers-*-stable/vmlinux.h" | sort -V | tail -n1)" \
-		build .
-	meson compile ${JOBS:+-j ${JOBS}} -C build
+		$_meson_extra_configure_options \
+		$_meson_builddir .
+	meson compile ${JOBS:+-j ${JOBS}} -C $_meson_builddir
 }
 
 check() {
-	case "$CARCH" in
-	x86_64) meson test -C build ;;
-	*)
-		echo "*** NOTE: Skipping tests for archs that might use pmb:crossdirect/qemu-user ***" ;;
-	esac
+	if [ "$PMB_CROSS" = "unnecessary" ]; then
+		meson test --print-errorlogs --quiet --no-stdsplit -C $_meson_builddir
+	else
+		echo "*** NOTE: Skipping tests, not building natively ***"
+	fi
 }
 
 package() {
@@ -277,8 +345,7 @@ package() {
 		!openrc
 		"
 
-	DESTDIR="$pkgdir" meson install --no-rebuild -C build
-
+	DESTDIR="$pkgdir" meson install --no-rebuild -C $_meson_builddir
 
 	# NOTE: Uncomment to print dlopened dependencies and crash the build:
 	# _dump_dlopen_metadata "$pkgdir" | _extract_sonames | _resolve_packages; exit 1
@@ -289,12 +356,14 @@ package() {
 		echo 'disable *' > "$pkgdir"/usr/lib/systemd/"$type"-preset/99-default.preset
 	done
 
-	# initramfs hardcodes /sbin/init
-	mkdir -p "$pkgdir"/sbin
-	ln -sf "../usr/lib/systemd/systemd" "$pkgdir"/sbin/init
+	if [ "$_systemd_upstream" != 1 ]; then
+		# initramfs hardcodes /sbin/init
+		mkdir -p "$pkgdir"/sbin
+		ln -sf "../usr/lib/systemd/systemd" "$pkgdir"/sbin/init
 
-	# this stuff is packaged in Alpine aports under "systemd-boot"
-	rm -rf "$pkgdir"/usr/lib/systemd/boot
+		# this stuff is packaged in Alpine aports under "systemd-boot"
+		rm -rf "$pkgdir"/usr/lib/systemd/boot
+	fi
 }
 
 udevd() {
@@ -305,9 +374,9 @@ udevd() {
 	# dlopened and must be explicitly listed
 	depends="kmod-libs"
 
-	# NOTE: should only be udev, but packages hardcode eudev
-	provides="eudev udev eudev-libs"
-	provider_priority=100
+	# eudev-libs: pulled in by eudev-dev makedepend and added by abuild from the
+	# .so file
+	provides="udev=$pkgver-r$pkgrel eudev-libs=$pkgver-r$pkgrel"
 
 	amove usr/bin/udevadm
 	amove usr/lib/libudev*
@@ -318,11 +387,16 @@ udevd() {
 	amove usr/lib/udev
 
 	# Install symlinks to be more like eudev
-	# FIXME: After usr merge, convert these into relative symlinks to support
-	# installing this package into an arbitrary directory
-	mkdir -p "$subpkgdir"/sbin "$subpkgdir"/bin
-	ln -sf /usr/lib/systemd/systemd-udevd "$subpkgdir"/sbin/udevd
-	ln -sf /usr/lib/systemd/systemd-udevd "$subpkgdir"/bin/udevadm
+	if [ "$_systemd_upstream" = 1 ]; then
+		mkdir -p "$subpkgdir"/usr/sbin
+		ln -sf ../bin/udevadm "$subpkgdir"/usr/sbin/udevd
+	else
+		# FIXME: After usr merge, convert these into relative symlinks to support
+		# installing this package into an arbitrary directory
+		mkdir -p "$subpkgdir"/sbin "$subpkgdir"/bin
+		ln -sf /usr/lib/systemd/systemd-udevd "$subpkgdir"/sbin/udevd
+		ln -sf /usr/lib/systemd/systemd-udevd "$subpkgdir"/bin/udevadm
+	fi
 }
 
 udevd_bcomp() {
@@ -422,7 +496,7 @@ logind() {
 		$pkgname=$pkgver-r$pkgrel
 		dbus
 		shadow
-	"
+		"
 
 	provides="elogind"
 	provider_priority=100
@@ -450,7 +524,6 @@ logind_zcomp() {
 
 journald() {
 	pkgdesc="systemd Journal"
-	# is a dependency of systemd
 
 	amove usr/bin/journalctl
 	amove usr/lib/systemd/system/sockets.target.wants/systemd-journal*
@@ -469,6 +542,12 @@ journald_zcomp() {
 	_default_zshcomp _journalctl
 }
 
+tests() {
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/lib/systemd/tests
+}
+
 x11() {
 	pkgdesc="systemd x11"
 	install_if="$pkgname=$pkgver-r$pkgrel xorg-server-common"
@@ -477,8 +556,7 @@ x11() {
 }
 
 dev() {
-	provides="eudev-dev udev-dev systemd-stage0-dev=$pkgver-r$pkgrel"
-	provider_priority=100
+	provides="eudev-dev=$pkgver-r$pkgrel udev-dev=$pkgver-r$pkgrel systemd-stage0-dev=$pkgver-r$pkgrel"
 
 	default_dev
 }
@@ -487,6 +565,37 @@ libs() {
 	provides="systemd-stage0-libs=$pkgver-r$pkgrel"
 
 	default_libs
+}
+
+boot() {
+	# Currently, this is only used in the upstream systemd CI with mkosi.
+
+	pkgdesc="systemd's EFI boot manager"
+	provides="efistub"
+	provider_priority=200
+
+	amove usr/lib/systemd/boot/efi
+}
+
+ukify() {
+	# Currently, this is only used in the upstream systemd CI with mkosi.
+
+	pkgdesc="Create unified kernel images (UKIs)"
+	provides="ukify"
+	provider_priority=200
+	depends="
+		binutils
+		py3-cryptography
+		py3-pefile
+		py3-zstandard
+		python3
+		systemd-boot=$pkgver-r$pkgrel
+		"
+
+	amove usr/bin/ukify
+	amove usr/lib/kernel/install.d/60-ukify.install
+	amove usr/lib/systemd/boot/hwids
+	amove usr/lib/systemd/ukify
 }
 
 # Scan for dlopened dependencies
@@ -531,10 +640,6 @@ _resolve_packages() {
 
 
 sha512sums="
-9f975dce6861853a817a7ceab18a24449a85d1bda6939b3a5173430c02a4d8a9a2b34ebb8cce1c51db9b0ff9078fcc65da7b0f44e3bdcbbe013b9e04bb6f0ff9  systemd-260.1.tar.gz
+5bd4ed38246de1ea17b46fcc6f921f94a53047cec4dc53b005afd4ca75cd50d631b92c6662204871ad2c0808694244ec15d90732b1251d15bf5f9d74b6a2a7f0  systemd-262_rc1.tar.gz
 81c897fed8a3fbfb67ec591b2398a5d65e4af1b3ef379376c157c98d71f085b707f8ebc896d5571a94f99f8fc84fd6b43e3b879ca9b0d57fc6c4596034c7a777  wired.network
-c33c552c6b8c74d3c15f339ec0ebc6d179022f18ba13d8524ce22e9311deb4bbba369a3a737222c9954817398c44998f3169f7f55122d6ee7b96f7d3fd6bcc78  41416.patch
-ca2f3a1326b3367aef0c1961c6dbbce0659b81ef39a0a546db69129b2edeba2f5141a663ae0d926bca96d7a9d1d09c7d840c63165f317f778a489b44f9b431c6  41418.patch
-394fb47e88f5ae766ffcb226bd55df25771e45099ba3cbed6b034e9a36a77a13029d24b2e2f27ef6624f6dfb87f1165da4654d4043fe8b88bcd34d81f786f902  41419.patch
-cb564eec45452df51eb8cbca8f8f92f1715d20867ac156c4b3d9b453862a328b8bde98948978d8de05e9c3e49a6c21b3bc5c0a128273b6d814a435ad7bd41d5c  41483.patch
 "

@@ -3,8 +3,8 @@
 maintainer="Luca Weiss <luca@lucaweiss.eu>"
 _flavor="postmarketos-qcom-sc7280"
 pkgname=linux-$_flavor
-pkgver=6.19.0
-pkgrel=4
+pkgver=7.2.2
+pkgrel=0
 pkgdesc="Mainline Kernel fork for SC7280/SM7325/QCM6490 devices"
 arch="aarch64"
 _carch="arm64"
@@ -19,12 +19,15 @@ options="!strip !check !tracedeps
 makedepends="
 	bison
 	clang
+	elfutils-dev
 	findutils
 	flex
 	installkernel
+	linux-headers
 	lld
 	llvm
 	openssl-dev
+	pahole
 	perl
 	python3
 	zstd
@@ -65,7 +68,7 @@ package() {
 		ARCH="$_carch" \
 		LLVM=1 \
 		INSTALL_PATH="$pkgdir"/boot/ \
-		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
 		INSTALL_MOD_STRIP=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
 	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
@@ -75,6 +78,6 @@ package() {
 }
 
 sha512sums="
-78f89b713eb93df1e8e24f3d5be31e276c91a7746d3ad9eefebb23805046669bbebc79df2679324d950d82ac2e155561096bf7dd1369088b0e762053bf496b32  linux-v6.19.0-sc7280.tar.gz
-72738bb83dd228f6c18ae903debb45110355f789bebc7562b23ea3e8bc0b85817291ef2a43d168d7fae2c59d9aa5d07e7f14cb8435293302866b91665a4fa77e  config-postmarketos-qcom-sc7280.aarch64
+17fde188f587e72feda664da72046458bb38f892785c9fe0b9ffd410d161b6620d28da0afbf38705078539c2d34fbd9aa3556d8de61aafdbe30ccd62bd80769b  linux-v7.2.2-sc7280.tar.gz
+1b31f009f15a936e6025559027c43b00cf334b45d11e03fae311786458663dcb1f24ab240482de6b44b77b2059b8a38ad3f46a23e10a2a3a0a6f302468a0d789  config-postmarketos-qcom-sc7280.aarch64
 "

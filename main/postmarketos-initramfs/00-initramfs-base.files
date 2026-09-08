@@ -1,9 +1,10 @@
 /bin/busybox
 /bin/busybox-extras
-/etc/deviceinfo
-/etc/unudhcpd.conf
+/etc/deviceinfo!optional
+/etc/unudhcpd.conf!optional
 /sbin/blkid
 /usr/bin/iskey
+/usr/bin/beebzzr
 /usr/bin/unudhcpd
 /usr/sbin/losetup
 /usr/share/deviceinfo/deviceinfo

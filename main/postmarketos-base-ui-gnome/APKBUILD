@@ -1,15 +1,14 @@
 # Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
 # Co-Maintainer: Achill Gilgenast <achill@achill.org>
-maintainer="Newbyte <newbyte@postmarketos.org>"
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
 pkgname=postmarketos-base-ui-gnome
-pkgver=11
+pkgver=14
 pkgrel=0
 pkgdesc="Meta package for shared configuration for GNOME-based UIs"
 url="https://postmarketos.org"
 arch="noarch"
 license="GPL-3.0-or-later"
 depends="
-	dnsmasq
 	gcr-ssh-agent
 	glycin-loaders-all
 	glycin-thumbnailer
@@ -19,6 +18,7 @@ depends="
 	gst-thumbnailers
 	iio-sensor-proxy
 	modemmanager
+	polkit-elogind
 	postmarketos-artwork-wallpapers
 	postmarketos-base-ui
 	postmarketos-base-ui-audio
@@ -38,9 +38,13 @@ options="!check"
 subpackages="
 	$pkgname-duranium
 	$pkgname-openrc
+	gnome-app-provider-gnome-software:gnome_software
+	gnome-app-provider-bazaar:bazaar
 	"
+install="$pkgname-openrc.post-install $pkgname-openrc.post-upgrade"
 
 _pmb_recommends="
+	cups
 	decibels
 	firefox-esr
 	flatpak
@@ -52,8 +56,6 @@ _pmb_recommends="
 	gnome-console
 	gnome-contacts
 	gnome-maps
-	gnome-software
-	gnome-software-plugin-apk
 	gnome-text-editor
 	gnome-user-share
 	gnome-weather
@@ -72,13 +74,14 @@ _pmb_recommends="
 "
 
 package() {
+	depends="$depends gnome-app-provider"
+
 	install -Dm644 -t "$pkgdir"/usr/share/glib-2.0/schemas \
 		"$srcdir"/*.override
 }
 
 openrc() {
 	install_if="$pkgname=$pkgver-r$pkgrel openrc"
-	install="$subpkgname.post-install $subpkgname.post-upgrade"
 	depends="
 		apk-polkit-rs-openrc
 		elogind
@@ -87,7 +90,6 @@ openrc() {
 		modemmanager-openrc
 		networkmanager-openrc
 		openrc
-		polkit-elogind
 	"
 
 	mkdir "$subpkgdir"
@@ -96,10 +98,28 @@ openrc() {
 duranium() {
 	pkgdesc="$pkgdesc (Duranium)"
 	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-duranium"
-	depends="gnome-software-plugin-sysupdate"
+	depends="gnome-app-provider-bazaar"
 
 	install -Dm644 "$srcdir"/50-duranium.conf \
 		-t "$subpkgdir"/usr/lib/kernel-cmdline.d
+}
+
+gnome_software() {
+	pkgdesc="Provider that installs GNOME Software"
+	provides="gnome-app-provider"
+	provider_priority=100
+	depends="gnome-software gnome-software-plugin-apk"
+
+	mkdir -p "$subpkgdir"
+}
+
+bazaar() {
+	pkgdesc="Provider that installs Bazaar"
+	provides="gnome-app-provider"
+	provider_priority=90
+	depends="bazaar"
+
+	mkdir -p "$subpkgdir"
 }
 
 sha512sums="

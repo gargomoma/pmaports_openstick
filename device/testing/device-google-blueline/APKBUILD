@@ -4,7 +4,7 @@
 maintainer="Victoria Brekenfeld <postmarketos@drakulix.de>"
 pkgname=device-google-blueline
 pkgdesc="Google Pixel 3"
-pkgver=6
+pkgver=7
 pkgrel=0
 url="https://postmarketos.org"
 license="MIT"

@@ -2,11 +2,13 @@
 disable systemd-network*
 disable systemd-homed*
 disable systemd-journald-audit.socket
-enable systemd-time-wait-sync.service
 
 # starting multipathd on systems with no multipath hardware can soft-hang
 # boot, so disable it by default
 disable multipathd.service
+
+# sleep/shutdown inhibit when apk is running
+enable apk-inhibit.path
 
 # for basically all Uis
 ## system services
@@ -17,12 +19,10 @@ enable apk-polkit-server.service
 enable bluetooth.service
 enable haveged.service
 enable hkdm.service
-enable kill-pbsplash.service
 enable shutdown-splash.service
 enable nftables.service
 enable postmarketos-tweakd.service
 enable rtkit-daemon.service
-enable sleep-inhibitor.service
 enable sshd.service
 enable systemd-rfkill.service
 enable tinydm.service
@@ -38,9 +38,12 @@ enable alsa-state.service
 enable tuned.service
 enable tuned-ppd.service
 enable irqbalance.service
-enable usb-moded.service
+enable usb-signaller.service
+enable unudhcpd@.service usb0
 enable dbus-broker.service
 enable avahi-daemon.service
+enable routewrangler.service
+enable resolv-conf-stub-link.service
 
 # Note: technically these two shouldn't be enabled at the same time, but
 # pmos-base-wifi provides should make sure that only one is installed at the
@@ -67,8 +70,8 @@ enable gdm.service
 ## optional dependency of gnome-usage
 enable vnstat.service
 
-## fbkeyboard
-enable fbkeyboard.service
+## buffyboard
+enable buffyboard.service
 
 ## kodi
 enable kodi.service
@@ -106,7 +109,6 @@ enable hfd-service.service
 enable 81voltd.service
 enable diag-router.service
 enable msm-modem-uim-selection.service
-enable pd-mapper.service
 enable q6voiced.service
 enable qbootctl.service
 enable qrtr-ns.service

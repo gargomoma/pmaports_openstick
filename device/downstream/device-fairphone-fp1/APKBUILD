@@ -2,7 +2,7 @@
 maintainer="Luca Weiss <luca@lucaweiss.eu>"
 pkgname=device-fairphone-fp1
 pkgdesc="Fairphone 1"
-pkgver=5
+pkgver=6
 pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
@@ -21,5 +21,5 @@ package() {
 }
 
 sha512sums="
-5ba06ad99a1ddf48f96813170a69a633ee4b83e2635a544fb408650860f9c708bf067b9c73494901186ff96d1f3b5027c39c4e5d87f1eca82e01cd2a2377eb43  deviceinfo
+cd957bf5b2f2dc530a390514c2ed220acbb2ff2a0b0b14597f563cb87d0ca0e6e0c1336ebe75ca5e59df4b219c670b89d39e3cfc1f52b7aa45910f2890aaa1cf  deviceinfo
 "

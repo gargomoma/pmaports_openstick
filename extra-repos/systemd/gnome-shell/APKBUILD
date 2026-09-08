@@ -1,9 +1,9 @@
 # Forked from Alpine to add systemd!
 # Co-Maintainer: Pablo Correa Gomez <pabloyoyoista@postmarketos.org>
 # Co-Maintainer: Achill Gilgenast <achill@achill.org>
-maintainer="Newbyte <newbyte@postmarketos.org>"
+maintainer="Stefan Hansson <newbyte@postmarketos.org>"
 pkgname=gnome-shell
-_pkgver=50.1
+_pkgver=50.4
 pkgver=9999$_pkgver
 pkgrel=0
 pkgdesc="GNOME shell"
@@ -124,6 +124,6 @@ schemas() {
 }
 
 sha512sums="
-3dd66936603b46043ec6757c555dc5172d1b2b700d5bfad53d3a648eb81f50be761827f00eab04e98392edaa207565250ce40b6fc871ea41b554977dffc2aac4  gnome-shell-50.1.tar.xz
+0b3a52861ee7255901fa8b9bf4ad07ff97261a762e16679b5779adc477e115e281b083a31e47f6a42a4b0bda93192431773e0e54fd690e640fcbeb0f42a54d1d  gnome-shell-50.4.tar.xz
 ae4ac679bacd35948b44068e5a70407f473bd96986ee126abb1bdf066db5cbc2087a3ffae0b390286689cacbe8325870fd43663ba39f4f7543216e02bf083934  gsh.patch
 "
