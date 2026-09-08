@@ -9,7 +9,9 @@ arch="aarch64"
 license="MIT"
 depends="
 	android-tools-mkbootimg
+	firmware-samsung-b2q
 	hexagonrpcd
+	linux-firmware-ath11k
 	linux-firmware-qca
 	linux-firmware-qcom
 	linux-postmarketos-qcom-sm8350
