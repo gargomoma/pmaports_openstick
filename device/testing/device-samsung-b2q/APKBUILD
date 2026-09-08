@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Alicja Michalska <ellyqw@mainlining.org>"
+pkgname=device-samsung-b2q
+pkgdesc="Samsung Galaxy Z Flip3 5G"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	android-tools-mkbootimg
+	hexagonrpcd
+	linux-firmware-qca
+	linux-firmware-qcom
+	linux-postmarketos-qcom-sm8350
+	make-dynpart-mappings
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+	"
+options="!archcheck !check"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+55bf8bd5024b0af295841824354ac821ba39d3a6b3bb00187f5410a670fee7e14a88914860512c31e879ed6636894f27a148c4c1655dc8b6491f3911e7daa807  deviceinfo
+9ed1246237067259c1e533bbbda28de56836a8ebe2fe9dc079f038552062be6b7daf9e2f46261d293d7eb58fa2d3d52d516f98c309f6adcd01d910a0e436cfcf  kernel-cmdline.conf
+da7f53f199fd38c6583228c00a325ecb67b578f144f21f2deb834d7012441e83e518f3b611cfd63b74468cbc0b9304e4ab71478d225affe00de888bfcbbdb09a  modules-initfs
+"
