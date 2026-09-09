@@ -2,8 +2,8 @@
 # Co-Maintainer: Jan Jasper de Kroon <jajadekroon@gmail.com>
 maintainer="Arnav Singh <me@arnavion.dev>"
 pkgname=device-pine64-pinephone
-pkgver=15
-pkgrel=2
+pkgver=16
+pkgrel=0
 pkgdesc="PINE64 PinePhone"
 url="https://postmarketos.org"
 license="MIT"
@@ -16,6 +16,7 @@ subpackages="
 	$pkgname-openrc
 	$pkgname-plasma-mobile:plasma_mobile
 	$pkgname-sensorfw
+	$pkgname-udev
 	$pkgname-upower
 	$pkgname-vccq-mod:vccq_mod
 	$pkgname-sway
