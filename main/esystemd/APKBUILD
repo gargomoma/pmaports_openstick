@@ -2,7 +2,7 @@
 maintainer="Aster Boese <asterboese@mailbox.org>"
 pkgname=esystemd
 pkgver=261.2
-pkgrel=1
+pkgrel=2
 _pkgname="systemd"
 _pkgver="${pkgver/_/-}"
 pkgdesc="systemd meta package for OpenRC-specific binaries and configs"
@@ -13,11 +13,13 @@ makedepends_build="
 	meson
 	coreutils
 	gperf
+	kmod
 	py3-jinja2
 	bash
 	"
 makedepends_host="
 	dbus-dev<9990
+	kmod-dev
 	libblkid
 	libcap
 	libcap-dev
@@ -32,6 +34,8 @@ subpackages="
 	$pkgname-sysusers:standalone
 	$pkgname-tmpfiles-openrc:standalone_tmpfiles_openrc
 	$pkgname-tmpfiles:standalone
+	$pkgname-udevd-openrc:udevd_openrc
+	$pkgname-udevd
 	"
 source="systemd-$pkgver.tar.gz::https://github.com/systemd/systemd/archive/refs/tags/v$_pkgver.tar.gz
 	$_pkgname-sysusers.initd
@@ -39,10 +43,12 @@ source="systemd-$pkgver.tar.gz::https://github.com/systemd/systemd/archive/refs/
 	$_pkgname-tmpfiles-setup-dev-early.initd
 	$_pkgname-tmpfiles-setup-dev.initd
 	$_pkgname-tmpfiles-setup.initd
+	$_pkgname-udevd-postmount.initd
 	"
 triggers="
 	$pkgname-sysusers.trigger=/usr/lib/sysusers.d
 	$pkgname-tmpfiles.trigger=/usr/lib/tmpfiles.d
+	$pkgname-udevd.trigger=/usr/lib/udev/rules.d
 	"
 # Any libraries, if they are eventually added, should not conflict or provide
 # the main systemd package versions and cause esystemd to be installed instead
@@ -51,6 +57,7 @@ options="!check pmb:cross-native2"
 builddir="$srcdir/$_pkgname-$_pkgver"
 
 build() {
+	# logind is only enabled to enable the udev rules
 	abuild-meson \
 		-Dtests=false \
 		-Ddbuspolicydir=/usr/share/dbus-1/system.d \
@@ -110,7 +117,7 @@ build() {
 		-Dinitrd=false \
 		-Dkernel-install=false \
 		-Dlocaled=false \
-		-Dlogind=false \
+		-Dlogind=true \
 		-Dmachined=false \
 		-Dmountfsd=false \
 		-Dnetworkd=false \
@@ -145,6 +152,18 @@ package() {
 		"$pkgdir"/
 	mv "$pkgdir"/usr/bin/systemd-tmpfiles.standalone \
 		"$pkgdir"/
+	mv "$pkgdir"/usr/bin/udevadm \
+		"$pkgdir"/
+	mv "$pkgdir"/usr/lib/udev \
+		"$pkgdir"/
+
+	# Save libudev so we can provide eudev-libs
+	mv "$pkgdir"/usr/lib/libudev.so* \
+		"$pkgdir"/
+
+	# Save shared library for usage by udev
+	mv "$pkgdir"/usr/lib/systemd/libsystemd-shared-* \
+		"$pkgdir"/
 
 	# Only save basic.conf since the rest of the configs are systemd-
 	# specific
@@ -174,6 +193,19 @@ package() {
 	mkdir -p "$pkgdir"/usr/bin
 	mv "$pkgdir"/systemd* \
 		"$pkgdir"/usr/bin/
+	mv "$pkgdir"/udevadm \
+		"$pkgdir"/usr/bin/
+
+	mkdir -p "$pkgdir"/usr/lib/
+	mv "$pkgdir"/udev \
+		"$pkgdir"/usr/lib/
+
+	mv "$pkgdir"/libudev.so* \
+		"$pkgdir"/usr/lib/
+
+	mkdir -p "$pkgdir"/usr/lib/systemd
+	mv "$pkgdir"/libsystemd-shared-* \
+		"$pkgdir"/usr/lib/systemd/
 
 	mkdir -p "$pkgdir"/usr/lib/sysusers.d
 	mv "$pkgdir"/basic.conf \
@@ -192,6 +224,8 @@ package() {
 	done
 	install -Dm755 "$srcdir"/systemd-sysusers.initd \
 		"$pkgdir"/etc/init.d/systemd-sysusers
+	install -Dm755 "$srcdir"/systemd-udevd-postmount.initd \
+		"$pkgdir"/etc/init.d/systemd-udevd-postmount
 }
 
 standalone() {
@@ -220,6 +254,36 @@ standalone_tmpfiles_openrc() {
 	amove etc/init.d/systemd-tmpfiles*
 }
 
+udevd_openrc() {
+	pkgdesc="systemd udev packaged alone"
+	install_if="$pkgname-udevd=$pkgver-r$pkgrel openrc"
+
+	amove etc/init.d/systemd-udevd-postmount
+}
+
+udevd() {
+	pkgdesc="systemd udev packaged alone"
+	depends="$pkgname=$pkgver-r$pkgrel kmod-libs"
+	# always provide a lower version than the real systemd-udevd but higher than
+	# eudev
+	# This shouldn't actually be a huge issue, since systemd-udevd is
+	# explicitly installed on systemd images, but just in-case
+	provides="
+		udev=100.$pkgver-r$pkgrel
+		eudev-libs=100.$pkgver-r$pkgrel
+		so:libudev.so.1
+		so:libudev.so
+	"
+
+	amove usr/bin/udevadm
+	amove usr/lib/udev
+	amove usr/lib/libudev*
+
+	# Install symlinks to be more like eudev
+	mkdir -p "$subpkgdir"/usr/sbin
+	ln -sf ../bin/udevadm "$subpkgdir"/usr/sbin/udevd
+}
+
 sha512sums="
 876f043970cb65b39ae15fba39f23bf94c7c3d80569503d6e8ea2c8013c30ee40ce43cb55cbcb1cf14d5c3021aafc09c0f67473bbf742d8964bf9fa30693b971  systemd-261.2.tar.gz
 89216553f97018c23c971b3f575021c7f0a2b4a3b654ffde064ad4c9bd9a1c4d5f09aea21d9b8dd7954927d9b584c3e53b2f867b4e3e1e8d8572a7de453c7f62  systemd-sysusers.initd
@@ -227,4 +291,5 @@ sha512sums="
 afc1d66f74818c13ddbb9db65446b82d1aa4e638cbe97f518b1da19b67e9d01ccbb109f13521dec75edc01594d4e930867df79ad5e52ee6bf261651ebf837d9e  systemd-tmpfiles-setup-dev-early.initd
 46169b0bb4d1e51b85126c546921821eb100a56074bfffeb1ba7467d868cba3093f025410c99696ee7e3bad814479dfcfd5379173c4e8dea380daaf204014d78  systemd-tmpfiles-setup-dev.initd
 e5e12fb3572ab4a1af4795cc0dbf9bb70567296b91b63551a2d3bf32ccacd7a33ee79c4e1c50b544ef025716f0d1d9f84ece4008904fd462fecee43b0c3a4104  systemd-tmpfiles-setup.initd
+8ef1b911843ab13acb1c1b9b7a0a5cd76659f395c3db9e579429556f23eacebb414507dc0231e2455e7589bc70054fa1e6b6dd93dd833f7101c0da0597aabf88  systemd-udevd-postmount.initd
 "
