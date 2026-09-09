@@ -3,7 +3,7 @@ maintainer="Jakko <jahau@rocketmail.com>"
 pkgname=device-samsung-serranove
 pkgdesc="Samsung Galaxy S4 Mini Value Edition"
 pkgver=18
-pkgrel=2
+pkgrel=3
 url="https://postmarketos.org"
 license="MIT"
 arch="armv7"
@@ -28,12 +28,6 @@ source="
 	"
 subpackages="$pkgname-phosh"
 
-# Backwards compatibility for old device package names + kernel variants
-_substitutes="device-samsung-serranovelte"
-replaces="$_substitutes $pkgname-kernel-mainline $pkgname-kernel-mainline-modem"
-for pkg in $_substitutes; do replaces="$replaces $pkg-kernel-mainline $pkg-kernel-mainline-modem"; done
-for pkg in $replaces; do provides="$provides $pkg=$pkgver-r$pkgrel"; done
-
 build() {
 	devicepkg_build $startdir $pkgname
 }
@@ -43,8 +37,6 @@ package() {
 }
 
 phosh() {
-	replaces="$_substitutes-phosh"
-	provides="$replaces=$pkgver-r$pkgrel"
 	install_if="$pkgname postmarketos-ui-phosh"
 	install -Dm644 "$srcdir"/phoc.ini \
 		"$subpkgdir"/etc/phosh/phoc.ini
