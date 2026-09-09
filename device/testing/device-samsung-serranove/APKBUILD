@@ -1,9 +1,8 @@
-# Archived: unmaintained
 # Reference: <https://postmarketos.org/devicepkg>
-maintainer=""
+maintainer="Jakko <jahau@rocketmail.com>"
 pkgname=device-samsung-serranove
 pkgdesc="Samsung Galaxy S4 Mini Value Edition"
-pkgver=17
+pkgver=18
 pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
