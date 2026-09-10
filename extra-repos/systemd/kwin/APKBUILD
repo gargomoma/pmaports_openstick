@@ -1,7 +1,7 @@
 # Forked from Alpine to add systemd!
 maintainer="team/kde <bribbers@disroot.org>"
 pkgname=kwin
-_pkgver=6.7.4
+_pkgver=6.7.5
 pkgver=9999$_pkgver
 pkgrel=0
 pkgdesc="An easy to use, but flexible, composited Window Manager"
@@ -124,5 +124,5 @@ package() {
 	DESTDIR="$pkgdir" cmake --install build
 }
 sha512sums="
-03f038b23187cf940aa90b2431e8fb09ce1ba77a69941ac1f824db314536059bcf30b2b54d40d9e9b4fc6532a4a551263656dd246c6584a517cb791d51a52dba  kwin-6.7.4.tar.xz
+8f69d8c06a7eb40f87de22347e00bbc9e157b9442f48c31c4a7373b8b62c96ba37991aa38019bd6c0b8437705593ec1740380a64a8e9af08fe6af235239bcdcc  kwin-6.7.5.tar.xz
 "
