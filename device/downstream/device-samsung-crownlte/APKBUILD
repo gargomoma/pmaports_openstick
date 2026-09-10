@@ -1,6 +1,6 @@
 # Archived: unmaintained
 # Reference: <https://postmarketos.org/devicepkg>
-maintainer=""
+maintainer="Thorben T. <r00t@constancy.org>"
 pkgname=device-samsung-crownlte
 pkgdesc="Samsung Galaxy Note 9"
 pkgver=4
