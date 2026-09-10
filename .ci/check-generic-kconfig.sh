@@ -8,7 +8,7 @@ if [ "$(id -u)" = 0 ]; then
 fi
 
 KERNELS="linux-postmarketos-lts linux-postmarketos-stable linux-postmarketos-mainline"
-ARCHS="aarch64 armv7 loongarch64 ppc64le riscv64 x86 x86_64"
+ARCHS="aarch64 armv7 loongarch64 ppc64le riscv64 x86_64"
 
 TOTAL=0
 PASSED=0

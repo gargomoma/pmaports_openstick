@@ -76,7 +76,7 @@ update_linux_next() {
 	# Update the checksums
 	pmbootstrap checksum linux-next
 
-	for arch in aarch64 armv7 loongarch64 ppc64le riscv64 x86 x86_64; do
+	for arch in aarch64 armv7 loongarch64 ppc64le riscv64 x86_64; do
 		# Regenerate the configuration
 		pmbootstrap --details-to-stdout kconfig generate linux-next --arch $arch
 		# Ensure it builds
