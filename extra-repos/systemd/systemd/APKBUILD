@@ -17,7 +17,7 @@ pkgname=systemd
 pkgver=262_rc2
 _pkgver="${pkgver/_/-}"
 # pkgrel must match systemd-stage0!
-pkgrel=0
+pkgrel=1
 pkgdesc="System and service manager"
 url="https://github.com/systemd/systemd"
 # armhf: no linux-stable
@@ -165,7 +165,7 @@ depends="
 provides="busctl openrc-settingsd=$pkgver-r$pkgrel systemd-stage0=$pkgver-r$pkgrel"
 provider_priority=100
 
-install="$pkgname.pre-install"
+install="$pkgname.post-upgrade"
 subpackages="
 	$pkgname-lang
 	$pkgname-dbg
