@@ -2,12 +2,13 @@
 maintainer="Thomas Turner <tturner@lineageos.org>"
 pkgname=device-samsung-a21s
 pkgver=1
-pkgrel=0
+pkgrel=1
 pkgdesc="Samsung Galaxy A21s"
 url="https://postmarketos.org"
 arch="aarch64"
 license="MIT"
 depends="
+	android-tools-avbtool
 	android-tools-mkbootimg
 	firmware-samsung-a21s
 	linux-postmarketos-exynos850
