@@ -1,6 +1,6 @@
 maintainer="Clayton Craft <clayton@craftyguy.net>"
 pkgname=postmarketos-base-ui
-pkgver=60
+pkgver=61
 pkgrel=0
 pkgdesc="Meta package for minimal postmarketOS UI base"
 url="https://postmarketos.org"
@@ -66,6 +66,7 @@ install="
 	"
 replaces="
 	chrony-common
+	linux-pam
 	postmarketos-base
 	sleep-inhibitor
 	wpa_supplicant-openrc
@@ -82,14 +83,17 @@ _pmb_recommends="
 
 _source644="
 	etc/chrony/chrony.conf
+	etc/environment
 	etc/elogind/logind.conf
 	etc/conf.d/bluetooth
 	etc/conf.d/openrc-settingsd
 	etc/conf.d/modemmanager
 	etc/conf.d/tinydm
 	etc/conf.d/wpa_supplicant
+	etc/profile.d/pmos-path.sh
+	etc/profile.d/qt-mobile-controls.sh
+	etc/profile.d/qt-wayland.sh
 	etc/pulse/default.pa.d/postmarketos.pa
-	etc/skel/.profile
 	etc/sleep-inhibitor.conf
 	etc/X11/Xwrapper.config
 	usr/lib/NetworkManager/conf.d/50-connectivity.conf
@@ -108,8 +112,6 @@ _source644="
 "
 _source755="
 	usr/share/tinydm/env-wayland.d/50-sdl-wayland.sh
-	etc/profile.d/qt-mobile-controls.sh
-	etc/profile.d/qt-wayland.sh
 	"
 
 # Avoid filename based checksum conflicts by including the whole path.
@@ -347,14 +349,17 @@ iio_sensor_proxy_systemd() {
 
 sha512sums="
 187baa4a2b77e1e97a13536553ef2e1f64c3968f07ab2a372b550e4eee10a801a3b9797766d0d9f566148230335f3d4d150cd335bc40050322313a195874d608  rootfs-etc-chrony-chrony.conf
+78ce55d9bb50db22df3f4b8a0757f7d6147caa212bcc5366b8bc03cdabfd6f20354c272120d75789424d1cacc17cd62facbf3fae497d9f1714756578c80d3072  rootfs-etc-environment
 8d2c54fe3ca62c62f8337fb6be28479d0e02ea63f32abae81907f2768631e65c9e17485f8bc0854a013377f729b06dd1873e2b75f86f657ece866d00aecbbdb4  rootfs-etc-elogind-logind.conf
 b841282b96110ec59a7aa539db0737327b09549d55c78dc4b2c3b28b4a6ad1facf015b3175cb6d3a38f13e47aa6314ef3dc1514a4e60dd653a97409ec54ba706  rootfs-etc-conf.d-bluetooth
 49fb494b659fe0149a93eafe109609acce6a470bb8acea160638d07e0e4b11af2544f34549d5ef2deb2914a7ef13d0d470b04ad62981f14f96999af02a5f24cf  rootfs-etc-conf.d-openrc-settingsd
 e33f41360ccc4900bb76a26cc7b46bde1fb90facdf45c4fbcebc80499386939948401cacd6df9f779eafab10f4ee77ee1fef3e7bd06f483f8c2a4a644c84f327  rootfs-etc-conf.d-modemmanager
 44e4283c6f77de83915977dd3bc2d8e2d96b3ed6cc68d3cc156304359ae649b5a8b0bac843e517ec6faa2066dd43ba85e313899b1eda04862f864fb9eb508aa0  rootfs-etc-conf.d-tinydm
 e9f6167d8e0af6d2b60dd4b95b7a58af3cb4856ea1650dc9f17d7562c603a578ea51597cd7b82401e74f9ffb66ce306b6478ef0c0d702de9f49c0a12613b8bea  rootfs-etc-conf.d-wpa_supplicant
+450bdde6eb64131fa553ce98b5478cbf4003bceabc2e5336c14b5670a31cdb3c600ae85fc760f26cf365e73cc9efedde08296df32c7e70cdca60918eca1d8af9  rootfs-etc-profile.d-pmos-path.sh
+6c4b4e573665c2985f23a4222cc0d3094851577e941c37badb813f78fe7d31480919abea345e3913d8161b26b393b7cd7a0c2ec552aa47715af3a8f3248e66b2  rootfs-etc-profile.d-qt-mobile-controls.sh
+e60bfff4ae4b246e9b31cfe1aab55b670b7bb49f670830846d623a6d7f21c6d5c8b90a62a8612b621c4b6122ff6c509be81e6e2bd95e522041e08c6f09c14736  rootfs-etc-profile.d-qt-wayland.sh
 6c516635a61fbaa93102f02301a75070a91de837456b07a50e24a9e0ee5dac785087d4a8f78906807719ebf6f0124127383441cccf00475d9a91d3dbaf9d4d81  rootfs-etc-pulse-default.pa.d-postmarketos.pa
-90b30cbea660ef6cd4c0461b6935de0cd63a84a1a40edb24348a83044c97935b974bd8bafda9cd558e92d3eb69e22c5ccf55483b80f839e24f0eb57ae2df6fe3  rootfs-etc-skel-.profile
 041e50a7f78f7f03153175027439fc203f3dc81ed9970c579a16728d36e006e77f49b0321ee4bb7bb127fa6e4c31de3e7029f80ea75c4afc83bae7d24906372d  rootfs-etc-sleep-inhibitor.conf
 cac604e25c46e695dd30bd5a10cfd2d69595fcc3bc290096ac94b76b10834d591ea6576afb79c46b5da492a1dbf8660cf87b6110cd39937e15237bc74fa7a5c6  rootfs-etc-X11-Xwrapper.config
 53a61899e0e2188e6fc6ee33c151e73078b7f6cb37d98fc820e17c75b4d2d9c0fdd6d782da896f656811f3a7c45c17216cf3fffb406bbdf639903389903f96d9  rootfs-usr-lib-NetworkManager-conf.d-50-connectivity.conf
@@ -371,6 +376,4 @@ cc86775a7820eb683e67df7d23ebae9d72699a643ff1452c71daf38ac6c39a84fd1686e67351ab0a
 92930f027626825b027f585a9be180f8a6ebae6dc44d2cf8f9d43cce00db8cbb43c33fc341fe382abacb832ea1b6414dc4c8129d265b0258d096599b2e206a93  rootfs-usr-share-wireplumber-wireplumber.conf.d-50-bluetooth.conf
 66a7a72746e822676d0ec76160e39b65c711e574a6334f3aad38c563d3104b33d0619d50b92c9201546fd81bfd10cfe0e4a59278cbcbddf20a238f6ad71c050c  rootfs-usr-share-mkinitfs-files-10-wireless-regdb.files
 ecaa57d033a119a53a6574c27636b7c89d659d75ea48a973a6a4ff6f90e5d07202529fd489bfc9dfc7430f5b60f40612f6d5c06f7fab47e681b0a3112a874058  rootfs-usr-share-tinydm-env-wayland.d-50-sdl-wayland.sh
-bf8db527c49fa724e640a90269ba2648a2555f5867b2adbfbd88d1f685261f757339757c09ee08f590c76de4bd3d0c73a47dea9bd340644dd4707e76152cefd1  rootfs-etc-profile.d-qt-mobile-controls.sh
-6e193eca3961a78d47b4656892eae34d019d9317a255a201f5ea61e3300caff04c526a27cd98d0edc072b36e3eaf3a1768f4cd27c5e2be8b19c167d535c820a6  rootfs-etc-profile.d-qt-wayland.sh
 "
