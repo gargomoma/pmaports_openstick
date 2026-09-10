@@ -1,11 +1,10 @@
-# Archived: unmaintained
 # Reference: <https://postmarketos.org/vendorkernel>
 # Kernel config based on: arch/arm64/configs/exynos9810-crownlte_defconfig
-
 maintainer="Thorben T. <r00t@constancy.org>"
 pkgname=linux-samsung-crownlte
 pkgver=4.9.218
 pkgrel=7
+_commit="5a2dd7d6f3a05168d2f1303c3b29e9e9fa39b781"
 pkgdesc="Samsung Galaxy Note 9 kernel fork"
 arch="aarch64"
 _carch="arm64"
@@ -25,11 +24,9 @@ makedepends="
 "
 
 # Source
-_repository="android_kernel_samsung_universal9810"
-_commit="5a2dd7d6f3a05168d2f1303c3b29e9e9fa39b781"
 _config="config-$_flavor.$arch"
 source="
-	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/android_kernel_samsung_universal9810/archive/$_commit.tar.gz
 	$_config
 	01-decon_reg.patch
 	02-decon_dsi-BGRA-to-RGBA.patch
