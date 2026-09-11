@@ -2,7 +2,7 @@
 maintainer="Clayton Craft <clayton@craftyguy.net>"
 pkgname=postmarketos-ui-cosmic
 pkgver=2
-pkgrel=4
+pkgrel=5
 pkgdesc="COSMIC Desktop Environment from System76"
 url="https://system76.com/cosmic/"
 # Only tested on these archs.
@@ -25,6 +25,7 @@ depends="
 "
 _pmb_recommends="
 	cosmic-edit
+	cosmic-ext-camera
 	cosmic-initial-setup
 	cosmic-monitor
 	cosmic-player
@@ -41,7 +42,6 @@ _pmb_recommends="
 	gst-plugins-rs-dav1d
 	papers
 	postmarketos-artwork-wallpapers
-	snapshot
 	tuned-ppd
 "
 source="
