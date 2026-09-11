@@ -1,0 +1,68 @@
+From: postmarketOS rhodep port
+Subject: [PATCH] arm64: dts: qcom: sm6375-motorola-rhodep: add the charger
+
+Add the SGM41542 at 0x3b so the battery actually charges. Until now the
+gauge reported correctly but the charger sat with charging disabled in
+REG01 and its watchdog off, so the state persisted across reboots and the
+phone ran off VBUS without ever charging the cell.
+
+The charge limits are deliberately below what the vendor allows. Downstream
+goes up to 4450 mV / 3000 mA, but only because it runs a software JEITA
+loop (enable_sw_jeita in its sgm4154x node) that lowers the target and cuts
+the current with temperature, and stops charging outside 0..50 C. There is
+no equivalent loop here, so the temperate-zone values from that same table
+(jeita_temp_t2_to_t3: 4350 mV, 1250 mA) are used as a fixed ceiling. The
+chip rounds them down to 4336 mV and 1200 mA.
+
+--- a/arch/arm64/boot/dts/qcom/sm6375-motorola-rhodep.dts
++++ b/arch/arm64/boot/dts/qcom/sm6375-motorola-rhodep.dts
+@@ -152,6 +152,21 @@
+ 		charge-full-design-microamp-hours = <5000000>;
+ 		voltage-min-design-microvolt = <3400000>;
+ 		voltage-max-design-microvolt = <4450000>;
++
++		/*
++		 * Deliberately conservative charge limits. The vendor allows up to
++		 * 4450 mV / 3000 mA, but only because it runs a software JEITA loop
++		 * (enable_sw_jeita in its sgm4154x node) that lowers the target and
++		 * cuts the current with temperature, and stops charging outside
++		 * 0..50 C. Mainline has no such loop, so the temperate zone values
++		 * from that same table are used as a fixed ceiling
++		 * (jeita_temp_t2_to_t3: 4350 mV, 1250 mA) como techo fijo.
++		 * The chip rounds them down to 4336 mV and 1200 mA.
++		 */
++		constant-charge-voltage-max-microvolt = <4350000>;
++		constant-charge-current-max-microamp = <1250000>;
++		precharge-current-microamp = <300000>;
++		charge-term-current-microamp = <240000>;
+ 	};
+ 
+ 	touch_avdd: touch-avdd-regulator {
+@@ -200,6 +215,27 @@
+ 		monitored-battery = <&battery>;
+ 		shunt-resistor-micro-ohms = <5000>;
+ 	};
++
++	/*
++	 * SGM41542: register level clone of the bq25601. Checked against the
++	 * vendor header (same masks, steps and bases for IINDPM, VINDPM,
++	 * VBATREG, ITERM and ICHG) and against the hardware: an unconfigured
++	 * fabrica leia 0x58 = 4208 mV, identico a BQ2560X_VBATREG_DEF_uV.
++	 *
++	 * Without "ti,watchdog-timeout-ms" the driver leaves the watchdog off,
++	 * which is what we want: if it expires the part resets its registers to
++	 * the factory values and charging stops.
++	 *
++	 * The interrupt (tlmm 12 in the vendor DT) is left out on purpose: it is
++	 * optional in bq256xx and without it the driver reads the registers on
++	 * demand. It can be added later.
++	 */
++	charger@3b {
++		compatible = "sgm,sgm41542";
++		reg = <0x3b>;
++		monitored-battery = <&battery>;
++		input-current-limit-microamp = <1000000>;
++	};
+ };
+ 
+ &i2c10 {
