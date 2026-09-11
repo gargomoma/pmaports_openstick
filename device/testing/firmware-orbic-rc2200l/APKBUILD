@@ -1,0 +1,30 @@
+maintainer="Natt-Da-Katt <nhryciw1@gmail.com>"
+pkgname=firmware-orbic-rc2200l
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Orbic Journey V"
+url="https://github.com/Natt-Da-Katt/orbic-rc2200l-firmware"
+arch="armv7"
+license="custom"
+_commit="93e27c2f81d218a59490246eb6ed00d41f13fa3d"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+subpackages="$pkgname-wcnss-nv:wcnss_nv_package"
+
+_fwsrc="$srcdir/orbic-rc2200l-firmware-$_commit"
+_fwdir="/lib/firmware/postmarketos"
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+
+wcnss_nv_package() {
+	pkgdesc="Orbic Journey V WiFi/BT firmware configuration"
+	install -Dm644 "$_fwsrc"/WCNSS_qcom_wlan_nv.bin -t \
+		"$subpkgdir/$_fwdir"/wlan/prima/
+}
+
+sha512sums="
+9f26f89ae5ca93bb89f3967110b987b39d8e5c034335a680bd67496f7bbf8b8e84a0875b360b0a874992b9565cf45d84a87df41547d36d81d916342bf7b74732  firmware-orbic-rc2200l-93e27c2f81d218a59490246eb6ed00d41f13fa3d.tar.gz
+"

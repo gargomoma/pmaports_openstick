@@ -1,0 +1,45 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Natt-Da-Katt <nhryciw1@gmail.com>"
+pkgname=device-orbic-rc2200l
+pkgdesc="Orbic Journey V"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8916
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8909
+	soc-qcom-msm8916-rproc
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+    kernel-cmdline.conf
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="WiFi/BT firmware"
+	depends="
+		msm-firmware-loader
+		firmware-orbic-rc2200l-wcnss-nv
+	"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+087f2f334ef607b8ad2dccde3aca8189a92bde4a9c54f5810165c4096f6b50b427fa65f58e53d752346e26929da8262110d82d43f2ab66737d2df857592285b4  deviceinfo
+059c69a5b3d051560ee045dea159eb70c6dae1197e62c6cea70afc706f87aea0e5eb367d85bfd4388e4a7df2153610eb555fc8d23e1f9c6b63acbae65af687e0  kernel-cmdline.conf
+"
