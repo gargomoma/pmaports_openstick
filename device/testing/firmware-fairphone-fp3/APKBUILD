@@ -2,7 +2,7 @@ maintainer="Luca Weiss <luca@lucaweiss.eu>"
 pkgname=firmware-fairphone-fp3
 pkgver=20210805
 _commit="ee529820bb874ab1b52873f0b144c3786f01ee4c"
-pkgrel=3
+pkgrel=4
 pkgdesc="Firmware for Fairphone 3"
 url="https://github.com/FairBlobs/FP3-firmware"
 arch="aarch64"
@@ -34,14 +34,14 @@ adreno() {
 	pkgdesc="Fairphone 3 firmware for GPU"
 
 	install -Dm644 "$builddir"/a506_zap.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8953/fairphone/fp3"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8953/fairphone/fp3"
 }
 
 adsp() {
 	pkgdesc="Fairphone 3 firmware for the ADSP"
 
 	install -Dm644 "$builddir"/adsp.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8953/fairphone/fp3"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8953/fairphone/fp3"
 }
 
 audio() {
@@ -49,32 +49,32 @@ audio() {
 
 	# TODO: More generic path
 	install -Dm644 "$builddir"/aw8898_cfg.bin -t \
-		"$subpkgdir/lib/firmware/postmarketos"
+		"$subpkgdir/usr/lib/firmware/postmarketos"
 }
 
 modem() {
 	pkgdesc="Fairphone 3 firmware for the modem"
 
 	install -Dm644 "$builddir"/mba.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8953/fairphone/fp3"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8953/fairphone/fp3"
 	install -Dm644 "$builddir"/modem.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8953/fairphone/fp3"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8953/fairphone/fp3"
 }
 
 venus() {
 	pkgdesc="Fairphone 3 firmware for venus"
 
 	install -Dm644 "$builddir"/venus.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8953/fairphone/fp3"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8953/fairphone/fp3"
 }
 
 wcnss() {
 	pkgdesc="Fairphone 3 firmware for the Qualcomm Wireless Connectivity Subsystem (WCNSS)"
 
 	install -Dm644 "$builddir"/wcnss.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8953/fairphone/fp3"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8953/fairphone/fp3"
 	install -Dm644 "$builddir"/wlan/prima/WCNSS_qcom_wlan_nv.bin -t \
-		"$subpkgdir/lib/firmware/qcom/msm8953/fairphone/fp3"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8953/fairphone/fp3"
 }
 
 sha512sums="

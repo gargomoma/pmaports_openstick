@@ -1,7 +1,7 @@
 maintainer="Luca Weiss <luca@lucaweiss.eu>"
 pkgname=firmware-fairphone-fp2
 pkgver=17.09.3
-pkgrel=3
+pkgrel=4
 pkgdesc="Firmware for Fairphone 2"
 subpackages="$pkgname-wcnss $pkgname-adsp $pkgname-modem"
 url="https://github.com/FairBlobs/FP2-firmware"
@@ -28,11 +28,11 @@ wcnss() {
 
 	cd "$builddir"
 	for _i in wcnss.*; do
-		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+		install -Dm644 $_i "$subpkgdir"/usr/lib/firmware/postmarketos/$_i
 	done
 	for _i in $_wififiles; do
 		install -Dm644 "$srcdir/$pkgname-$_commit-$_i" \
-			"$subpkgdir/lib/firmware/postmarketos/wlan/prima/$_i"
+			"$subpkgdir/usr/lib/firmware/postmarketos/wlan/prima/$_i"
 	done
 }
 
@@ -41,7 +41,7 @@ adsp() {
 
 	cd "$builddir"
 	for _i in adsp.*; do
-		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+		install -Dm644 $_i "$subpkgdir"/usr/lib/firmware/postmarketos/$_i
 	done
 }
 
@@ -50,7 +50,7 @@ modem() {
 
 	cd "$builddir"
 	for _i in modem.* mba.*; do
-		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+		install -Dm644 $_i "$subpkgdir"/usr/lib/firmware/postmarketos/$_i
 	done
 }
 

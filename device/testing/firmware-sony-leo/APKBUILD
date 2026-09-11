@@ -1,7 +1,7 @@
 maintainer="Luca Weiss <luca@lucaweiss.eu>"
 pkgname=firmware-sony-leo
 pkgver=1
-pkgrel=0
+pkgrel=1
 pkgdesc="Firmware for Sony Xperia Z3"
 url="https://github.com/FairBlobs/leo-firmware"
 arch="armv7"
@@ -26,7 +26,7 @@ adsp() {
 
 	cd "$builddir"
 	for _i in adsp.*; do
-		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+		install -Dm644 $_i "$subpkgdir"/usr/lib/firmware/postmarketos/$_i
 	done
 }
 
@@ -35,7 +35,7 @@ modem() {
 
 	cd "$builddir"
 	for _i in modem.* mba.*; do
-		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+		install -Dm644 $_i "$subpkgdir"/usr/lib/firmware/postmarketos/$_i
 	done
 }
 
@@ -44,9 +44,9 @@ wifi() {
 
 	cd "$builddir"
 	install -Dm644 brcmfmac4339-sdio.sony,xperia-leo.bin -t \
-		"$subpkgdir"/lib/firmware/brcm/
+		"$subpkgdir"/usr/lib/firmware/brcm/
 	install -Dm644 brcmfmac4339-sdio.txt -t \
-		"$subpkgdir"/lib/firmware/brcm/
+		"$subpkgdir"/usr/lib/firmware/brcm/
 }
 
 sha512sums="

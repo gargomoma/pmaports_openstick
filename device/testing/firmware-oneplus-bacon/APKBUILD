@@ -2,7 +2,7 @@ maintainer="Luca Weiss <luca@lucaweiss.eu>"
 pkgname=firmware-oneplus-bacon
 pkgver=2
 _commit="a4b0ec447d9ae6d1025fc43b6d7f495298a71b61"
-pkgrel=0
+pkgrel=1
 pkgdesc="Firmware for OnePlus One"
 url="https://github.com/FairBlobs/bacon-firmware"
 arch="armv7"
@@ -31,35 +31,35 @@ adsp() {
 	pkgdesc="OnePlus One adsp firmware"
 
 	install -Dm644 "$builddir"/adsp.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8974/oneplus/bacon"
 
-	mkdir -p "$subpkgdir/lib/firmware/postmarketos"
+	mkdir -p "$subpkgdir/usr/lib/firmware/postmarketos"
 	ln -s ../qcom/msm8974/oneplus/bacon/adsp.mbn \
-		"$subpkgdir/lib/firmware/postmarketos/adsp.mdt"
+		"$subpkgdir/usr/lib/firmware/postmarketos/adsp.mdt"
 }
 
 modem() {
 	pkgdesc="OnePlus One modem firmware"
 
 	install -Dm644 "$builddir"/mba.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8974/oneplus/bacon"
 	install -Dm644 "$builddir"/modem.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8974/oneplus/bacon"
 }
 
 wcnss() {
 	pkgdesc="OnePlus One wcnss firmware"
 
 	install -Dm644 "$builddir"/wcnss.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8974/oneplus/bacon"
 	install -Dm644 "$builddir"/WCNSS_qcom_wlan_nv.bin -t \
-		"$subpkgdir/lib/firmware/qcom/msm8974/oneplus/bacon"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8974/oneplus/bacon"
 
-	mkdir -p "$subpkgdir/lib/firmware/postmarketos/wlan/prima"
+	mkdir -p "$subpkgdir/usr/lib/firmware/postmarketos/wlan/prima"
 	ln -s ../qcom/msm8974/oneplus/bacon/wcnss.mbn \
-		"$subpkgdir/lib/firmware/postmarketos/wcnss.mdt"
+		"$subpkgdir/usr/lib/firmware/postmarketos/wcnss.mdt"
 	ln -s ../../../qcom/msm8974/oneplus/bacon/WCNSS_qcom_wlan_nv.bin \
-		"$subpkgdir/lib/firmware/postmarketos/wlan/prima/WCNSS_qcom_wlan_nv.bin"
+		"$subpkgdir/usr/lib/firmware/postmarketos/wlan/prima/WCNSS_qcom_wlan_nv.bin"
 }
 
 sha512sums="

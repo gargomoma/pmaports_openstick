@@ -1,7 +1,7 @@
 maintainer="Luca Weiss <luca@lucaweiss.eu>"
 pkgname=firmware-lg-lenok
 pkgver=1
-pkgrel=0
+pkgrel=1
 pkgdesc="Firmware for LG G Watch R"
 subpackages="
 	$pkgname-adsp
@@ -26,7 +26,7 @@ adsp() {
 
 	cd "$builddir"
 	for _i in adsp.*; do
-		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+		install -Dm644 $_i "$subpkgdir"/usr/lib/firmware/postmarketos/$_i
 	done
 }
 
@@ -35,7 +35,7 @@ modem() {
 
 	cd "$builddir"
 	for _i in modem.* mba.*; do
-		install -Dm644 $_i "$subpkgdir"/lib/firmware/postmarketos/$_i
+		install -Dm644 $_i "$subpkgdir"/usr/lib/firmware/postmarketos/$_i
 	done
 }
 
@@ -44,11 +44,11 @@ wifi() {
 
 	cd "$builddir"
 	install -Dm644 BCM4343A0.hcd \
-		"$subpkgdir"/lib/firmware/brcm/BCM4343A0.hcd
+		"$subpkgdir"/usr/lib/firmware/brcm/BCM4343A0.hcd
 	install -Dm644 brcmfmac43430a0-sdio.lg,lenok.bin \
-		"$subpkgdir"/lib/firmware/brcm/brcmfmac43430a0-sdio.lg,lenok.bin
+		"$subpkgdir"/usr/lib/firmware/brcm/brcmfmac43430a0-sdio.lg,lenok.bin
 	install -Dm644 brcmfmac43430a0-sdio.lg,lenok.txt \
-		"$subpkgdir"/lib/firmware/brcm/brcmfmac43430a0-sdio.lg,lenok.txt
+		"$subpkgdir"/usr/lib/firmware/brcm/brcmfmac43430a0-sdio.lg,lenok.txt
 }
 
 sha512sums="

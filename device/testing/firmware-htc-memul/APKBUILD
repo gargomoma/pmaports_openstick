@@ -1,7 +1,7 @@
 maintainer="Luca Weiss <luca@lucaweiss.eu>"
 pkgname=firmware-htc-memul
 pkgver=1
-pkgrel=2
+pkgrel=3
 pkgdesc="Firmware for HTC One Mini 2"
 subpackages="
 	$pkgname-adsp
@@ -40,16 +40,16 @@ adsp() {
 	pkgdesc="HTC One Mini 2 - ADSP firmware"
 
 	install -Dm644 "$builddir"/adsp.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8926/memul/"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8926/memul/"
 }
 
 modem() {
 	pkgdesc="HTC One Mini 2 - Modem firmware"
 
 	install -Dm644 "$builddir"/mba.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8926/memul/"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8926/memul/"
 	install -Dm644 "$builddir"/modem.mbn -t \
-		"$subpkgdir/lib/firmware/qcom/msm8926/memul/"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8926/memul/"
 }
 
 wcnss() {
@@ -58,11 +58,11 @@ wcnss() {
 	# Squashing wcnss firmware leads to incomplete .mbn, so keep installing
 	# the original .mdt + .b0* files
 	install -Dm644 "$builddir"/wcnss.* -t \
-		"$subpkgdir/lib/firmware/qcom/msm8926/memul/"
+		"$subpkgdir/usr/lib/firmware/qcom/msm8926/memul/"
 	cd "$builddir"
 	for _i in $_wififiles; do
 		install -Dm644 "$srcdir/$pkgname-$_dt_commit-$_i" \
-			"$subpkgdir/lib/firmware/postmarketos/wlan/prima/$_i"
+			"$subpkgdir/usr/lib/firmware/postmarketos/wlan/prima/$_i"
 	done
 }
 
