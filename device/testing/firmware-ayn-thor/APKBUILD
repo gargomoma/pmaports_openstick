@@ -1,0 +1,23 @@
+maintainer="angelthorns <angelthorns@kohlroulade.lgbt>"
+pkgname=firmware-ayn-thor
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for the AYN Thor"
+url="https://github.com/angelthorns/firmware-ayn-thor"
+arch="aarch64"
+license="prorietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="f602c0f0f38ff41cbb7bbe13c307de7930557aad"
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit/$pkgname-$_commit.tar.gz"
+
+
+builddir="$srcdir/$pkgname-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"
+	find . -type f -exec install -Dm644 {} "$pkgdir"/{} \;
+}
+
+sha512sums="
+5f4e81dc6e76fd7ad2b0c6405a4412116e8381a7040c5b6365c25fcd5b4b87554957cdbccba24bd927ad8b1acea0c3c0594f7991759ca06d3dd70b76f89d9ff2  firmware-ayn-thor-f602c0f0f38ff41cbb7bbe13c307de7930557aad.tar.gz
+"

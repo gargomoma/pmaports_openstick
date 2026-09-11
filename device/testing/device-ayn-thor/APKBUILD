@@ -1,0 +1,45 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="angelthorns <angelthorns@kohlroulade.lgbt>"
+pkgname=device-ayn-thor
+pkgdesc="AYN Thor"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	android-tools
+	dtbloader
+	firmware-ayn-thor
+	linux-ayn-thor
+	linux-firmware-qca
+	linux-firmware-qcom
+	make-dynpart-mappings
+	mesa-vulkan-freedreno
+	msm-fb-refresher
+	postmarketos-base
+	soc-qcom
+	soc-qcom-qbootctl
+	systemd-boot
+	vulkan-loader
+	wcnss-wlan
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+95ba17d354795d781fe145cfe3f1ee6514cadf59ac51a253801dacfa9d1610ce53583dce40663a6ba59b0e259ef18efc75b9a5e628ae3a757fdab81bef4f20ff  deviceinfo
+dc987332abe6d5c7ac511be1045af227d80b9dbe2f907e23e89b62217ca867dd064484caec36f0605dda89a9894da780b75beb23d9b893bd0f9a46593e675393  modules-initfs
+"

@@ -1,0 +1,105 @@
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="angelthorns <angelthorns@kohlroulade.lgbt>"
+pkgname=linux-ayn-thor
+pkgver=7.0
+pkgrel=0
+_commit="d0bd1239126dbd52b2bad91de1db0020de26977c"
+pkgdesc="Close-to-mainline Linux AYNTechnologies kernel"
+arch="aarch64"
+_carch="arm64"
+_flavor="ayn-thor"
+url="https://kernel.org"
+license="GPL-2.0-only"
+
+options="!check !tracedeps pmb:cross-native pmb:kconfigcheck-community pmb:kconfigcheck-uefi pmb:kconfigcheck-virt"
+
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/AYNTechnologies/linux/archive/$_commit.tar.gz
+	$_config
+	0001-qcom-dispcc-sm8550-Fix-disp_cc_mdss_mdp_clk_src.patch
+	0002-rmi4-silence-spam-irq-errors.patch
+	0003-HACK-fix-usb-boot-hang.patch
+	0004-GPU_Pwr_req.patch
+	0005-qos.patch
+	0006-fanctl.patch
+"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	clang-libclang
+	devicepkg-dev
+	elfutils-dev
+	findutils
+	flex
+	git
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	zstd
+"
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		LLVM=1 \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-tmp
+
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/qcs8550* "$pkgdir"/boot/dtbs/qcom
+	rm -rf "$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+ea0d82d54e5460b0061da99610411aae767c819100d9fa6d4e6975463301b9976a742bb86cfebbd25679df9d3c5dd89c0b0797ce1775eadf5525ff5ca62a0e66  linux-ayn-thor-d0bd1239126dbd52b2bad91de1db0020de26977c.tar.gz
+6bb2a60be108a4495498e51549021fd962c412825fa81405f88ff92bcd3b3c2764055a12683ec736b86593ac462ec5b82c7ed6d68fe2a895a09526d35828339d  config-ayn-thor.aarch64
+70a935958b6849de5ebdd15a1f187bd6cf3cb83f3c4b7fc750cf4bc5834fb6ee3470ac27ee5ceb76ddfe4bb0445bb377bc6e90d0553d9f68e402c2cc1b23cd58  0001-qcom-dispcc-sm8550-Fix-disp_cc_mdss_mdp_clk_src.patch
+9def278e13e962de31f6e9a082ec4d767ca07a3f762a6120a3baafe6b1e22b4893b8a50ffb59df6220e6e8359d5ff78e36a2966f171cdbfb85908503f61d4df2  0002-rmi4-silence-spam-irq-errors.patch
+a17f720af65dc11432481e3dfa1701ee9db950d344ff5a4185855f895b3e9857857e34cc89ad0f4883ebb209af6fd256488c9afd42a1c3a80578224b49e49495  0003-HACK-fix-usb-boot-hang.patch
+64a8b36b425d94f3d679e30218882a5b4d64731dbea9157b2a5c790cab0b6735ef2f014603d25098b636f6d838b58dd2fec283e4a2d7e8721487e848a45b5c79  0004-GPU_Pwr_req.patch
+aa956896a985bd229bc3c47f1c16855ebb5e99d97552e09ec19d0491a9926cce1183d61ceca4aee1acfdb1e2040ffd53fec93501b6de1434d661db5118f989ab  0005-qos.patch
+c3cfb632c61679311dfa60aef53fb83e37232b211f76fe3cbf40aaf0ac7b871b51e81ae23665308f6ec601f9452a5568aecd5a8a106d991abe1b18ae39a7be5b  0006-fanctl.patch
+"
