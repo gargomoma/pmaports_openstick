@@ -11,7 +11,7 @@ arch="aarch64"
 options="!check !archcheck"
 depends="
 	firmware-google-crosshatch-mainline-dtbo
-	linux-google-crosshatch-mainline
+	linux-postmarketos-qcom-sdm845
 	mkbootimg
 	postmarketos-base
 "
