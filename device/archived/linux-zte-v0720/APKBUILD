@@ -1,3 +1,5 @@
+# Archived: does not compile
+
 # Reference: <https://postmarketos.org/vendorkernel>
 # Kernel config based on: arch/arm/configs/ztexa6735m_35u_m_defconfig
 maintainer="Martin Kunze <kunzemartin5@gmail.com>"

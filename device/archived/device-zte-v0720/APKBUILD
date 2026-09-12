@@ -1,3 +1,5 @@
+# Archived: depends on kernel that does not compile
+
 # Reference: <https://postmarketos.org/devicepkg>
 maintainer="Martin Kunze <kunzemartin5@gmail.com>"
 pkgname=device-zte-v0720
