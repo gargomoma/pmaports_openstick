@@ -5,10 +5,10 @@ maintainer="Clayton Craft <clayton@craftyguy.net>"
 pkgname=postmarketos-qemu-common
 pkgdesc="Common package for Qemu 'devices'"
 pkgver=3
-pkgrel=1
+pkgrel=2
 url="https://postmarketos.org"
 license="MIT"
-arch="aarch64 x86_64 loongarch64 ppc64le riscv64"
+arch="aarch64 x86_64 loongarch64 ppc64le riscv64 armv7"
 options="!check !archcheck !tracedeps"
 subpackages="
 	$pkgname-mce

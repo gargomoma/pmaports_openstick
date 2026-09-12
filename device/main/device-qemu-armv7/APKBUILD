@@ -1,0 +1,98 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Co-Maintainer: Robert Eckelmann <longnoserob@postmarketos.org>
+maintainer="Rudraksha Gupta <guptarud@gmail.com>"
+pkgname=device-qemu-armv7
+pkgver=1
+pkgrel=0
+pkgdesc="Simulated device in QEMU (armv7)"
+url="https://postmarketos.org"
+arch="armv7"
+license="MIT"
+depends="
+	postmarketos-base
+	postmarketos-qemu-common
+	systemd-boot
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-virt:kernel_virt
+	$pkgname-kernel-none:kernel_none
+	$pkgname-kernel-stable:kernel_stable
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-mainline:kernel_mainline
+	$pkgname-pmtest
+	"
+
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+mce() {
+	pkgdesc="Prevents screen blanking for UI's using mce (Glacier, Asteroid)"
+	install_if="$pkgname=$pkgver-r$pkgrel mce"
+	install -Dm644 "$srcdir"/mce-display-blanking.conf \
+		"$subpkgdir"/etc/mce/50display-blanking.conf
+}
+
+sway() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-sway"
+	depends="postmarketos-ui-sway-logo-key-alt"
+	mkdir "$subpkgdir"
+}
+
+x11() {
+	install_if="$pkgname=$pkgver-r$pkgrel xorg-server"
+	install -Dm644 "$srcdir"/resolution-qemu-X11.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/10-resolution-qemu-X11.conf
+}
+
+kernel_virt() {
+	pkgdesc="Alpine Virt kernel (minimal, no audio)"
+	depends="linux-virt"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_none() {
+	pkgdesc="No kernel (does not boot! can be used during pmbootstrap testing to save time)"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_stable() {
+	pkgdesc="postmarketOS Stable kernel"
+	depends="linux-postmarketos-stable linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_lts() {
+	pkgdesc="postmarketOS LTS kernel"
+	depends="linux-postmarketos-lts linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_mainline() {
+	pkgdesc="postmarketOS Mainline kernel"
+	depends="linux-postmarketos-mainline linux-firmware-none"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+pmtest() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-mkinitfs-hook-ci"
+	depends="unl0kr"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+33e8bd40251b232adf45a5ce8aac95a7062137e9a7cd333030ff375d8faa29200068a32d8c0eb4422195a653aafddce55ff3439a21e8e362327edfc42fc0ee60  deviceinfo
+f0a93c8bf1328c8b9a7487a5c1cc09b628ee488b97c6e86fa26c4be3788c1e0b0217f219a205634145f5c6ff9b4616e5b3bbdfa2fec5d7a422f42bf9417a96da  kernel-cmdline.conf
+"
