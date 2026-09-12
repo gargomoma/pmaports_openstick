@@ -2,7 +2,7 @@
 maintainer="Casey Connolly <kcxt@postmarketos.org>"
 pkgname=soc-qcom
 pkgdesc="Common package for Qualcomm devices"
-pkgver=12
+pkgver=13
 pkgrel=0
 url="https://postmarketos.org"
 license="BSD-3-Clause"
@@ -16,7 +16,17 @@ depends="
 replaces="
 	soc-qcom-sdm845
 	soc-qcom-sdm845-nonfree-firmware
-	"
+"
+install="
+	$pkgname-modem-openrc.post-install
+	$pkgname-modem-openrc.post-upgrade
+	$pkgname-openrc.post-install
+	$pkgname-openrc.post-upgrade
+	$pkgname-pulseaudio-openrc.post-install
+	$pkgname-pulseaudio-openrc.post-upgrade
+	$pkgname-qbootctl-openrc.post-install
+	$pkgname-qbootctl-openrc.post-upgrade
+"
 subpackages="
 	$pkgname-gstreamer-openrc:gstreamer_openrc
 	$pkgname-gstreamer-systemd:gstreamer_systemd
@@ -99,7 +109,6 @@ modem_openrc() {
 	install_if="$pkgname-modem=$pkgver-r$pkgrel openrc"
 	depends="q6voiced-openrc openrc"
 	replaces="soc-qcom-sdm845-modem-openrc device-google-sargo-openrc"
-	install="$subpkgname.post-install $subpkgname.post-upgrade"
 
 	install -Dm755 "$srcdir"/modem-gnss.initd \
 		"$subpkgdir"/etc/init.d/modem-gnss
@@ -111,7 +120,6 @@ openrc() {
 		openrc
 		tqftpserv-openrc
 	"
-	install="$subpkgname.post-install $subpkgname.post-upgrade"
 
 	mkdir "$subpkgdir"
 }
@@ -125,7 +133,6 @@ qbootctl() {
 
 qbootctl_openrc() {
 	install_if="$pkgname-qbootctl=$pkgver-r$pkgrel openrc"
-	install="$subpkgname.post-install $subpkgname.post-upgrade"
 	depends="openrc"
 
 	mkdir "$subpkgdir"
@@ -149,7 +156,6 @@ pulseaudio() {
 
 pulseaudio_openrc() {
 	install_if="$pkgname-pulseaudio=$pkgver-r$pkgrel openrc"
-	install="$subpkgname.post-install $subpkgname.post-upgrade"
 	replaces="soc-qcom-sdm845-pulseaudio-openrc"
 	depends="openrc"
 
