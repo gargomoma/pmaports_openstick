@@ -11,9 +11,9 @@ license="MIT"
 options="!pmb:crossdirect"
 makedepends="build-base"
 source="
-    h6x-faccessat-compat.c
-    LICENSE
-    "
+	h6x-faccessat-compat.c
+	LICENSE
+	"
 
 build() {
 	$CC $CFLAGS -Os -fPIC -fno-stack-protector -shared -nostdlib \
