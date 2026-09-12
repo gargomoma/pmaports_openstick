@@ -3,7 +3,7 @@
 maintainer="YuanLang <tsushdkjfajxnxm@gmail.com>"
 pkgname=linux-huawei-berlin
 pkgver=4.4.174
-pkgrel=2
+pkgrel=0
 pkgdesc="Huawei Honor 6X kernel fork"
 arch="aarch64"
 _carch="arm64"
@@ -55,7 +55,7 @@ _verify_rc6_config() {
 		NFT_CHAIN_NAT_IPV4 NFT_MASQ_IPV4 NF_NAT_IPV4 NF_NAT_MASQUERADE_IPV4; do
 		grep -qx "CONFIG_$symbol=y" "$_outdir/.config" || return 1
 	done
-	grep -qx '# CONFIG_HW_CGROUP_PIDS is not set' "$_outdir/.config" || return 1
+	grep -qx '# CONFIG_HW_CGROUP_PIDS is not set' "$_outdir/.config"
 	for symbol in IP_NF_NAT IP_NF_TARGET_MASQUERADE IP_NF_TARGET_NETMAP \
 		IP_NF_TARGET_REDIRECT IP6_NF_NAT IP6_NF_TARGET_MASQUERADE \
 		NETFILTER_XT_NAT NETFILTER_XT_TARGET_NETMAP NETFILTER_XT_TARGET_REDIRECT; do
@@ -84,18 +84,19 @@ package() {
 	case "$kernel_release" in
 		""|*[!a-zA-Z0-9._+-]*|.|..) return 1 ;;
 	esac
-	test -n "$pkgdir" && test "$pkgdir" != / && test -d "$pkgdir" \
-		&& test ! -L "$pkgdir" || return 1
+	test -n "$pkgdir" && test "$pkgdir" != /
 	case "$pkgdir" in /*) ;; *) return 1 ;; esac
-	resolved_pkgdir="$(realpath "$pkgdir")" || return 1
-	test "$resolved_pkgdir" = "$pkgdir" || return 1
+	mkdir -p "$pkgdir"
+	test -d "$pkgdir" && test ! -L "$pkgdir"
+	resolved_pkgdir="$(realpath "$pkgdir")"
+	test "$resolved_pkgdir" = "$pkgdir"
 	module_dir="$pkgdir/usr/lib/modules/$kernel_release"
 	export KERNEL_IMAGE_NAME="Image.gz"
 	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
 		"$_flavor" "$_outdir"
 	cmp "$_outdir/include/config/kernel.release" \
-		"$pkgdir/usr/share/kernel/$_flavor/kernel.release" || return 1
-	cmp "$_outdir/arch/$_carch/boot/$KERNEL_IMAGE_NAME" "$pkgdir/boot/vmlinuz" || return 1
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+	cmp "$_outdir/arch/$_carch/boot/$KERNEL_IMAGE_NAME" "$pkgdir/boot/vmlinuz"
 
 	# The downstream helper installs vmlinuz only. Keep the optional legacy
 	# NAT modules with this exact kernel; they must not be built in on 4.4.

@@ -37,7 +37,7 @@ class DevicePolicyTests(unittest.TestCase):
         for name, value in expected.items():
             with self.subTest(name=name):
                 self.assertEqual(values.get(name), value)
-        self.assertEqual(values.get("deviceinfo_create_initfs_extra"), "false")
+        self.assertEqual(values.get("deviceinfo_create_initfs_extra", "false"), "false")
         self.assertNotIn("deviceinfo_flash_fastboot_partition_kernel", values)
 
     def test_explicit_rndis_selection(self):

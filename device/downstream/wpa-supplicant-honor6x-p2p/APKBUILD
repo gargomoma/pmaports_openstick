@@ -1,7 +1,7 @@
 maintainer="YuanLang <tsushdkjfajxnxm@gmail.com>"
 pkgname=wpa-supplicant-honor6x-p2p
 pkgver=2.11
-pkgrel=3
+pkgrel=0
 pkgdesc="Disabled-by-default isolated wpa_supplicant for Honor 6X P2P-GO"
 url="https://w1.fi/wpa_supplicant/"
 arch="aarch64"
