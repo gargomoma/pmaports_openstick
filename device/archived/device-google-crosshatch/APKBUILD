@@ -16,7 +16,7 @@ depends="
 	postmarketos-base
 "
 makedepends="devicepkg-dev"
-source="deviceinfo kernel-cmdline.conf"
+source="deviceinfo kernel-cmdline.conf modules-initfs"
 
 build() {
 	devicepkg_build $startdir $pkgname
@@ -29,4 +29,5 @@ package() {
 sha512sums="
 266aaee802a5e0eb116be04bd5740acf6449df1d628354caf936270d04c3692f1377fea66889bd02c1fb7b454269cc37b883662947040c30f57bbdb6fbed72b1  deviceinfo
 c2762af3b8268599d2edf37f1dca6284e85e7fd6222a701c7699b9baedb3312bad766100a6bafcd2b2660f04241429b19d5f641f2b0a3915dd4cb079d52b0680  kernel-cmdline.conf
+d12abd5c7ba57c61736997788314e3c5223d46e95b2d676f96150555d71cdcef96bf6680965052c862be1c906ffef361b3950d6dbd298804f1452940b8f15088  modules-initfs
 "
