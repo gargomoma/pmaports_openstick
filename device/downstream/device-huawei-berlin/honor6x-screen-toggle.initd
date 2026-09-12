@@ -1,0 +1,20 @@
+#!/sbin/openrc-run
+
+name="Honor 6X power-key screen toggle"
+description="Toggle the LCD backlight and request graceful shutdown"
+command="/usr/sbin/honor6x-screen-toggle"
+command_background="yes"
+pidfile="/run/honor6x-screen-toggle.pid"
+output_log="/var/log/honor6x-screen-toggle.log"
+error_log="$output_log"
+
+depend() {
+	need localmount
+	after udev elogind
+	before lightdm
+}
+
+start_pre() {
+	checkpath --file --mode 0644 --owner root:root "$output_log"
+	[ -w /sys/class/leds/lcd_backlight0/brightness ]
+}

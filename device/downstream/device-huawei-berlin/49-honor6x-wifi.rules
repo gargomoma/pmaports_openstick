@@ -1,0 +1,11 @@
+polkit.addRule(function(action, subject) {
+	if (action.id !== "org.freedesktop.policykit.exec") {
+		return;
+	}
+
+	if (action.lookup("program") ===
+			"/usr/libexec/honor6x/honor6x-wifi-control" &&
+			subject.local && subject.active && subject.isInGroup("wheel")) {
+		return polkit.Result.YES;
+	}
+});

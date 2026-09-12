@@ -1,0 +1,8 @@
+[x.dm.slick-greeter]
+background='/usr/share/backgrounds/honor6x/honor6x-pmos-v26-portrait.png'
+background-color='#203040'
+font-name='Sans 11'
+icon-theme-name='Adwaita'
+xft-dpi=96.0
+cursor-theme-size=24
+enable-hidpi='on'

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Honor 6X Brightness
+Comment=Adjust the Honor 6X display brightness
+Exec=honor6x-brightness
+Icon=display-brightness
+Terminal=false
+Categories=Settings;X-XFCE-SettingsDialog;

@@ -1,0 +1,85 @@
+#!/bin/sh
+set -eu
+
+red=/sys/class/leds/red/brightness
+green=/sys/class/leds/green/brightness
+blue=/sys/class/leds/blue/brightness
+expected_kernel="${H6X_EXPECTED_KERNEL:-4.4.174}"
+
+write_led() {
+	path="$1"
+	value="$2"
+	[ -w "$path" ] || return 1
+	printf '%s\n' "$value" >"$path"
+	[ "$(cat "$path")" = "$value" ]
+}
+
+set_red() {
+	write_led "$green" 0 || true
+	write_led "$blue" 0 || true
+	write_led "$red" 255
+}
+
+set_green() {
+	write_led "$red" 0
+	write_led "$blue" 0 || true
+	write_led "$green" 255
+}
+
+set_off() {
+	write_led "$green" 0 || true
+	write_led "$blue" 0 || true
+	write_led "$red" 0 || true
+}
+
+service_required_and_down() {
+	service="$1"
+	[ -e "/etc/runlevels/default/$service" ] || return 1
+	! rc-service "$service" status >/dev/null 2>&1
+}
+
+runtime_ok() {
+	case "$(uname -r)" in
+		"$expected_kernel"*) ;;
+		*) return 1 ;;
+	esac
+	[ "$(cat /sys/class/graphics/fb0/name)" = "hisifb0" ] || return 1
+	grep -q ' / .*rw' /proc/mounts || return 1
+	service_required_and_down sshd && return 1
+	service_required_and_down lightdm && return 1
+	if [ -e /etc/runlevels/default/lightdm ]; then
+		pgrep -x Xorg >/dev/null 2>&1 || return 1
+	fi
+	if dmesg | grep -Eiq \
+			'EXT4-fs error|Buffer I/O error|end_request: I/O error'; then
+		return 1
+	fi
+}
+
+mark_healthy() {
+	set_red
+	elapsed=0
+	while [ "$elapsed" -lt 45 ]; do
+		if runtime_ok; then
+			set_green
+			return 0
+		fi
+		sleep 1
+		elapsed=$((elapsed + 1))
+	done
+	return 1
+}
+
+case "${1:-status}" in
+	healthy) mark_healthy ;;
+	red) set_red ;;
+	off) set_off ;;
+	status)
+		printf 'red=%s green=%s blue=%s\n' \
+			"$(cat "$red")" "$(cat "$green")" "$(cat "$blue")"
+		;;
+	*)
+		echo "Usage: $0 {healthy|red|off|status}" >&2
+		exit 2
+		;;
+esac

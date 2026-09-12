@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+
+description="Honor 6X vendor Wi-Fi manager"
+
+depend() {
+    need hisi-wlan
+    use dbus
+    after modules
+    before lightdm
+}
+
+start() {
+    ebegin "Starting Honor 6X Wi-Fi manager"
+    /usr/libexec/honor6x/honor6x-wifi-control boot
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping Honor 6X Wi-Fi manager"
+    /usr/libexec/honor6x/honor6x-wifi-control shutdown
+    eend $?
+}

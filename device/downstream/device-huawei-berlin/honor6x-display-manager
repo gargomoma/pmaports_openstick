@@ -1,0 +1,64 @@
+#!/bin/sh
+set -eu
+
+control=/run/honor6x-display-control
+apply=/usr/sbin/honor6x-display-orientation
+
+start_lightdm() {
+	rc-service lightdm start || return 1
+	timeout=15
+	while [ "$timeout" -gt 0 ]; do
+		if rc-service lightdm status >/dev/null 2>&1 &&
+				pgrep -x Xorg >/dev/null; then
+			return 0
+		fi
+		sleep 1
+		timeout=$((timeout - 1))
+	done
+	return 1
+}
+
+recover_portrait() {
+	"$apply" portrait || return 1
+	rc-service lightdm stop >/dev/null 2>&1 || true
+	sleep 1
+	start_lightdm
+}
+
+apply_request() {
+	requested="$1"
+	current="$("$apply" status | sed 's/^orientation=//')"
+	if [ "$requested" = "$current" ] &&
+			rc-service lightdm status >/dev/null 2>&1; then
+		return 0
+	fi
+	"$apply" "$requested"
+	rc-service lightdm stop >/dev/null 2>&1 || true
+	sleep 2
+	start_lightdm || recover_portrait
+	rc-service honor6x-health-led restart >/dev/null 2>&1 || true
+}
+
+cleanup() {
+	exec 3>&- 3<&-
+	rm -f "$control"
+}
+
+trap cleanup EXIT
+trap 'exit 0' INT TERM
+"$apply" apply-current
+rm -f "$control"
+mkfifo "$control"
+chown root:video "$control"
+chmod 0660 "$control"
+exec 3<>"$control"
+
+while true; do
+	request=""
+	IFS= read -r request <&3 || continue
+	case "$request" in
+		portrait|landscape)
+			apply_request "$request" || recover_portrait || true
+			;;
+	esac
+done

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Honor 6X Wi-Fi Tray
+Exec=/usr/bin/honor6x-wifi-tray
+Icon=network-wireless
+Terminal=false
+OnlyShowIn=XFCE;
+X-GNOME-Autostart-enabled=true

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+rc-update add honor6x-display-manager default
+
+# The downstream vendor Wi-Fi and zram services own these resources. UI
+# packages may enable generic alternatives before this install hook runs.
+for service in \
+	bluetooth \
+	kill-plymouth \
+	networkmanager \
+	nftables \
+	postmarketos-zram-swap \
+	swapfile \
+	wpa_supplicant \
+	zram-init; do
+	rc-update del "$service" default 2>/dev/null || true
+done

@@ -1,0 +1,371 @@
+#!/bin/sh
+set -eu
+
+sta_iface=wlan0
+p2p_iface=p2p0
+runtime=/run/honor6x-hotspot
+control="$runtime/control"
+sta_config="$runtime/sta.conf"
+p2p_config="$runtime/p2p.conf"
+probe_binary=/usr/libexec/honor6x/wpa_supplicant-p2p
+probe_pid="$runtime/wpa.pid"
+upstream_dhcp_pid="$runtime/udhcpc.pid"
+dnsmasq_pid="$runtime/dnsmasq.pid"
+probe_log="$runtime/wpa.log"
+upstream_dhcp_log="$runtime/udhcpc.log"
+dnsmasq_log="$runtime/dnsmasq.log"
+leases="$runtime/dnsmasq.leases"
+ready=/run/honor6x-hotspot.state
+controller_pid=/run/honor6x-hotspot-controller.pid
+snapshot=/tmp/honor6x-hotspot-last
+standard_config=/etc/wpa_supplicant/honor6x.conf
+standard_control=/run/wpa_supplicant
+operation_lock=/run/honor6x-wifi/operation.lock
+before_ifaces="$runtime/interfaces.before"
+group_iface=
+standard_stopped=0
+nat_enabled=1
+filter_chain=H6X_HOTSPOT_FWD
+nat_chain=H6X_HOTSPOT_NAT
+
+log() { printf '%s\n' "$*"; }
+fail() { log "FAIL: $*"; exit 1; }
+
+pid_alive() {
+    [ -s "$1" ] || return 1
+    kill -0 "$(cat "$1")" 2>/dev/null
+}
+
+interface_names() {
+    timeout 3 iw dev 2>/dev/null | awk '$1 == "Interface" { print $2 }'
+}
+
+interface_type() {
+    timeout 3 iw dev "$1" info 2>/dev/null |
+        awk '$1 == "type" { print $2; exit }'
+}
+
+wpa_state() {
+    timeout 3 wpa_cli -p "$1" -i "$2" status 2>/dev/null |
+        sed -n 's/^wpa_state=//p'
+}
+
+wait_for_wpa() {
+    ctrl="$1"; iface="$2"; limit="$3"; count=0
+    while ! timeout 3 wpa_cli -p "$ctrl" -i "$iface" ping 2>/dev/null |
+        grep -qx PONG; do
+        count=$((count + 1)); [ "$count" -lt "$limit" ] || return 1
+        sleep 1
+    done
+}
+
+wait_for_association() {
+    ctrl="$1"; iface="$2"; limit="$3"; count=0
+    while [ "$(wpa_state "$ctrl" "$iface")" != COMPLETED ]; do
+        count=$((count + 1)); [ "$count" -lt "$limit" ] || return 1
+        sleep 1
+    done
+}
+
+wait_for_ipv4() {
+    iface="$1"; limit="$2"; count=0
+    while ! ip -4 addr show dev "$iface" | grep -q ' inet '; do
+        count=$((count + 1)); [ "$count" -lt "$limit" ] || return 1
+        sleep 1
+    done
+}
+
+internet_ok() {
+    response="$(timeout 10 curl -q --interface "$sta_iface" --noproxy '*' \
+        --proto '=https' --connect-timeout 3 --max-time 7 --max-filesize 1024 \
+        --silent --write-out '\n%{http_code}' \
+        https://networkcheck.postmarketos.org 2>/dev/null || true)"
+    code="$(printf '%s\n' "$response" | tail -n 1)"
+    body="$(printf '%s\n' "$response" | sed '$d' | tr -d '\r\n')"
+    [ "$code" = 200 ] && [ "$body" = OK ]
+}
+
+upstream_frequency() {
+    timeout 3 iw dev "$sta_iface" link 2>/dev/null |
+        awk '$1 == "freq:" { printf "%d\n", $2; exit }'
+}
+
+new_group_interface() {
+    for iface in $(interface_names); do
+        if ! grep -qx "$iface" "$before_ifaces" &&
+            [ "$(interface_type "$iface")" = P2P-GO ]; then
+            printf '%s\n' "$iface"
+            return 0
+        fi
+    done
+    return 1
+}
+
+wait_for_group() {
+    limit="$1"; count=0
+    while :; do
+        candidate="$(new_group_interface || true)"
+        if [ -n "$candidate" ]; then group_iface="$candidate"; return 0; fi
+        count=$((count + 1)); [ "$count" -lt "$limit" ] || return 1
+        sleep 1
+    done
+}
+
+stop_pid_file() {
+    file="$1"; signal="${2:-TERM}"
+    if pid_alive "$file"; then
+        kill -"$signal" "$(cat "$file")" 2>/dev/null || true
+    fi
+}
+
+enable_nat() {
+    iptables-legacy -N "$filter_chain"
+    iptables-legacy -A "$filter_chain" -i "$group_iface" -o "$sta_iface" \
+        -s 192.168.51.0/24 -j ACCEPT
+    iptables-legacy -A "$filter_chain" -i "$sta_iface" -o "$group_iface" \
+        -d 192.168.51.0/24 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    iptables-legacy -I FORWARD 1 -j "$filter_chain"
+    iptables-legacy -t nat -N "$nat_chain"
+    iptables-legacy -t nat -A "$nat_chain" -s 192.168.51.0/24 \
+        -o "$sta_iface" -j MASQUERADE
+    iptables-legacy -t nat -I POSTROUTING 1 -j "$nat_chain"
+}
+
+disable_nat() {
+    [ "$nat_enabled" -eq 1 ] || return 0
+    printf '0\n' >/proc/sys/net/ipv4/ip_forward 2>/dev/null || true
+    while iptables-legacy -C FORWARD -j "$filter_chain" >/dev/null 2>&1; do
+        iptables-legacy -D FORWARD -j "$filter_chain" >/dev/null 2>&1 || break
+    done
+    iptables-legacy -F "$filter_chain" >/dev/null 2>&1 || true
+    iptables-legacy -X "$filter_chain" >/dev/null 2>&1 || true
+    while iptables-legacy -t nat -C POSTROUTING -j "$nat_chain" >/dev/null 2>&1; do
+        iptables-legacy -t nat -D POSTROUTING -j "$nat_chain" >/dev/null 2>&1 || break
+    done
+    iptables-legacy -t nat -F "$nat_chain" >/dev/null 2>&1 || true
+    iptables-legacy -t nat -X "$nat_chain" >/dev/null 2>&1 || true
+}
+
+remove_group() {
+    [ -n "$group_iface" ] || return 0
+    [ -d "/sys/class/net/$group_iface" ] || return 0
+    ip addr flush dev "$group_iface" 2>/dev/null || true
+    timeout 8 wpa_cli -p "$control" -i "$p2p_iface" \
+        p2p_group_remove "$group_iface" >/dev/null 2>&1 || true
+    count=0
+    while [ -d "/sys/class/net/$group_iface" ] && [ "$count" -lt 8 ]; do
+        count=$((count + 1)); sleep 1
+    done
+    if [ -d "/sys/class/net/$group_iface" ]; then
+        timeout 5 iw dev "$group_iface" del >/dev/null 2>&1 || true
+    fi
+    [ ! -d "/sys/class/net/$group_iface" ]
+}
+
+cleanup_probe() {
+    stop_pid_file "$dnsmasq_pid" TERM
+    rm -f "$dnsmasq_pid"
+    disable_nat
+    remove_group || true
+    stop_pid_file "$upstream_dhcp_pid" USR2
+    stop_pid_file "$upstream_dhcp_pid" TERM
+    rm -f "$upstream_dhcp_pid"
+    stop_pid_file "$probe_pid" TERM
+    count=0
+    while pid_alive "$probe_pid"; do
+        count=$((count + 1))
+        if [ "$count" -ge 10 ]; then stop_pid_file "$probe_pid" KILL; break; fi
+        sleep 1
+    done
+    rm -f "$probe_pid"
+    ip addr flush dev "$sta_iface" 2>/dev/null || true
+    ip route flush dev "$sta_iface" 2>/dev/null || true
+}
+
+capture_diagnostics() {
+    phase="$1"
+    mkdir -p "$snapshot"
+    [ ! -f "$probe_log" ] || cp "$probe_log" "$snapshot/wpa.log"
+    [ ! -f "$upstream_dhcp_log" ] || cp "$upstream_dhcp_log" "$snapshot/udhcpc.log"
+    [ ! -f "$dnsmasq_log" ] || cp "$dnsmasq_log" "$snapshot/dnsmasq.log"
+    [ ! -f "$leases" ] || awk '{ print $1, "[REDACTED-MAC]", $3, $4 }' \
+        "$leases" >"$snapshot/dnsmasq.leases.redacted"
+    iw dev >"$snapshot/iw-$phase.txt" 2>&1 || true
+    ip -4 addr >"$snapshot/ipv4-$phase.txt" 2>&1 || true
+    ip route >"$snapshot/routes-$phase.txt" 2>&1 || true
+    ip rule >"$snapshot/rules-$phase.txt" 2>&1 || true
+    cat /proc/sys/net/ipv4/ip_forward >"$snapshot/ip-forward-$phase.txt" 2>&1 || true
+    if [ "$nat_enabled" -eq 1 ]; then
+        iptables-legacy -L "$filter_chain" -v -n -x \
+            >"$snapshot/filter-$phase.txt" 2>&1 || true
+        iptables-legacy -t nat -L "$nat_chain" -v -n -x \
+            >"$snapshot/nat-$phase.txt" 2>&1 || true
+    fi
+    dmesg | tail -n 700 >"$snapshot/dmesg-$phase.txt" 2>&1 || true
+}
+
+restore_standard_wifi() {
+    log "RESTORE: stopping DHCP and removing the P2P-GO"
+    capture_diagnostics before-restore
+    cleanup_probe
+    rm -rf "$runtime"
+    [ -d "/sys/class/net/$p2p_iface" ] || return 1
+    [ "$(interface_type "$p2p_iface")" = P2P-device ] || return 1
+    timeout 45 rc-service honor6x-wifi start >/dev/null 2>&1 || return 1
+    wait_for_wpa "$standard_control" "$sta_iface" 30 || return 1
+    wait_for_association "$standard_control" "$sta_iface" 40 || return 1
+    wait_for_ipv4 "$sta_iface" 30 || return 1
+    [ "$(interface_type "$p2p_iface")" = P2P-device ] || return 1
+    internet_ok || return 1
+}
+
+finish() {
+    rc=$?
+    trap - EXIT
+    trap '' HUP INT TERM
+    rm -f "$ready"
+    if [ "$standard_stopped" -eq 1 ]; then
+        set +e; exec 9>&-
+        if restore_standard_wifi; then
+            capture_diagnostics after-restore
+            log "RESTORE_OK: test DHCP is stopped and standard Wi-Fi is online"
+        else
+            capture_diagnostics after-restore
+            log "RESTORE_FAILED: leave the phone powered on for recovery"
+            rc=1
+        fi
+    fi
+    rm -f "$controller_pid"
+    exit "$rc"
+}
+
+trap finish EXIT
+trap 'exit 130' HUP INT TERM
+
+case "${1:-}" in
+    --run) ;;
+    *) fail "usage: $0 --run" ;;
+esac
+[ "$(id -u)" -eq 0 ] || fail "root privileges required"
+printf '%s\n' "$$" >"$controller_pid"
+chmod 0644 "$controller_pid"
+
+for command in curl dnsmasq flock getent install ip iptables-legacy rc-service sed timeout wpa_cli; do
+    command -v "$command" >/dev/null 2>&1 || fail "missing command: $command"
+done
+[ -x "$probe_binary" ] || fail "probe binary is not installed"
+[ -r "$standard_config" ] || fail "standard Wi-Fi config is missing"
+[ "$(interface_type "$p2p_iface")" = P2P-device ] || fail "p2p0 is not P2P-device"
+timeout 5 rc-service honor6x-wifi status 2>/dev/null | grep -q started ||
+    fail "honor6x-wifi is not started"
+[ "$(wpa_state "$standard_control" "$sta_iface")" = COMPLETED ] ||
+    fail "baseline Wi-Fi is not associated"
+internet_ok || fail "baseline internet check failed"
+! pgrep -x dnsmasq >/dev/null || fail "dnsmasq is already running"
+[ "$(cat /proc/sys/net/ipv4/ip_forward)" = 0 ] || fail "IPv4 forwarding is already enabled"
+if [ "$nat_enabled" -eq 1 ]; then
+    iptables-legacy -t nat -L >/dev/null 2>&1 ||
+        fail "kernel legacy IPv4 NAT support is unavailable"
+    ! iptables-legacy -S "$filter_chain" >/dev/null 2>&1 ||
+        fail "stale $filter_chain chain exists"
+    ! iptables-legacy -t nat -S "$nat_chain" >/dev/null 2>&1 ||
+        fail "stale $nat_chain chain exists"
+fi
+
+mkdir -p "$runtime" "$control"
+rm -rf "$snapshot" "$ready"
+chmod 0700 "$runtime"; chmod 0755 "$control"
+interface_names >"$before_ifaces"
+grep -qx 'p2p_disabled=1' "$standard_config" || fail "standard P2P guard is missing"
+install -m 0600 "$standard_config" "$sta_config"
+cat >"$p2p_config" <<EOF
+ctrl_interface=$control
+update_config=0
+device_name=Honor6X-pmOS
+device_type=1-0050F204-1
+p2p_go_intent=15
+p2p_no_group_iface=0
+p2p_ssid_postfix=-Honor6X
+EOF
+chmod 0600 "$p2p_config"
+
+log "BASELINE_OK: starting isolated STA plus P2P manager"
+standard_stopped=1
+timeout 35 rc-service honor6x-wifi stop >/dev/null 2>&1 ||
+    fail "could not stop honor6x-wifi cleanly"
+exec 9>"$operation_lock"; flock -n 9 || fail "another Wi-Fi operation is active"
+ip link set "$sta_iface" up
+"$probe_binary" -Dnl80211 -Q -i "$p2p_iface" -c "$p2p_config" -C "$control" \
+    -N -Dnl80211 -i "$sta_iface" -c "$sta_config" \
+    >"$probe_log" 2>&1 9>&- &
+printf '%s\n' "$!" >"$probe_pid"
+wait_for_wpa "$control" "$p2p_iface" 20 || fail "p2p0 control socket did not answer"
+wait_for_wpa "$standard_control" "$sta_iface" 20 || fail "wlan0 control socket did not answer"
+wait_for_association "$standard_control" "$sta_iface" 35 || fail "wlan0 did not reassociate"
+
+/sbin/udhcpc -i "$sta_iface" -p "$upstream_dhcp_pid" \
+    -s /usr/share/udhcpc/default.script -t 5 -T 3 -A 3 -b -R -S \
+    >"$upstream_dhcp_log" 2>&1 9>&- &
+wait_for_ipv4 "$sta_iface" 30 || fail "upstream DHCP failed"
+internet_ok || fail "upstream internet failed before GO creation"
+check_ip="$(getent ahostsv4 networkcheck.postmarketos.org 2>/dev/null |
+    awk '$2 == "STREAM" { print $1; exit }')"
+case "$check_ip" in
+    *.*.*.*) ;;
+    *) fail "could not resolve the external HTTPS validation address" ;;
+esac
+frequency="$(upstream_frequency)"
+case "$frequency" in ''|*[!0-9]*) fail "invalid upstream frequency" ;; esac
+
+result="$(timeout 12 wpa_cli -p "$control" -i "$p2p_iface" \
+    p2p_group_add "freq=$frequency" 2>&1 || true)"
+[ "$result" = OK ] || fail "P2P_GROUP_ADD returned: $result"
+wait_for_group 15 || fail "no P2P-GO interface appeared"
+[ "$(interface_type "$group_iface")" = P2P-GO ] || fail "$group_iface is not P2P-GO"
+[ "$(interface_type "$p2p_iface")" = P2P-device ] || fail "p2p0 changed type"
+
+status_wps="$(timeout 6 wpa_cli -p "$control" -i "$group_iface" raw STATUS-WPS 2>/dev/null || true)"
+ssid="$(printf '%s\n' "$status_wps" | sed -n 's/^ssid=//p' | head -n 1)"
+passphrase="$(printf '%s\n' "$status_wps" | sed -n 's/^passphrase=//p' | head -n 1)"
+[ -n "$ssid" ] || fail "P2P-GO SSID was not available"
+pass_length="${#passphrase}"
+if [ "$pass_length" -lt 8 ] || [ "$pass_length" -gt 63 ]; then
+    fail "P2P-GO passphrase was not available"
+fi
+
+ip addr add 192.168.51.1/24 dev "$group_iface"
+dnsmasq --keep-in-foreground --conf-file=/dev/null --user=root \
+    --interface="$group_iface" --bind-interfaces --listen-address=192.168.51.1 \
+    --port=0 --dhcp-authoritative \
+    --dhcp-range=192.168.51.10,192.168.51.30,255.255.255.0,12h \
+    --dhcp-option=3,192.168.51.1 --dhcp-option=6,1.1.1.1 \
+    --dhcp-leasefile="$leases" --log-dhcp --log-facility=- \
+    >"$dnsmasq_log" 2>&1 &
+printf '%s\n' "$!" >"$dnsmasq_pid"
+sleep 2; pid_alive "$dnsmasq_pid" || fail "dnsmasq failed to start"
+
+enable_nat
+printf '1\n' >/proc/sys/net/ipv4/ip_forward
+
+umask 077
+printf 'active=1\nssid=%s\npassphrase=%s\ngroup=%s\nupstream_ssid=%s\n' \
+    "$ssid" "$passphrase" "$group_iface" \
+    "$(wpa_cli -p "$standard_control" -i "$sta_iface" status 2>/dev/null |
+        sed -n 's/^ssid=//p')" >"$ready"
+chmod 0600 "$ready"
+umask 022
+log "HOTSPOT_READY: $ssid is forwarding through $sta_iface"
+
+while :; do
+    [ -d "/sys/class/net/$group_iface" ] || fail "P2P-GO disappeared"
+    pid_alive "$dnsmasq_pid" || fail "dnsmasq exited"
+    [ "$(wpa_state "$standard_control" "$sta_iface")" = COMPLETED ] ||
+        fail "wlan0 lost association"
+    [ "$(cat /proc/sys/net/ipv4/ip_forward)" = 1 ] ||
+        fail "IPv4 forwarding was disabled"
+    iptables-legacy -S "$filter_chain" >/dev/null 2>&1 ||
+        fail "hotspot forwarding chain disappeared"
+    iptables-legacy -t nat -S "$nat_chain" >/dev/null 2>&1 ||
+        fail "hotspot NAT chain disappeared"
+    sleep 5
+done

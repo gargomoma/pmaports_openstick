@@ -1,0 +1,54 @@
+maintainer="YuanLang <tsushdkjfajxnxm@gmail.com>"
+pkgname=honor6x-hotspot
+pkgdesc="Honor 6X P2P-GO hotspot controller"
+pkgver=2
+pkgrel=2
+url="https://gitlab.postmarketos.org/"
+arch="aarch64"
+license="MIT"
+checkdepends="python3"
+depends="
+curl
+dnsmasq
+iw
+iptables-legacy
+iproute2
+openrc
+util-linux-misc
+wpa_supplicant
+wpa-supplicant-honor6x-p2p
+"
+source="
+honor6x-hotspot-control
+honor6x-hotspot-worker
+test_hotspot_control.py
+test_hotspot_nat.py
+50-honor6x-hotspot.rules
+README.md
+"
+
+check() {
+	sh -n "$srcdir"/honor6x-hotspot-control
+	sh -n "$srcdir"/honor6x-hotspot-worker
+	python3 "$srcdir"/test_hotspot_control.py
+	python3 "$srcdir"/test_hotspot_nat.py
+}
+
+package() {
+	install -Dm755 "$srcdir"/honor6x-hotspot-control \
+		"$pkgdir"/usr/libexec/honor6x/honor6x-hotspot-control
+	install -Dm755 "$srcdir"/honor6x-hotspot-worker \
+		"$pkgdir"/usr/libexec/honor6x/honor6x-hotspot-worker
+	install -Dm644 "$srcdir"/50-honor6x-hotspot.rules \
+		"$pkgdir"/usr/share/polkit-1/rules.d/50-honor6x-hotspot.rules
+	install -Dm644 "$srcdir"/README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}
+
+sha512sums="
+73e8bc3da727ff17aef2af21f0f5459359188f3f864fafd9148348ce0ccd87be8777e49d7afa0e595c00de7bc34a3ea5d884ed770187b45fd1361ab02889ecd6  honor6x-hotspot-control
+5dc1a26dc539c2fe848522f0f31113c3d2c6399f7324f73cc333d391fc749f2f930e404abb1ae0575a18ba8a7c91e34c2f0c3e16b78278ba1a99cdd36f02cdb6  honor6x-hotspot-worker
+baa035fc421bdea7b4c4c435ce0106421c5cac2f76b45a0ac821bac01b566b0dd139a2397c00d6dc2e239932f6a76966c6c68f77abed59b66c1b546fc7328cc3  test_hotspot_control.py
+47a42194449a2ca8576c8f900ece5268fbcf0d727e7071217b8885bfe8985b65298f57c5488453ad03e8af6743c2f8980ec4ef3641d4ce07ce6aa4ae2a63599c  test_hotspot_nat.py
+75d1bd7a3252cb9cf01a0716567e2c64a943664a5e55fb1a9775f18a188e2716b3bca08606a421b98c257831c76731d9a71f2dae244a61e01f4b32e9de4416b3  50-honor6x-hotspot.rules
+7e8c01205c817fa8c0315f565a530c194dba3af9378905b7377b7988952aa9796965c49175d5c3a44c1c7c57fc71ac76e692600cca0d01614f3e6c5c03a2c3fd  README.md
+"

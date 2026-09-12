@@ -1,0 +1,45 @@
+From: Honor 6X local port <honor6x-local@example.invalid>
+Date: Sat, 5 Sep 2026 22:10:00 +0800
+Subject: [PATCH] nl80211: do not start, stop, or delete external P2P devices
+
+The Honor 6X vendor driver pre-creates p2p0, but its
+start_p2p_device callback is an unimplemented stub that always returns an
+error. The stop callback is also a stub. An externally owned P2P Device must
+therefore not use the generic nl80211 lifecycle managed by wpa_supplicant.
+
+Leave start, stop, and deletion to the vendor driver while retaining the
+normal lifecycle for P2P Devices created by wpa_supplicant itself.
+---
+ src/drivers/driver_nl80211.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 945ba6f..c1b73ea 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -3041,7 +3041,10 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv,
+ 	wpa_driver_nl80211_drv_init_rfkill(drv);
+ 
+ 	if (!rfkill_is_blocked(drv->rfkill)) {
+-		int ret = i802_set_iface_flags(bss, 1);
++		int ret = 0;
++
++		if (!bss->externally_owned_p2p_device)
++			ret = i802_set_iface_flags(bss, 1);
+ 		if (ret) {
+ 			wpa_printf(MSG_ERROR, "nl80211: Could not set "
+ 				   "interface '%s' UP", bss->ifname);
+@@ -3204,7 +3207,8 @@ static void wpa_driver_nl80211_deinit(struct i802_bss *bss)
+ 
+ 	eloop_cancel_timeout(wpa_driver_nl80211_scan_timeout, drv, drv->ctx);
+ 
+-	if (!drv->start_iface_up)
++	if (!drv->start_iface_up &&
++	    !bss->externally_owned_p2p_device)
+ 		(void) i802_set_iface_flags(bss, 0);
+ 
+ 	if (drv->addr_changed) {
+-- 
+2.51.0
+
+

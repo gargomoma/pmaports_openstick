@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+mode="${1:-status}"
+control=/run/honor6x-display-control
+
+case "$mode" in
+	status)
+		exec /usr/sbin/honor6x-display-orientation status
+		;;
+	portrait|landscape) ;;
+	*)
+		echo "Usage: $0 {portrait|landscape|status}" >&2
+		exit 2
+		;;
+esac
+
+[ -p "$control" ] || {
+	echo "Honor 6X display manager is not running." >&2
+	exit 3
+}
+printf '%s\n' "$mode" >"$control"

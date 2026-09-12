@@ -1,0 +1,35 @@
+#!/bin/sh
+set -eu
+
+brightness=/sys/class/leds/lcd_backlight0/brightness
+maximum=/sys/class/leds/lcd_backlight0/max_brightness
+state=/run/honor6x-screen-last-brightness
+
+[ "$(cat /sys/class/graphics/fb0/name)" = "hisifb0" ]
+[ -r "$brightness" ]
+[ -r "$maximum" ]
+
+case "${1:-}" in
+	get)
+		printf '%s %s\n' "$(cat "$brightness")" "$(cat "$maximum")"
+		;;
+	set)
+		[ "$(id -u)" -eq 0 ]
+		case "${2:-}" in
+			''|*[!0-9]*) exit 2 ;;
+		esac
+		target="$2"
+		max="$(cat "$maximum")"
+		[ "$target" -le "$max" ]
+		printf '%s\n' "$target" >"$brightness" || :
+		sleep 1
+		[ "$(cat "$brightness")" = "$target" ]
+		if [ "$target" -gt 0 ]; then
+			printf '%s\n' "$target" >"$state"
+		fi
+		;;
+	*)
+		echo "usage: honor6x-brightness-control get | set VALUE" >&2
+		exit 2
+		;;
+esac

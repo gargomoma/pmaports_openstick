@@ -1,0 +1,306 @@
+#!/bin/sh
+set -eu
+
+iface=wlan0
+runtime=/run/honor6x-wifi
+ctrl_dir=/run/wpa_supplicant
+config=/etc/wpa_supplicant/honor6x.conf
+wpa_pid="$runtime/wpa_supplicant.pid"
+dhcp_pid="$runtime/udhcpc.pid"
+dhcp_log="$runtime/udhcpc.log"
+
+fail() {
+    echo "error=$*" >&2
+    exit 1
+}
+
+require_root() {
+    [ "$(id -u)" -eq 0 ] || fail "root privileges required"
+}
+
+pid_alive() {
+    [ -s "$1" ] || return 1
+    kill -0 "$(cat "$1")" 2>/dev/null
+}
+
+ensure_runtime() {
+    mkdir -p "$runtime" "$ctrl_dir" /etc/wpa_supplicant
+    chmod 0755 "$runtime" "$ctrl_dir"
+    if [ ! -f "$config" ]; then
+        umask 077
+        printf '%s\n' \
+            'ctrl_interface=/run/wpa_supplicant' \
+            'update_config=0' \
+            'p2p_disabled=1' >"$config"
+    fi
+    chmod 0600 "$config"
+}
+
+ensure_exclusive_owner() {
+    if pidof NetworkManager >/dev/null 2>&1; then
+        command -v nmcli >/dev/null 2>&1 || \
+            fail "NetworkManager is running but nmcli is unavailable"
+        managed="$(nmcli -g GENERAL.MANAGED device show "$iface" 2>/dev/null || true)"
+        [ "$managed" != yes ] || \
+            fail "NetworkManager still owns the vendor Wi-Fi path"
+    fi
+}
+
+start_wpa() {
+    ensure_runtime
+    ensure_exclusive_owner
+    ip link set "$iface" up
+    if ! pid_alive "$wpa_pid"; then
+        rm -f "$wpa_pid"
+        /sbin/wpa_supplicant -B -P "$wpa_pid" -Dnl80211 \
+            -i"$iface" -c"$config" 9>&-
+    fi
+
+    count=0
+    while ! /sbin/wpa_cli -p "$ctrl_dir" -i "$iface" ping 2>/dev/null | \
+        grep -qx PONG; do
+        count=$((count + 1))
+        [ "$count" -lt 20 ] || fail "wpa_supplicant control socket unavailable"
+        sleep 1
+    done
+}
+
+stop_dhcp() {
+    if pid_alive "$dhcp_pid"; then
+        kill -USR2 "$(cat "$dhcp_pid")" 2>/dev/null || true
+        kill "$(cat "$dhcp_pid")" 2>/dev/null || true
+    fi
+    rm -f "$dhcp_pid"
+    ip addr flush dev "$iface" 2>/dev/null || true
+    ip route flush dev "$iface" 2>/dev/null || true
+}
+
+stop_wpa() {
+    if pid_alive "$wpa_pid"; then
+        kill "$(cat "$wpa_pid")" 2>/dev/null || true
+        count=0
+        while pid_alive "$wpa_pid"; do
+            count=$((count + 1))
+            [ "$count" -lt 10 ] || {
+                kill -KILL "$(cat "$wpa_pid")" 2>/dev/null || true
+                break
+            }
+            sleep 1
+        done
+    fi
+    rm -f "$wpa_pid"
+}
+
+wait_associated() {
+    count=0
+    while :; do
+        state="$(/sbin/wpa_cli -p "$ctrl_dir" -i "$iface" status 2>/dev/null | \
+            sed -n 's/^wpa_state=//p')"
+        [ "$state" = COMPLETED ] && return 0
+        count=$((count + 1))
+        [ "$count" -lt 25 ] || return 1
+        sleep 1
+    done
+}
+
+start_dhcp() {
+    stop_dhcp
+    /sbin/udhcpc -i "$iface" -p "$dhcp_pid" \
+        -s /usr/share/udhcpc/default.script -t 5 -T 3 -A 3 -b -R -S \
+        >"$dhcp_log" 2>&1 9>&- &
+
+    count=0
+    while ! ip -4 addr show "$iface" | grep -q ' inet '; do
+        count=$((count + 1))
+        [ "$count" -lt 20 ] || fail "DHCP did not assign an IPv4 address"
+        sleep 1
+    done
+}
+
+saved_ssid() {
+    sed -n 's/^[[:space:]]*ssid="\(.*\)"/\1/p' "$config" 2>/dev/null | head -n 1
+}
+
+print_status() {
+    state=DISCONNECTED
+    ssid=
+    bssid=
+    rssi=
+    signal_source=unavailable
+    if pid_alive "$wpa_pid"; then
+        output="$(timeout 2 /sbin/wpa_cli -p "$ctrl_dir" -i "$iface" status 2>/dev/null || true)"
+        state="$(printf '%s\n' "$output" | sed -n 's/^wpa_state=//p')"
+        state="${state:-ERROR}"
+        ssid="$(printf '%s\n' "$output" | sed -n 's/^ssid=//p')"
+        bssid="$(printf '%s\n' "$output" | sed -n 's/^bssid=//p')"
+        if [ "$state" = COMPLETED ]; then
+            poll="$(timeout 2 /sbin/wpa_cli -p "$ctrl_dir" -i "$iface" signal_poll 2>/dev/null || true)"
+            rssi="$(printf '%s\n' "$poll" | awk -F= '$1 == "RSSI" && $2 ~ /^-[0-9]+$/ && $2 >= -127 && $2 < 0 {print $2; exit}')"
+            [ -z "$rssi" ] || signal_source=wpa_signal_poll
+        fi
+    fi
+    address="$(ip -4 addr show "$iface" | sed -n 's/.* inet \([^ ]*\).*/\1/p' | head -n 1)"
+    gateway="$(ip route show default dev "$iface" 2>/dev/null | awk 'NR == 1 {print $3}')"
+    printf 'state=%s\nssid=%s\nip=%s\ngateway=%s\nsaved_ssid=%s\n' \
+        "${state:-DISCONNECTED}" "$ssid" "$address" "$gateway" \
+        "$(saved_ssid)"
+    printf 'rssi_dbm=%s\nsignal_source=%s\nbssid=%s\n' "$rssi" "$signal_source" "$bssid"
+    [ "$state" != ERROR ] || printf 'error=Unable to read wpa_supplicant state\n'
+}
+
+link_identity() {
+    timeout 2 /sbin/wpa_cli -p "$ctrl_dir" -i "$iface" status 2>/dev/null |
+        grep -E '^(wpa_state|bssid)=' || true
+    ip -4 -o addr show dev "$iface" | awk '{print "inet " $4}'
+}
+
+check_internet() {
+    before="$(link_identity)"
+    if ! printf '%s\n' "$before" | grep -qx 'wpa_state=COMPLETED' ||
+       ! printf '%s\n' "$before" | grep -q '^inet '; then
+        printf 'internet=not_connected\nreason=no_wifi_address\n'
+        return
+    fi
+    # Fixed HTTPS endpoint; no proxy, curlrc, redirects, or USB-route fallback.
+    if response="$(curl -q --interface "$iface" --noproxy '*' --proto '=https' \
+        --connect-timeout 3 --max-time 6 --max-filesize 1024 \
+        --silent --write-out '\n%{http_code}' https://networkcheck.postmarketos.org 2>/dev/null)"; then
+        code="$(printf '%s\n' "$response" | tail -n 1)"
+        body="$(printf '%s\n' "$response" | sed '$d' | tr -d '\r\n')"
+        if [ "$code" = 200 ] && [ "$body" = OK ]; then
+            result=online
+            reason=https_ok
+        else
+            result=check_failed
+            reason=unexpected_response
+        fi
+    else
+        result=check_failed
+        reason=probe_failed
+    fi
+    after="$(link_identity)"
+    if [ "$before" != "$after" ]; then
+        result=link_changed
+        reason=wifi_changed_during_probe
+    fi
+    printf 'internet=%s\nreason=%s\n' "$result" "$reason"
+}
+
+write_network() {
+    ssid="$1"
+    [ -n "$ssid" ] || fail "invalid SSID"
+    ! LC_ALL=C printf %s "$ssid" | grep -q '[[:cntrl:]]' || \
+        fail "SSID contains control characters"
+    [ "$(printf %s "$ssid" | wc -c)" -le 32 ] || fail "SSID is too long"
+
+    IFS= read -r passphrase || fail "missing passphrase"
+    length="$(printf %s "$passphrase" | wc -c)"
+    [ "$length" -ge 8 ] && [ "$length" -le 63 ] || \
+        fail "WPA passphrase must contain 8 to 63 characters"
+
+    ensure_runtime
+    tmp="$(mktemp /etc/wpa_supplicant/honor6x.conf.XXXXXX)"
+    trap 'rm -f "$tmp"' EXIT INT TERM
+    {
+        printf '%s\n' \
+            'ctrl_interface=/run/wpa_supplicant' \
+            'update_config=0' \
+            'p2p_disabled=1'
+        printf '%s\n%s\n' "$ssid" "$passphrase" | \
+            /usr/libexec/honor6x/honor6x-wifi-psk
+    } >"$tmp"
+    install -o root -g root -m 0600 "$tmp" "$config"
+    rm -f "$tmp"
+    trap - EXIT INT TERM
+    unset passphrase
+}
+
+command="${1:-status}"
+require_root
+[ -d "/sys/class/net/$iface" ] || fail "$iface is unavailable"
+ensure_runtime
+case "$command" in
+    status|saved|internet) ;;
+    *) exec 9>"$runtime/operation.lock"
+       flock -n 9 || fail "another Wi-Fi operation is running" ;;
+esac
+
+case "$command" in
+    internet)
+        [ "$#" -eq 1 ] || fail "usage: internet"
+        check_internet
+        ;;
+    boot)
+        start_wpa
+        if grep -q '^[[:space:]]*network={' "$config" && wait_associated; then
+            start_dhcp
+        fi
+        ;;
+    scan)
+        start_wpa
+        /sbin/wpa_cli -p "$ctrl_dir" -i "$iface" scan >/dev/null
+        sleep 3
+        /sbin/wpa_cli -p "$ctrl_dir" -i "$iface" scan_results | tail -n +2
+        ;;
+    connect)
+        [ "$#" -eq 2 ] || [ "$#" -eq 3 ] || fail "usage: connect SSID [wpa|open]"
+        /usr/libexec/honor6x/honor6x-wifi-psk save "$2" "${3:-wpa}"
+        stop_dhcp
+        stop_wpa
+        start_wpa
+        wait_associated || fail "association timed out"
+        start_dhcp
+        print_status
+        ;;
+    select)
+        [ "$#" -eq 2 ] || fail "usage: select SSID"
+        /usr/libexec/honor6x/honor6x-wifi-psk select "$2"
+        stop_dhcp
+        stop_wpa
+        start_wpa
+        wait_associated || fail "association timed out (check password and signal)"
+        start_dhcp
+        print_status
+        ;;
+    forget)
+        [ "$#" -eq 2 ] || fail "usage: forget SSID"
+        current="$(saved_ssid)"
+        /usr/libexec/honor6x/honor6x-wifi-psk forget "$2"
+        if [ "$current" = "$2" ]; then
+            stop_dhcp
+            stop_wpa
+        fi
+        print_status
+        ;;
+    reconnect)
+        grep -q '^[[:space:]]*network={' "$config" 2>/dev/null || \
+            fail "no saved network"
+        start_wpa
+        /sbin/wpa_cli -p "$ctrl_dir" -i "$iface" reconnect >/dev/null
+        wait_associated || fail "association timed out"
+        start_dhcp
+        print_status
+        ;;
+    disconnect)
+        stop_dhcp
+        if pid_alive "$wpa_pid"; then
+            /sbin/wpa_cli -p "$ctrl_dir" -i "$iface" disconnect >/dev/null || true
+        fi
+        print_status
+        ;;
+    status)
+        ensure_runtime
+        print_status
+        ;;
+    saved)
+        ensure_runtime
+        /usr/libexec/honor6x/honor6x-wifi-psk list
+        ;;
+    shutdown)
+        stop_dhcp
+        stop_wpa
+        ;;
+    *)
+        fail "unknown command: $command"
+        ;;
+esac

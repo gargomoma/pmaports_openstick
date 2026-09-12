@@ -1,0 +1,20 @@
+polkit.addRule(function(action, subject) {
+	if (action.id === "org.freedesktop.policykit.exec" &&
+			action.lookup("program") ===
+			"/usr/libexec/honor6x/honor6x-brightness-control" &&
+			subject.active && subject.local && subject.isInGroup("wheel")) {
+		return polkit.Result.YES;
+	}
+
+	var allowed = [
+		"org.freedesktop.login1.power-off",
+		"org.freedesktop.login1.power-off-multiple-sessions",
+		"org.freedesktop.login1.reboot",
+		"org.freedesktop.login1.reboot-multiple-sessions"
+	];
+
+	if (subject.local && subject.isInGroup("wheel") &&
+			allowed.indexOf(action.id) !== -1) {
+		return polkit.Result.YES;
+	}
+});

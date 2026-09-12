@@ -1,0 +1,28 @@
+#!/bin/sh
+set -eu
+
+device_config=/etc/xdg/xfce4-phone-honor6x
+if [ -n "${XDG_CONFIG_DIRS:-}" ]; then
+	XDG_CONFIG_DIRS="$device_config:$XDG_CONFIG_DIRS"
+else
+	XDG_CONFIG_DIRS="$device_config:/etc/xdg"
+fi
+export XDG_CONFIG_DIRS
+
+# The vendor fbdev backlight is controlled by the Honor 6X service. Keep
+# generic X11 idle blanking out of that lifecycle while retaining manual lock.
+xset s off || true
+xset -dpms || true
+
+compat=/usr/lib/honor6x/compat/libh6x-faccessat-compat.so
+
+if [ -r "$compat" ]; then
+	if [ -n "${LD_PRELOAD:-}" ]; then
+		LD_PRELOAD="$compat:$LD_PRELOAD"
+	else
+		LD_PRELOAD="$compat"
+	fi
+	export LD_PRELOAD
+fi
+
+exec /usr/bin/startxfce4 "$@"

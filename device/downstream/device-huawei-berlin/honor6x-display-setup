@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+brightness=/sys/class/leds/lcd_backlight0/brightness
+maximum=/sys/class/leds/lcd_backlight0/max_brightness
+
+[ "$(cat /sys/class/graphics/fb0/name)" = "hisifb0" ]
+[ "$(cat /sys/class/graphics/fb0/virtual_size)" = "1080,1920" ]
+[ "$(cat /sys/class/graphics/fb0/bits_per_pixel)" = "32" ]
+[ -w "$brightness" ]
+
+target="$(cat "$maximum")"
+[ "$target" -gt 0 ]
+
+write_and_verify() {
+	requested="$1"
+
+	# This vendor sysfs handler can return an error after applying the value.
+	printf '%s\n' "$requested" >"$brightness" || :
+	sleep 1
+	[ "$(cat "$brightness")" = "$requested" ]
+}
+
+write_and_verify 0
+write_and_verify "$target"

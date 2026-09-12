@@ -1,0 +1,143 @@
+#!/bin/sh
+set -eu
+
+worker=/usr/libexec/honor6x/honor6x-hotspot-worker
+pid_file=/run/honor6x-hotspot-controller.pid
+state_file=/run/honor6x-hotspot.state
+log_file=/run/honor6x-hotspot-controller.log
+
+fail() {
+    echo "error=$*" >&2
+    exit 1
+}
+
+require_root() {
+    [ "$(id -u)" -eq 0 ] || fail "root privileges required"
+}
+
+pid_alive() {
+    [ -s "$pid_file" ] || return 1
+    pid="$(cat "$pid_file")"
+    kill -0 "$pid" 2>/dev/null || return 1
+    [ -r "/proc/$pid/cmdline" ] || return 1
+    tr '\0' ' ' <"/proc/$pid/cmdline" | grep -q "$worker --run"
+}
+
+print_status() {
+    if pid_alive && [ -s "$state_file" ]; then
+        cat "$state_file"
+        upstream_ip="$(ip -4 addr show dev wlan0 2>/dev/null |
+            sed -n 's/.* inet \([^ ]*\).*/\1/p' | head -n 1)"
+        rssi="$(timeout 2 wpa_cli -p /run/wpa_supplicant -i wlan0 \
+            signal_poll 2>/dev/null |
+            awk -F= '$1 == "RSSI" && $2 ~ /^-[0-9]+$/ { print $2; exit }')"
+        printf 'upstream_ip=%s\nrssi_dbm=%s\n' "$upstream_ip" "$rssi"
+        if [ -s /run/honor6x-hotspot/dnsmasq.leases ]; then
+            clients="$(awk 'NF >= 3 { count++ } END { print count + 0 }' \
+                /run/honor6x-hotspot/dnsmasq.leases)"
+        else
+            clients=0
+        fi
+        printf 'clients=%s\n' "$clients"
+    else
+        printf 'active=0\nclients=0\n'
+    fi
+}
+
+check_internet() {
+    if ! pid_alive || [ ! -s "$state_file" ]; then
+        printf 'internet=not_connected\nreason=hotspot_inactive\n'
+        return
+    fi
+    response="$(curl -q --interface wlan0 --noproxy '*' --proto '=https' \
+        --connect-timeout 3 --max-time 7 --max-filesize 1024 --silent \
+        --write-out '\n%{http_code}' \
+        https://networkcheck.postmarketos.org 2>/dev/null || true)"
+    code="$(printf '%s\n' "$response" | tail -n 1)"
+    body="$(printf '%s\n' "$response" | sed '$d' | tr -d '\r\n')"
+    if [ "$code" = 200 ] && [ "$body" = OK ]; then
+        printf 'internet=online\nreason=https_ok\n'
+    else
+        printf 'internet=check_failed\nreason=probe_failed\n'
+    fi
+}
+
+start_hotspot() {
+    [ -x "$worker" ] || fail "hotspot worker is not installed"
+    [ -x /usr/libexec/honor6x/wpa_supplicant-p2p ] ||
+        fail "Honor 6X P2P wpa_supplicant is not installed"
+    command -v dnsmasq >/dev/null 2>&1 || fail "dnsmasq is not installed"
+    command -v iptables-legacy >/dev/null 2>&1 || fail "iptables-legacy is not installed"
+    if pid_alive; then
+        print_status
+        return
+    fi
+    rm -f "$pid_file" "$state_file" "$log_file"
+    nohup "$worker" --run >"$log_file" 2>&1 </dev/null &
+    startup_pid=$!
+    count=0
+    while [ "$count" -lt 100 ]; do
+        if [ -s "$state_file" ] && pid_alive; then
+            print_status
+            return
+        fi
+        # Cleanup removes the PID file even on immediate preflight failure.
+        # Observe the launched child independently of that file.
+        if ! kill -0 "$startup_pid" 2>/dev/null; then
+            wait "$startup_pid" 2>/dev/null || true
+            break
+        fi
+        count=$((count + 1))
+        sleep 1
+    done
+    message="$(tail -n 1 "$log_file" 2>/dev/null || true)"
+    fail "hotspot did not start${message:+: $message}"
+}
+
+stop_hotspot() {
+    if ! pid_alive; then
+        rm -f "$pid_file" "$state_file"
+        rc-service honor6x-wifi status >/dev/null 2>&1 ||
+            rc-service honor6x-wifi start >/dev/null 2>&1 ||
+            fail "standard Wi-Fi could not be restored"
+        print_status
+        return
+    fi
+    kill -TERM "$(cat "$pid_file")"
+    count=0
+    while [ "$count" -lt 100 ] && [ -e "$pid_file" ]; do
+        count=$((count + 1))
+        sleep 1
+    done
+    [ ! -e "$pid_file" ] || fail "hotspot cleanup did not finish"
+    rc-service honor6x-wifi status 2>/dev/null | grep -q started ||
+        fail "standard Wi-Fi is not running after hotspot shutdown"
+    print_status
+}
+
+require_root
+case "${1:-status}" in
+    start)
+        [ "$#" -eq 1 ] || fail "usage: start"
+        start_hotspot
+        ;;
+    stop)
+        [ "$#" -eq 1 ] || fail "usage: stop"
+        stop_hotspot
+        ;;
+    status)
+        [ "$#" -eq 1 ] || fail "usage: status"
+        print_status
+        ;;
+    internet)
+        [ "$#" -eq 1 ] || fail "usage: internet"
+        check_internet
+        ;;
+    log)
+        [ "$#" -eq 1 ] || fail "usage: log"
+        tail -n 80 "$log_file" 2>/dev/null || true
+        ;;
+    *)
+        fail "unknown command: $1"
+        ;;
+esac

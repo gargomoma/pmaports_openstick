@@ -1,0 +1,26 @@
+#!/sbin/openrc-run
+
+name="Honor 6X display manager"
+description="Apply Honor 6X display and touch orientation"
+command="/usr/sbin/honor6x-display-manager"
+command_background="yes"
+pidfile="/run/honor6x-display-manager.pid"
+output_log="/var/log/honor6x-display-manager.log"
+error_log="$output_log"
+
+depend() {
+	need localmount kill-pbsplash
+	after udev
+	before lightdm
+}
+
+start_pre() {
+	[ -x /usr/libexec/honor6x-p31-splash-stop ] || return 1
+	/usr/libexec/honor6x-p31-splash-stop || return 1
+	checkpath --file --mode 0644 --owner root:root "$output_log"
+	getent group video >/dev/null
+}
+
+stop_post() {
+	rm -f /run/honor6x-display-control
+}
