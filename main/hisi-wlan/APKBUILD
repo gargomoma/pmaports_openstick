@@ -1,6 +1,6 @@
 maintainer="YuanLang <tsushdkjfajxnxm@gmail.com>"
 pkgname=hisi-wlan
-pkgver=3
+pkgver=4
 pkgrel=0
 pkgdesc="Init script for enabling hisi wlan driver (downstream Android kernels)"
 url="https://gitlab.postmarketos.org/postmarketOS/pmaports"
