@@ -6,7 +6,7 @@ pkgdesc="Xorg fbdevhw compatibility module for the Honor 6X virtual framebuffer"
 url="https://gitlab.freedesktop.org/xorg/xserver"
 arch="aarch64"
 license="MIT"
-depends="xorg-server=$pkgver-r0"
+depends="xorg-server"
 # The crossdirect environment cannot execute its host cc1 through the target
 # root. Build this Xorg module through the native-aarch64 QEMU path instead.
 options="!pmb:crossdirect"
