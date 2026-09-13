@@ -3,7 +3,7 @@
 maintainer="User0 <user0thenyancat@proton.me>"
 pkgname=linux-amazon-checkers
 pkgver=4.9.77
-pkgrel=4
+pkgrel=5
 pkgdesc="Amazon Echo Show 5 1st Generation kernel fork"
 arch="armv7"
 _carch="arm"
@@ -44,6 +44,10 @@ source="
 	fix-check-lxdialog-makefile.patch
 	remove-dummy-audio-mmap.patch
 	remove-mno-thumb-interwork.patch
+	0001-disable-dtc-werror.patch
+	0001-add-upstream-drm-drivers.patch
+	0002-add-upstream-i2c-drivers.patch
+	0003-add-upstream-fbdev-drivers.patch
 "
 builddir="$srcdir/$_repository-$_commit"
 _outdir="out"
@@ -67,6 +71,15 @@ prepare() {
 	# Replace x86_64 dtc_overlay binary
 	rm "$builddir"/scripts/dtc/dtc_overlay
 	ln -s /usr/bin/dtc "$builddir"/scripts/dtc/dtc_overlay
+
+	# Remove -Werror from all makefiles
+	local i
+	local makefiles="$(find . -type f -name Makefile)
+	    $(find . -type f -name Kbuild)"
+	for i in $makefiles; do
+	    sed -i 's/-Werror-/-W/g' "$i"
+	    sed -i 's/-Werror//g' "$i"
+	done
 
 	. downstreamkernel_prepare
 }
@@ -101,4 +114,8 @@ ad4fce05db2247c9353afe63f54cfaac54bd96266ffc6572e0e0dfeefe090b90e08ee44e0825e59e
 c33fad9de627e72f12e61e728fa1ec53ef15259c7790392a997cc7269e60e45da9534d58851c3b348a1729aaa134d1df305e33546e8a1f3654462f2c3c1d9563  fix-check-lxdialog-makefile.patch
 e6f11b7a87c68ad0d9bb85361fe0d99f957e2bcba6c86d314b9ef558b526a7dfd8efcbe7698b686c396ef31f98ae33bd097736ea20f65612755838acb94a03bf  remove-dummy-audio-mmap.patch
 e7f4f35229580ff87572cc8c98fe4d79689c18690fb5c0a0f91de9d8159e7dc0043d3e3e27b788fa421dd682c0bde3ffbfb8ec36663e018c34e5a030ec4a7e6e  remove-mno-thumb-interwork.patch
+401ccbd665758444c1cccbf62e1acac2b9384188aaad1a55b8b63506eddbfd247cd257624c55d13b3879c00bbb45a136709ff8c7ea83ae349c800714fd61886e  0001-disable-dtc-werror.patch
+80dfe9c2c75153b5be2fc5ac38491f00c7b89b177a095c481069949c558619c9f6a45a4304d4dd5d6337563f7248600099cd64da4310c56cdfe4c8716b3b516d  0001-add-upstream-drm-drivers.patch
+0c1726a61af7aa6a7004ba2c215516ba95522cc7ce550bd5de84ba03b0519467ad60784398082529847fa15090c210268c9ed47d89ab9a808c1fadccf06c7f81  0002-add-upstream-i2c-drivers.patch
+03d7050956fd9dd928d74f64e1ad54e93d265dcb53f84f96f68d6ce563074f146b2dbaef0e93cea6ce86c5e1c5119dada79714368cbcbebac29c05547934ded3  0003-add-upstream-fbdev-drivers.patch
 "
