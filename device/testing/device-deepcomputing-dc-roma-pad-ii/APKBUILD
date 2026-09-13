@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-deepcomputing-dc-roma-pad-ii
+pkgdesc="deepcomputing DC-ROMA PAD II"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="riscv64"
+options="!check !archcheck"
+depends="
+	linux-deepcomputing-dc-roma-pad-ii
+	postmarketos-base
+"
+# u-boot-spacemit-kx107
+# atm uboot does not compile correctly so I leave it out to build a working system.
+
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+c50e74771564dbb6503b6ccd4ccb938302c7daa75fae3313f707e1cc213b6b4c650141e2bf8fbe6f7e1546526b96a686a250b0f3b975c9b2369a21dcc39f61ed  deviceinfo
+7edb862d27ba97c086c2d1f82318e93561c8274b6e56f427ad3c4ae9a07d4763e7ff6767cd71c0d580ccf3e2e647b00dbaee1e30c9d4f4b0b40b12326013c474  modules-initfs
+"
