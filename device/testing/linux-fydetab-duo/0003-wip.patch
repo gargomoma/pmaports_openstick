@@ -1,0 +1,107 @@
+From 1a673f79ddc07501efd54a4508257b1c1ca7d191 Mon Sep 17 00:00:00 2001
+From: Hugo Osvaldo Barrera <hugo@whynothugo.nl>
+Date: Tue, 30 Jun 2026 12:32:23 +0200
+Subject: [PATCH] wip
+
+---
+ .../boot/dts/rockchip/rk3588s-fydetab-duo.dts | 70 ++++++++++++++++++-
+ 1 file changed, 69 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588s-fydetab-duo.dts b/arch/arm64/boot/dts/rockchip/rk3588s-fydetab-duo.dts
+index 59a890b4faad..bc43a4b5d708 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-fydetab-duo.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-fydetab-duo.dts
+@@ -44,6 +44,62 @@ button-vol-down {
+ 		};
+ 	};
+ 
++	speaker_amp: audio-amplifier-speaker {
++		compatible = "simple-audio-amplifier";
++		pinctrl-names = "default";
++		pinctrl-0 = <&spk_con_pin>;
++		enable-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
++		sound-name-prefix = "Speaker Amp";
++	};
++
++	headphone_amp: audio-amplifier-headphone {
++		compatible = "simple-audio-amplifier";
++		pinctrl-names = "default";
++		pinctrl-0 = <&hp_con_pin>;
++		enable-gpios = <&gpio4 RK_PA4 GPIO_ACTIVE_HIGH>;
++		sound-name-prefix = "Headphones Amp";
++	};
++
++	es8388_sound: es8388-sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "rockchip-es8388";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,mclk-fs = <256>;
++		simple-audio-card,aux-devs = <&speaker_amp>, <&headphone_amp>;
++		simple-audio-card,widgets =
++			"Microphone", "Onboard Microphone",
++			"Microphone", "Microphone Jack",
++			"Speaker", "Speaker",
++			"Headphone", "Headphones";
++		simple-audio-card,routing =
++			"Headphones", "LOUT1",
++			"Headphones", "ROUT1",
++			"Speaker", "LOUT2",
++			"Speaker", "ROUT2",
++			"Headphones", "Headphones Amp OUTL",
++			"Headphones", "Headphones Amp OUTR",
++			"Headphones Amp INL", "LOUT1",
++			"Headphones Amp INR", "ROUT1",
++			"Speaker", "Speaker Amp OUTL",
++			"Speaker", "Speaker Amp OUTR",
++			"Speaker Amp INL", "LOUT2",
++			"Speaker Amp INR", "ROUT2",
++			"LINPUT1", "Microphone Jack",
++			"RINPUT1", "Microphone Jack",
++			"LINPUT2", "Onboard Microphone",
++			"RINPUT2", "Onboard Microphone";
++
++		daicpu: simple-audio-card,cpu {
++			sound-dai = <&i2s0_8ch>;
++			system-clock-frequency = <12288000>;
++		};
++
++		daicodec: simple-audio-card,codec {
++			sound-dai = <&es8388>;
++			system-clock-frequency = <12288000>;
++		};
++	};
++
+ 	backlight: backlight {
+ 		compatible = "pwm-backlight";
+ 		pwms = <&pwm14 0 25000 0>;
+@@ -461,7 +517,9 @@ &i2c8 {
+ 
+ &i2s0_8ch {
+ 	status = "okay";
+-	pinctrl-0 = <&i2s0_lrck
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s0_mclk
++		     &i2s0_lrck
+ 		     &i2s0_sclk
+ 		     &i2s0_sdi0
+ 		     &i2s0_sdo0>;
+@@ -938,6 +996,16 @@ hp_det: hp-det {
+ 		};
+ 	};
+ 
++	audio-amp {
++		spk_con_pin: spk-con-pin {
++			rockchip,pins = <4 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		hp_con_pin: hp-con-pin {
++			rockchip,pins = <4 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	hym8563 {
+ 		hym8563_int: hym8563-int {
+ 			rockchip,pins = <0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>;
+-- 
+2.54.0
+

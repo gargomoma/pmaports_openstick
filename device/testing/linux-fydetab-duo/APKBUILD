@@ -1,0 +1,98 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config from: https://github.com/Linux-for-Fydetab-Duo/linux-rockchip branch noble-panthor
+maintainer="Hugo Osvaldo Barrera <hugo@whynothugo.nl>"
+pkgname=linux-fydetab-duo
+pkgver=7.1.2
+_kernver=${pkgver%.*}
+pkgrel=0
+pkgdesc="Linux kernel for Fydetab Duo"
+arch="aarch64"
+_carch="arm64"
+_flavor="fydetab-duo"
+url="https://kernel.org"
+license="GPL-2.0-only"
+# TODO: stale makedepends?
+makedepends="
+	bash
+	bison
+	clang
+	devicepkg-dev
+	dtc
+	findutils
+	flex
+	linux-firmware
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	python3
+	xz
+	zstd
+"
+checkdepends="
+	py3-dt-schema
+	flex
+	bison
+	yamllint
+	"
+_config="config-$_flavor.$arch"
+# get patch releases
+if [ "${pkgver/*./}" -ne 0 ]; then
+	source="$pkgname-$pkgver.patch.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/patch-$pkgver.xz"
+fi
+source="
+	$source
+	https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$_kernver.tar.xz
+	0001-dt-bindings-bluetooth-broadcom-add-BCM43752.patch
+	0002-fydetab-initial-commit.patch
+	0003-wip.patch
+	$_config
+"
+options="!strip !check !tracedeps pmb:cross-native"
+builddir="$srcdir"/linux-$_kernver
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-$_flavor" \
+		Image modules dtbs
+}
+
+check() {
+	#TODO: remove options=!check
+	make ARCH=arm64 LLVM=1 dt_binding_check DT_SCHEMA_FILES=rockchip
+	make ARCH=arm64 LLVM=1 CHECK_DTBS=y rockchip/rk3588s-fydetab-duo.dtb
+}
+
+package() {
+	install -Dm644 "$builddir/$_outdir/arch/$_carch/boot/Image" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+c825216673bbc11f83fba55aed6456d6149cecc99df5f7b33971dcaeec967e73fa9950f62ddaca2fee437b0bf6f4c4826088a0ccdc7f96fe32ea936bcfdd3b67  linux-fydetab-duo-7.1.2.patch.xz
+d4d9c45261813559341c67ea53d4a47f5a04d1ad15e3c2b8222a09b5483380d2bfd31b8c675e144db2eb91f560d6cb28f66187a5ea4f24f6dfb82a4ad48064cc  linux-7.1.tar.xz
+d413e5b901f34c89f6c2ff30cf4e92b1c5838f85ba69647ca56f2266e761aadef77b16b195aeb882b0892c7306d1afdf9fe4c6984e99dccb790c60fccec25756  0001-dt-bindings-bluetooth-broadcom-add-BCM43752.patch
+7f24d3e463af8de52c5a19e83a48f87d8c0b001efd8cf378a3c3411cfdff52bb23df443f23d9a370c7e2eea7c7459c102ad1bd8a1a1947c5bde8d0ea510b0d92  0002-fydetab-initial-commit.patch
+15ad9208446d55595785db9c6ab8f0aaa76010e682741ba5fd901c26c8d4e05fe6a7f5f5aa07dc51f9a81bd653c370151bd912a65d8129ef4930ac167982d5f3  0003-wip.patch
+8a6fc9584e5e113369ac38b01050239246170949f750f191689f25c1ef2dfe6f78b5894e0b16f5615b6ce59c472d8cc5c4d0234b82022f44d1d345472a986645  config-fydetab-duo.aarch64
+"

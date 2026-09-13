@@ -1,0 +1,32 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Fydetab Duo"
+deviceinfo_manufacturer="Fyde"
+deviceinfo_codename="fyde-fydetab-duo"
+deviceinfo_year="2024"
+deviceinfo_dtb="rockchip/rk3588s-fydetab-duo"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="tablet"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="1600"
+deviceinfo_screen_height="2560"
+deviceinfo_getty="ttyS2;1500000"
+
+# Flash related
+deviceinfo_flash_method="rkdeveloptool"
+deviceinfo_flash_rk_partition_kernel="boot"
+deviceinfo_flash_rk_partition_rootfs="os1"
+
+# sd embed firmware
+deviceinfo_sd_embed_firmware="u-boot/fydetab-duo/idbloader.img:64,u-boot/fydetab-duo/u-boot.itb:16384"
+deviceinfo_sd_embed_firmware_step_size="512"
+deviceinfo_boot_part_start="32768"
+
+# Boot configuration
+deviceinfo_boot_filesystem="fat32"
+deviceinfo_generate_extlinux_config="true"

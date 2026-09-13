@@ -1,0 +1,45 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Hugo Osvaldo Barrera <hugo@whynothugo.nl>"
+pkgname=device-fyde-fydetab-duo
+pkgdesc="Fyde Fydetab Duo"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+depends="
+	firmware-ap6275p
+	linux-fydetab-duo
+	postmarketos-base
+	u-boot-fydetab-duo
+"
+makedepends="
+	devicepkg-dev
+"
+source="
+	deviceinfo
+	modules-initfs
+	99-debug.conf
+"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm 644 99-debug.conf "$pkgdir"/etc/kernel-cmdline.d/99-debug.conf
+}
+
+# modules required for bluetooth: hci_uart, btbcm
+# these would require the following via /usr/share/mkinitfs/files/firmware-ap6275p.files:
+#   /usr/lib/firmware/brcm/BCM4362A2.hcd
+#   /usr/lib/firmware/brcm/brcmfmac43752-pcie.bin
+#   /usr/lib/firmware/brcm/brcmfmac43752-pcie.clm_blob
+
+sha512sums="
+555cfc792fe0e04454d2191327db590e746eac45ee5e3abbeb479d2612f7a849eecfb939e2963c77ba374e6614748e3a9eeab931b3ae8a01d514d77bcf3e1884  deviceinfo
+7b3b64cf31951e9be77e64cf89cd09c06191b9bc8599dbfa341dd7f2aa6cac22e3ad90ec9fa7120dab25b8da547c67abead6d2f1236c07a6da9f61f3fcf40aba  modules-initfs
+c57e0510d8005490bfa51386246bab1b32c1b0af19e8a8684dda65a02005139dcfba34db85c474b23353aab7084111fcb6758f533049da1b4ac9aa2760205935  99-debug.conf
+"

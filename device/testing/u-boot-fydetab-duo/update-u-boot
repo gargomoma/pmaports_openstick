@@ -1,0 +1,89 @@
+#!/bin/sh
+
+device=
+dryrun=
+imagedir=
+
+get_defaults() {
+	if [ -z "$device" ]; then
+		# Fydetab Duo uses mmcblk0 for internal storage
+		device=/dev/mmcblk0
+	fi
+
+	if [ -z "$imagedir" ]; then
+		imagedir="/usr/share/u-boot"
+	fi
+}
+
+die() {
+	echo "ERROR: $*"
+	exit 1
+}
+
+usage() {
+	get_defaults
+
+	cat <<EOF
+usage: $0 [-n,--dry-run] [-i,--imagedir <imagedir>] [-d|--device <device>]
+
+options:
+
+ -d,--device <device>     Specify the device where to install u-boot
+                          (current default: ${device:-none})
+
+ -i,--imagedir <imagedir> Specify u-boot image directory
+                          (current default: ${imagedir:-none})
+
+ -n,--dry-run             Print commands but don't execute them
+
+EOF
+}
+
+while [ $# -gt 0 ]; do
+	opt="$1"
+	shift
+	case "$opt" in
+	-d | --device)
+		device="$1"
+		shift
+		;;
+	-i | --imagedir)
+		imagedir="$1"
+		shift
+		;;
+	-n | --dry-run)
+		dryrun="echo"
+		;;
+	--)
+		break
+		;;
+	-*)
+		usage
+		exit 1
+		;;
+	esac
+done
+
+get_defaults
+if [ -z "$device" ] || [ -z "$imagedir" ] || [ ! -e "$imagedir" ]; then
+	usage
+	exit 1
+fi
+
+if [ ! -e "$imagedir/fydetab-duo/" ]; then
+	die "fydetab-duo images not installed, apk add u-boot-fydetab-duo"
+fi
+
+if [ -z "$dryrun" ]; then
+	echo "Updating u-boot in $device in 3 seconds..."
+	sleep 3
+fi
+
+(
+	set -e
+	$dryrun dd if="$imagedir/fydetab-duo/idbloader.img" of="$device" seek=64 status=none
+	$dryrun dd if="$imagedir/fydetab-duo/u-boot.itb" of="$device" seek=16384 status=none
+	$dryrun sync
+) || die "U-Boot installation in $device failed"
+
+[ -z "$dryrun" ] && echo "Completed successfully."

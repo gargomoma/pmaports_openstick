@@ -1,0 +1,27 @@
+From 372d2864667891a5f48bd9e029399f1941f74fc5 Mon Sep 17 00:00:00 2001
+From: Hugo Osvaldo Barrera <hugo@whynothugo.nl>
+Date: Sun, 28 Jun 2026 11:33:55 +0200
+Subject: [PATCH] dt-bindings: bluetooth: broadcom: add BCM43752
+
+Document the compatible string for BCM43752.
+
+Signed-off-by: Hugo Osvaldo Barrera <hugo@whynothugo.nl>
+---
+ .../devicetree/bindings/net/bluetooth/brcm,bluetooth.yaml        | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/net/bluetooth/brcm,bluetooth.yaml b/Documentation/devicetree/bindings/net/bluetooth/brcm,bluetooth.yaml
+index 95501e858e6f..04e8a968548d 100644
+--- a/Documentation/devicetree/bindings/net/bluetooth/brcm,bluetooth.yaml
++++ b/Documentation/devicetree/bindings/net/bluetooth/brcm,bluetooth.yaml
+@@ -29,6 +29,7 @@ properties:
+           - brcm,bcm43438-bt
+           - brcm,bcm4345c5
+           - brcm,bcm43540-bt
++          - brcm,bcm43752-bt
+           - brcm,bcm4335a0
+           - brcm,bcm4349-bt
+           - cypress,cyw4373a0-bt
+-- 
+2.54.0
+

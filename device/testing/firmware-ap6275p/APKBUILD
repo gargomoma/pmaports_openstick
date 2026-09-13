@@ -1,0 +1,24 @@
+maintainer="Hugo Osvaldo Barrera <hugo@whynothugo.nl>"
+pkgname=firmware-ap6275p
+pkgver=0_git20260626
+pkgrel=0
+pkgdesc="Firmware for the Broadcom AP6275P Wi-Fi/BT module"
+url="https://github.com/armbian/firmware"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="ecac75bb9441b61f611bd2cd361777fdf3fe9058"
+source="$pkgname-$_commit.tar.gz::https://github.com/armbian/firmware/archive/$_commit.tar.gz"
+builddir="$srcdir/firmware-$_commit"
+
+package() {
+	install -Dm644 -t "$pkgdir/usr/lib/firmware/brcm/" \
+		"brcm/brcmfmac43752-pcie.bin" \
+		"brcm/brcmfmac43752-pcie.clm_blob" \
+		"brcm/brcmfmac43752-pcie.txt" \
+		"brcm/BCM4362A2.hcd"
+}
+
+sha512sums="
+5c30f5357de9b461b72de8973a4047e0a4f3a655ae9f6c59ae55d83fd0fd47006c6a66714e4287114b2f00e6daf17f1484bc8af1ba2daeb57755892a5f77397e  firmware-ap6275p-ecac75bb9441b61f611bd2cd361777fdf3fe9058.tar.gz
+"
