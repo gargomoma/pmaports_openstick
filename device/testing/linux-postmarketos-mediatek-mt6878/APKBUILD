@@ -1,6 +1,6 @@
 maintainer="BotchedRPR <igor.belwon@mentallysanemainliners.org>"
 pkgname=linux-postmarketos-mediatek-mt6878
-pkgver=6.18
+pkgver=7.2
 pkgrel=0
 pkgdesc="Mainline Kernel fork for MT6878 devices"
 arch="aarch64"
@@ -15,16 +15,19 @@ makedepends="
 	bison
 	clang
 	devicepkg-dev
+	elfutils-dev
 	flex
+	linux-headers
 	lld
 	llvm
 	openssl-dev
+	pahole
 	perl
 	python3
 "
 
 _repository="linux"
-_commit="d84b264a54a37611f2f46bc19363cb9b41606205"
+_commit="12f2e9f040d0049f3f5ce5a7e53bf5ef27b46422"
 _config="config-$_flavor.$arch"
 source="
 	$pkgname-$_commit.tar.gz::https://github.com/MT6878-mainline/$_repository/archive/$_commit.tar.gz
@@ -52,17 +55,19 @@ package() {
 	make modules_install dtbs_install \
 		ARCH="$_carch" \
 		INSTALL_PATH="$pkgdir"/boot/ \
-		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
 		INSTALL_MOD_STRIP=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs \
 		LLVM=1
-	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
 
-	install -D "$builddir"/include/config/kernel.release \
+	# "build" is symlink that will be invalid in rootfs (points to /home/pmos...)
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -Dm644 "$builddir"/include/config/kernel.release \
 		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
 }
 
 sha512sums="
-5d809b44f94336549285a559909bfe5d8b2dcc3f213af58c25a52d535cd2cd0345ce34f44e1d155940cf0d4089fd2ad49fa0d6829fd2b965095084cd1500003c  linux-postmarketos-mediatek-mt6878-d84b264a54a37611f2f46bc19363cb9b41606205.tar.gz
-c29d74f8bd22a93ea8b00cc08a77e13193097188cb5f11ebdc819bae53735a012a529a26e7d750bf28511dded8263c335941c628684408e10dfdbb4e8317690d  config-postmarketos-mediatek-mt6878.aarch64
+e265744a408ab230acb712a045af332086da2e4309feff8e757fd6ef8898622a82b40a486fa94f7417240b5c70d430ef8dc69efb1219ff7030182ae6127ce931  linux-postmarketos-mediatek-mt6878-12f2e9f040d0049f3f5ce5a7e53bf5ef27b46422.tar.gz
+f9833236e45fb93e4c8e98c7d86882131a14acd6d4a6570d8f3f76c413f200245a9703c0b7d8c4e9ce11f5041fdbc460635e759dba81ca960886633abcbf6a53  config-postmarketos-mediatek-mt6878.aarch64
 "
