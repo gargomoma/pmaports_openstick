@@ -709,15 +709,17 @@ SHADOW_CALL_STACK = "y"
 
 # Arches come from https://docs.kernel.org/rust/arch-support.html
 # riscv64 and armv7 do not set SanitizerSet::KCFI, so we cannot use them with
-# our current CFI setup. loongarch64 is an exception because it doesn't have
-# CFI support at all.
+# our current CFI setup. loongarch64 and ppc64le are exceptions because they
+# don't have CFI support at all.
 ["category:rust".">=6.1.0"."x86_64"]
 RUST = "y"
 ["category:rust".">=6.8.0"."loongarch64"]
 RUST = "y"
 ["category:rust".">=6.9.0"."aarch64"]
 RUST = "y"
-["category:rust".">=0.0.0"."aarch64 loongarch64 x86_64"]
+["category:rust".">=7.3_rc1"."ppc64le"]
+RUST = "y"
+["category:rust".">=0.0.0"."aarch64 loongarch64 ppc64le x86_64"]
 MODVERSIONS = "n"
 
 # SELinux support, separate from hardening to keep it opt-in for now
