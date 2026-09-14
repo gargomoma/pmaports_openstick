@@ -1,0 +1,24 @@
+maintainer="Konya Tamas <thomas.konya@gmail.com>"
+pkgname=firmware-unihertz-titan-pocket
+pkgver=1
+pkgrel=0
+pkgdesc="Proprietary firmware for Unihertz Titan Pocket"
+url="https://github.com/some00/$pkgname"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !tracedeps pmb:cross-native"
+
+_commit="caaabbb19513d6377d731af78db0b1ffcc059914"
+
+source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
+
+package() {
+	local f
+	for f in "$srcdir/$pkgname-$_commit"/*; do
+		install -Dm644 "$f" "$pkgdir/lib/firmware/$(basename "$f")"
+	done
+}
+
+sha512sums="
+f075249a090e2b1d92c885d752199ec79d1ae4f3787d03f5fafa7c13087b7d55ccabbcb24ab77aaefe3c01868f7f00d38d11dce3e881070cfe59fae01bedcc20  firmware-unihertz-titan-pocket-caaabbb19513d6377d731af78db0b1ffcc059914.tar.gz
+"
