@@ -1,13 +1,13 @@
 maintainer="Luca Weiss <luca@lucaweiss.eu>"
 pkgname=alsa-ucm-conf-qcom-sc7280
-pkgver=5
+pkgver=6
 pkgrel=0
 pkgdesc="ALSA UCM configuration for sc7280 devices"
-url="https://github.com/sc7280-mainline/alsa-ucm-conf"
+url="https://github.com/f-izzo/alsa-ucm-conf"
 arch="aarch64"
 license="BSD-3-Clause"
 provides="alsa-ucm-conf=0.$pkgver-r$pkgrel" # versioned provides need to be below default version
-_commit="f051a09ade09b918c63e1fcf06663a022470b24a"
+_commit="517d9564a9b2c90c06721586bda4bdcd18063f0b"
 source="$pkgname-$_commit.tar.gz::$url/archive/$_commit.tar.gz"
 options="!check"
 builddir="$srcdir/alsa-ucm-conf-$_commit"
@@ -19,5 +19,5 @@ package() {
 }
 
 sha512sums="
-cd3e487e27c5cb7ae2fe03d42c2ac9ba8085d48b0dd002ce9167b30450f1de8b7fff7d666cd7acb8dfc5a8ab8361fdfce49834c8a81c5f386a8362ad4cb038c8  alsa-ucm-conf-qcom-sc7280-f051a09ade09b918c63e1fcf06663a022470b24a.tar.gz
+3a90bc3998b6e3ed700c77ae48b9fbd95e8e9a3f0c33afab9c0e89f59f7ea8b7d26dfbfefb257528c85ec81372a30d9b9f9c077067d6b3e35fcb4c1184030fa1  alsa-ucm-conf-qcom-sc7280-517d9564a9b2c90c06721586bda4bdcd18063f0b.tar.gz
 "
