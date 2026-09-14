@@ -1,0 +1,82 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: https://forge.giftedmc.com/haui/bianbu-linux-6.6/src/branch/main/arch/riscv/configs/k1_defconfig
+# Maintainer: haui <haui@gifted-minecraft.com>
+
+pkgname=linux-bananapi-bpi-f3
+pkgver=6.6.36
+pkgrel=0
+pkgdesc="Banana Pi F3 kernel fork"
+arch="riscv64"
+_carch="riscv"
+_flavor="bananapi-bpi-f3"
+url="https://forge.giftedmc.com/haui/bianbu-linux-6.6"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	u-boot-tools
+"
+
+# Source
+_repository="bianbu-linux-6.6"
+_commit="feed9b0bdccbc7c0d5aed7f80d56ca75fa6148d3"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://forge.giftedmc.com/haui/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" CARCH=riscv\
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	echo "PACKAGE"
+
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+c0c0127d227c79d415692039556fce8ba45caf70cdb53106d76be8b44bee6bb22a1fc9ce5270f00976f91548d29696d952619ef5c76e0d74857033bc53a11624  linux-bananapi-bpi-f3-feed9b0bdccbc7c0d5aed7f80d56ca75fa6148d3.tar.gz
+0e575719c82d8343a6071af4183303cde15b6af0fc9481e32d73785bc82d2a7fca7e0b6228731e779bf7222bdabd03a6311fa1e3ea90622d9ec5b1ac43f2861a  config-bananapi-bpi-f3.riscv64
+"

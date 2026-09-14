@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: haui <haui@gifted-minecraft.com>
+pkgname=device-bananapi-bpi-f3
+pkgdesc="Banana Pi BPI-F3"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="riscv64"
+options="!check !archcheck"
+depends="
+	linux-bananapi-bpi-f3
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+f63739872e030ead61bef6c4b527459a335ae509fd7434863625a37495b050b364af466b4d2635b23df2fa016ab4e1f38232e7ec1c8114ff046aabc755d52af1  deviceinfo
+"
