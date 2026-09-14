@@ -3,13 +3,14 @@
 # Co-Maintainer: Matt Panhans <mpanhans@protonmail.com>
 maintainer="Casey Connolly <kcxt@postmarketos.org>"
 pkgname=device-oneplus-fajita
-pkgver=32
+pkgver=33
 pkgrel=0
 pkgdesc="OnePlus 6T"
 url="https://postmarketos.org"
 arch="aarch64"
 license="MIT"
 depends="
+	!postmarketos-base-ui-audio-backend-pulseaudio
 	alsa-ucm-conf-sdm845
 	firmware-oneplus-sdm845>=9
 	firmware-oneplus-sdm845-sensors
@@ -17,6 +18,7 @@ depends="
 	linux-postmarketos-qcom-sdm845
 	mkbootimg
 	postmarketos-base
+	postmarketos-base-ui-audio-backend-pipewire
 	soc-qcom
 	soc-qcom-modem
 	soc-qcom-qbootctl
