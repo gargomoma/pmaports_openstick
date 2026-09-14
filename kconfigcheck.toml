@@ -24,6 +24,7 @@ community = [
 	"category:netboot",
 	"category:netmount",
 	"category:nftables",
+	"category:power",
 	"category:usb",
 	"category:usb_gadgets",
 	"category:waydroid",
@@ -446,14 +447,34 @@ NETFILTER_XT_MATCH_MULTIPORT = "m"  # e.g. HashiCorp Nomad
 NETFILTER_XT_MATCH_STATISTIC = "m"  # kube-proxy
 NETFILTER_XT_MATCH_TCPMSS = "m"  # change MTU e.g. for Wireguard
 NETFILTER_XT_TARGET_TCPMSS = "m"  # change MTU e.g. for Wireguard
-# TODO = Depends on SUSPEND which is not enabled for some devices
-# PM_WAKELOCKS = "y"  # Sxmo
-CPU_FREQ = "y"
-CPU_FREQ_GOV_SCHEDUTIL = "y" # Required by UCLAMP_TASK
-UCLAMP_TASK = "y"  # Scheduler hints
-UCLAMP_TASK_GROUP = "y"  # Scheduler hints
 RT_GROUP_SCHED = "n"  # https://gitlab.postmarketos.org/postmarketOS/pmaports/-/issues/2652
 DM_INTEGRITY = "m"  # Device-mapper integrity target
+
+# power: power management and savings
+["category:power".">=0.0.0"."all"]
+CPU_FREQ = "y"
+CPU_FREQ_STAT = "y"
+CPU_FREQ_GOV_SCHEDUTIL = "y" # Required by UCLAMP_TASK
+CPU_FREQ_DEFAULT_GOV_SCHEDUTIL = "y"
+UCLAMP_TASK = "y"  # Scheduler hints
+UCLAMP_TASK_GROUP = "y"  # Scheduler hints
+PM_DEBUG = "y"
+# TODO = Depends on SUSPEND which is not enabled for some devices
+# PM_WAKELOCKS = "y"  # Sxmo
+BT_HCIBTUSB_AUTOSUSPEND = "y"
+ENERGY_MODEL = "y"
+WQ_POWER_EFFICIENT_DEFAULT = "y"
+
+["category:power".">=0.0.0"."aarch64 loongarch64 riscv64 x86_64"]
+NO_HZ_FULL = "y" # Required by RCU_NOCB_CPU (also "If you're a distro say Y")
+
+["category:power".">=5.18.0"."all"]
+SATA_MOBILE_LPM_POLICY = "3" # "medium with device initiated PM"
+
+["category:power".">=6.2.0"."aarch64 loongarch64 riscv64 x86_64"]
+RCU_NOCB_CPU = "y" # Required by RCU_LAZY
+RCU_NOCB_CPU_DEFAULT_ALL = "y" # Actually enable all of this (including RCU_LAZY) by default
+RCU_LAZY = "y" # Batch RCU callbacks to save power
 
 # uefi: proper modern booting
 ["category:uefi".">=0.0.0"."aarch64 armv7 armhf loongarch64 riscv64 x86 x86_64"]
