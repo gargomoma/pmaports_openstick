@@ -1,23 +1,27 @@
 maintainer="Stefan Hansson <newbyte@postmarketos.org>"
 pkgname=firmware-ayn-odin
-pkgver=4
+pkgver=6
 pkgrel=0
+_commit="d4e14a46e39cf48eeb53ffba772fd91c3f4f3108"
 pkgdesc="Firmware for AYN Odin"
 url="https://gitlab.com/jenneron/firmware-ayn-odin"
 arch="aarch64"
 license="proprietary"
-options="!check !strip !archcheck !tracedeps textrels pmb:cross-native"
-
-_repo="firmware-ayn-odin"
-_commit="92fb887a6ad21a76eb07ea049fe4b71a35388724"
-source="$pkgname-$_commit.tar.gz::$url/-/archive/$_commit/$_repo-$_commit.tar.gz"
-
-builddir="$srcdir/$_repo-$_commit"
+source="$pkgname-$_commit.tar.gz::https://gitlab.com/jenneron/firmware-ayn-odin/-/archive/$_commit/firmware-ayn-odin-$_commit.tar.gz"
+options="
+	!archcheck
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+	textrels
+"
+builddir="$srcdir/firmware-ayn-odin-$_commit"
 
 package() {
 	make DESTDIR="$pkgdir" install
 }
 
 sha512sums="
-db34b2ae22d5d8aba01124154bfb072ef11b572fc8c3434162b5cafd77250cd67a373d4a5b1892100e855276c9ad6167409667b735d3a88f155d14e6b5560cc4  firmware-ayn-odin-92fb887a6ad21a76eb07ea049fe4b71a35388724.tar.gz
+e002a6a2085e30b975dfeb6cf81fc873bafb7f21985dc092a5a5ea7471307036385eb88ca760b5cab8ae0065e17b202bc467a41181664bd88c2f84f5476ac304  firmware-ayn-odin-d4e14a46e39cf48eeb53ffba772fd91c3f4f3108.tar.gz
 "
