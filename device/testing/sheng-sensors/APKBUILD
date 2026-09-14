@@ -1,0 +1,22 @@
+# Maintainer: alghiffaryfa19 <alghiffaryfa19@gmail.com>
+pkgname=sheng-sensors
+pkgver=20240917
+pkgrel=1
+pkgdesc="Sensor files for Xiaomi Mi Pad 6s Pro"
+url="https://github.com/alghiffaryfa19/sheng-sensors-file"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+_commit="199754bb37ae6d4706bd8d4b23e9e6fec2d959cc"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/alghiffaryfa19/sheng-sensors-file/archive/$_commit.tar.gz
+"
+builddir="$srcdir/sheng-sensors-file-$_commit"
+
+package() {
+	mkdir -p "$pkgdir"
+	cp -a "$builddir"/. "$pkgdir"/
+}
+sha512sums="
+fdd19011be40c14a7f79e3e3714bf5a9747db899f57358bac39848a9af96305588e61b5066e2d4bc76d36d6def7b5656255f57bc3be27798fa375123c0e49fa3  sheng-sensors-199754bb37ae6d4706bd8d4b23e9e6fec2d959cc.tar.gz
+"

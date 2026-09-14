@@ -1,0 +1,54 @@
+# Maintainer: raihan2000 <raihan1999ahamed@gmail.com>
+
+pkgname=sheng-libssc
+pkgdesc="Library to expose Qualcomm Sensor Core sensors"
+pkgver=0.3.0
+pkgrel=1
+_arches=specific
+arch="aarch64"
+license="GPL-3.0-or-later"
+url="https://codeberg.org/alghiffaryfa19/libssc"
+provides="
+    libssc.so
+"
+
+depends="
+    libqmi>=1.33.4
+    protobuf-c
+"
+makedepends="
+glib-dev
+    linux-headers
+    meson
+    git
+libqmi-dev
+protobuf-c-dev
+    python3-dev
+    py3-setuptools
+ gobject-introspection-dev
+"
+source="https://codeberg.org/alghiffaryfa19/libssc/archive/main.tar.gz"
+
+builddir="$srcdir/libssc"
+
+pkgver() {
+    cd "$builddir"
+    git describe --long --abbrev=7 --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+
+
+build() {
+    meson setup build --prefix=/usr
+    meson compile -C build
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install --no-rebuild -C build
+}
+
+sha512sums="
+5d735726e7f856fae1d4db2498a50121d554eaf9a6c223d659aa42acac4fc2eae4f3861ea8b473ff843181da54e651756552c30451d5727907003775300e344c  main.tar.gz
+"
+
+

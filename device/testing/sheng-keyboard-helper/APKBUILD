@@ -1,0 +1,30 @@
+# Contributor: Your Name <your.email@example.com>
+# Maintainer: Your Name <your.email@example.com>
+pkgname=sheng-keyboard-helper
+pkgver=0.2.0
+pkgrel=0
+pkgdesc="Xiaomi Sheng keyboard helper daemon"
+url="https://github.com/ianchb/xiaomi-sheng-keyboard-helper"
+arch="aarch64"
+license="Apache-2.0"
+makedepends="glib-dev pkgconf sheng-sensors sheng-libssc"
+_commit="3bb9aada8814e81a5c22de5d1e5dd70f4b99183e"
+source="$pkgname-$_commit.tar.gz::https://github.com/ianchb/xiaomi-sheng-keyboard-helper/archive/$_commit.tar.gz"
+builddir="$srcdir/xiaomi-sheng-keyboard-helper-$_commit"
+options="!check"
+
+build() {
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+
+	install -d -m 0755 "$pkgdir/usr/share/doc/$pkgname"
+	install -m 0644 README.md "$pkgdir/usr/share/doc/$pkgname/"
+	install -m 0644 packaging/debian/copyright \
+		"$pkgdir/usr/share/doc/$pkgname/"
+}
+sha512sums="
+e8ddf516172cf6478c6f432ac6148feea24549ca2dcf76673ce6bef06d681625517f71c7a7d918438a6890c1b4f07e20d68da80764febe3f147224d8d93270b3  sheng-keyboard-helper-3bb9aada8814e81a5c22de5d1e5dd70f4b99183e.tar.gz
+"

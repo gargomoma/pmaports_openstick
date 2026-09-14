@@ -1,0 +1,77 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: Fauzan Amir <alghiffaryfa19@gmail.com>
+pkgname=device-xiaomi-sheng
+pkgdesc="Xiaomi Pad 6s Pro"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="
+	!check
+	!archcheck
+	!strip
+	"
+depends="
+	alsa-ucm-conf
+	firmware-xiaomi-sheng
+	sheng-devauth
+	sheng-mipps
+	linux-postmarketos-qcom-sm8550
+	make-dynpart-mappings
+	mkbootimg
+	soc-qcom-modem
+	postmarketos-base
+	soc-qcom
+	soc-qcom-qbootctl
+	sheng-sensors
+	sheng-fastrpc
+	sheng-fingerprint
+	sheng-keyboard-helper
+	sheng-thp
+	sheng-pen-status
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	HiFi.conf
+	Xiaomi-Pad6SPro.conf
+	XiaomiPad6SPro.conf
+"
+
+subpackages="
+	$pkgname-openrc
+"
+
+build() {
+	devicepkg_build	$startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir/HiFi.conf" \
+		"$pkgdir/usr/share/alsa/ucm2/Xiaomi/sheng/HiFi.conf"
+
+	install -Dm644 "$srcdir/Xiaomi-Pad6SPro.conf" \
+		"$pkgdir/usr/share/alsa/ucm2/Xiaomi/sheng/Xiaomi-Pad6SPro.conf"
+
+	mkdir -p "$pkgdir/usr/share/alsa/ucm2/conf.d/sm8550"
+	ln -s ../../Xiaomi/sheng/Xiaomi-Pad6SPro.conf \
+		"$pkgdir/usr/share/alsa/ucm2/conf.d/sm8550/Xiaomi-Pad6SPro.conf"
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	depends="
+		qbootctl-openrc
+		"
+	mkdir -p "$subpkgdir"
+}
+sha512sums="
+cc19101a967b6b3b689b6730c35cc7f1980630e923a159f480a104835e148de80b4ff68b7f4aeab766dd16517b174e0f1cd23b95fad373e6f62a7d66e5310308  deviceinfo
+66768dd7e7b3209eb0391b4ca9379a3525ae3b97af7f661b7c392adc1063e80990dad17b69467f73c7904a20dcb5d5c2fdaaf135449a3b9cfd157342896c924e  HiFi.conf
+7d353085d242c08c8b388585b3a4ba8c77160431c5700026c4da2e1d7c868d483d9a7d0b7671e8c453cc64bcd990d6e871f1e698fc6e354e7f8c2d5ea7471402  Xiaomi-Pad6SPro.conf
+dcf908c335e862c1dd9ec583d3c87a6a291e94e8b3f163aafee1a5d011d4db0a649f5be525c18c8cc3ec91fe4b411df7e6b19233ce44c1a8bc199779ff492956  XiaomiPad6SPro.conf
+"

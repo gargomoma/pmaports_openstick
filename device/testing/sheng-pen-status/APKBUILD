@@ -1,0 +1,61 @@
+# Contributor: Your Name <your.email@example.com>
+# Maintainer: Your Name <your.email@example.com>
+pkgname=sheng-pen-status
+pkgver=0.3.0
+pkgrel=0
+pkgdesc="Stylus status utility for Xiaomi Sheng"
+url="https://github.com/alghiffaryfa19/xiaomi-pen-status"
+arch="aarch64"
+license="GPL-2.0-or-later"
+depends=""
+makedepends="qt6-qtbase-dev qt6-qtsvg-dev"
+_commit="8b0ff3eb143b84541cc1e55ea9cdd3a723256021"
+source="$pkgname-$_commit.tar.gz::https://github.com/alghiffaryfa19/xiaomi-pen-status/archive/$_commit.tar.gz"
+builddir="$srcdir/xiaomi-pen-status-$_commit"
+options="!check"
+
+prepare() {
+	default_prepare
+	rm -f "$builddir"/*.o "$builddir"/xiaomi-pen-status "$builddir"/xiaomi-pen-status-cli
+}
+
+build() {
+	_app="xiaomi-pen-status"
+	_cli="xiaomi-pen-status-cli"
+
+	qmake6 "$_app.pro"
+	make
+
+	# Build the CLI utility manually as per the original deb script
+	${CXX:-g++} -std=c++17 ${CXXFLAGS:-"-O2"} -Wall -Wextra -pedantic \
+		${LDFLAGS:-} "$_cli.cpp" -o "$_cli"
+}
+
+package() {
+	_app="xiaomi-pen-status"
+	_cli="xiaomi-pen-status-cli"
+	_ext_uuid="xiaomi-pen-status@siergtc"
+
+	install -Dm755 "$_app" "$pkgdir/usr/bin/$_app"
+	install -Dm755 "$_cli" "$pkgdir/usr/bin/$_cli"
+	
+	install -Dm644 "$_app.desktop" \
+		"$pkgdir/usr/share/applications/$_app.desktop"
+		
+	install -d -m755 "$pkgdir/etc/xdg/autostart"
+	sed 's/^Exec=.*/Exec=xiaomi-pen-status/' "$_app.desktop" > \
+		"$pkgdir/etc/xdg/autostart/$_app.desktop"
+	printf 'NotShowIn=GNOME;\n' >> "$pkgdir/etc/xdg/autostart/$_app.desktop"
+	chmod 644 "$pkgdir/etc/xdg/autostart/$_app.desktop"
+	
+	install -Dm644 "$_app.svg" \
+		"$pkgdir/usr/share/icons/hicolor/scalable/apps/$_app.svg"
+		
+	install -Dm644 gnome-extension/$_ext_uuid/metadata.json \
+		"$pkgdir/usr/share/gnome-shell/extensions/$_ext_uuid/metadata.json"
+	install -Dm644 gnome-extension/$_ext_uuid/extension.js \
+		"$pkgdir/usr/share/gnome-shell/extensions/$_ext_uuid/extension.js"
+}
+sha512sums="
+b5a1ea890599a04fedb87b86715416efbf8fc4276d68c2284ae92bfcb5020d6c9c3edf29e7bbd308bdc85dd483dd818c8ca2b5ecbcf53de3f5b25fadf2bcd713  sheng-pen-status-8b0ff3eb143b84541cc1e55ea9cdd3a723256021.tar.gz
+"

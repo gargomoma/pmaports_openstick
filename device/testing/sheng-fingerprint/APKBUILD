@@ -1,0 +1,80 @@
+# Contributor: Your Name <your.email@example.com>
+# Maintainer: Your Name <your.email@example.com>
+pkgname=sheng-fingerprint
+pkgver=0.1.4
+pkgrel=0
+pkgdesc="FPC1553 fingerprint support for Xiaomi Pad 6S Pro 12.4"
+url="https://github.com/ianchb/xiaomi-sheng-fingerprint"
+arch="aarch64"
+license="Apache-2.0 AND LGPL-2.1-or-later AND GPL-2.0-or-later AND BSD-3-Clause"
+depends="fprintd gcompat"
+makedepends="meson ninja patchelf glib-dev libusb-dev libgusb-dev nss-dev pixman-dev"
+_commit="76e7301163b0e708f609c9864b3e5833e9f57402"
+_libfprint_ver="1.94.10"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/ianchb/xiaomi-sheng-fingerprint/archive/$_commit.tar.gz
+	libfprint-$_libfprint_ver.orig.tar.xz.bin::https://deb.debian.org/debian/pool/main/libf/libfprint/libfprint_${_libfprint_ver}.orig.tar.xz
+"
+builddir="$srcdir/xiaomi-$pkgname-$_commit"
+options="!check !tracedeps"
+
+prepare() {
+	default_prepare
+
+	sha256sum -c prebuilt/aarch64/SHA256SUMS
+
+	# Fix path in systemd service for Alpine
+	sed -i 's|/usr/lib/aarch64-linux-gnu/qtee-listeners|/usr/lib/qtee-listeners|g' \
+		systemd/qteesupplicant.service
+}
+
+build() {
+	export LIBFPRINT_TARBALL="$srcdir/libfprint-$_libfprint_ver.orig.tar.xz.bin"
+
+	scripts/build-backend.sh build/native/backend
+	scripts/build-libfprint.sh build/native/backend build/native/libfprint
+}
+
+package() {
+	_native_dir="build/native"
+
+	install -d -m 0755 "$pkgdir/usr/lib/xiaomi-sheng-fingerprint"
+	install -d -m 0755 "$pkgdir/usr/lib/qtee-listeners"
+	install -d -m 0755 "$pkgdir/usr/libexec"
+	install -d -m 0755 "$pkgdir/usr/lib/systemd/system/fprintd.service.d"
+	install -d -m 0755 "$pkgdir/usr/lib/udev/rules.d"
+	install -d -m 0755 "$pkgdir/usr/share/doc/xiaomi-sheng-fingerprint"
+
+	install -m 0644 "$_native_dir/libfprint/libfprint-2.so.2.0.0" \
+		"$pkgdir/usr/lib/xiaomi-sheng-fingerprint/"
+	install -m 0644 "$_native_dir/backend/libfpc1553-qtee.so" \
+		"$pkgdir/usr/lib/xiaomi-sheng-fingerprint/"
+	ln -s libfprint-2.so.2.0.0 \
+		"$pkgdir/usr/lib/xiaomi-sheng-fingerprint/libfprint-2.so.2"
+	ln -s libfprint-2.so.2 \
+		"$pkgdir/usr/lib/xiaomi-sheng-fingerprint/libfprint-2.so"
+
+	install -m 0755 prebuilt/aarch64/qteesupplicant "$pkgdir/usr/libexec/"
+	install -m 0755 prebuilt/aarch64/sfs_config \
+		"$pkgdir/usr/libexec/fpc-sfs-config"
+
+	for listener in prebuilt/aarch64/qtee-listeners/*.so.1.0.0; do
+		name=$(basename "$listener")
+		install -m 0644 "$listener" \
+			"$pkgdir/usr/lib/qtee-listeners/$name"
+		ln -s "$name" \
+			"$pkgdir/usr/lib/qtee-listeners/${name%.0.0}"
+	done
+
+	install -m 0644 systemd/qteesupplicant.service \
+		systemd/sfsconfig.service "$pkgdir/usr/lib/systemd/system/"
+	install -m 0644 systemd/fprintd.service.d/10-xiaomi-sheng-fpc1553.conf \
+		"$pkgdir/usr/lib/systemd/system/fprintd.service.d/"
+	install -m 0644 udev/99-qcomtee-fpc.rules "$pkgdir/usr/lib/udev/rules.d/"
+	install -m 0644 README.md UPSTREAM_CHANGES.md \
+		"$pkgdir/usr/share/doc/xiaomi-sheng-fingerprint/"
+}
+sha512sums="
+04faa3205875c72917d3b89dcacd83b0f556f06fc04c2e4754f32df0fe1feb6b4fa61e76fd14ea5cfd1bc795214450b035f81734d2fce6362962b34fa0dc7f1b  sheng-fingerprint-76e7301163b0e708f609c9864b3e5833e9f57402.tar.gz
+5ef646d12805f81baa3a15c0c40f8e302283cb4aa22c8b296ee50ee4854c9b912d0cfb92b7fdaaa52b4317924bc2e4d44664d6318bdd7298f0f0d9b239fbb22e  libfprint-1.94.10.orig.tar.xz.bin
+"
