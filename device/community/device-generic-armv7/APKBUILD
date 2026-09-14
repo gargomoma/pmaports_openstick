@@ -1,22 +1,27 @@
 # Reference: <https://postmarketos.org/devicepkg>
 maintainer="Rudraksha Gupta <guptarud@gmail.com>"
-pkgname=device-samsung-expressatt
-pkgdesc="Samsung Galaxy Express SGH-I437"
-pkgver=6
-pkgrel=2
+pkgname=device-generic-armv7
+pkgdesc="Generic armv7 system, with EFI"
+pkgver=1
+pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
 arch="armv7"
 options="!check !archcheck"
-depends="postmarketos-base mkbootimg linux-firmware-none"
+depends="
+	postmarketos-base
+	systemd-boot
+	"
 makedepends="devicepkg-dev"
 subpackages="
 	$pkgname-kernel-stable:kernel_stable
 	$pkgname-kernel-lts:kernel_lts
 	$pkgname-kernel-mainline:kernel_mainline
 	$pkgname-kernel-next:kernel_next
-"
-source="deviceinfo kernel-cmdline.conf"
+	"
+source="
+	deviceinfo
+	"
 
 build() {
 	devicepkg_build $startdir $pkgname
@@ -51,6 +56,5 @@ kernel_next() {
 }
 
 sha512sums="
-7847d27def33bac03c92813da0e98c71f159139ad7b4e3d072ffd5ea56953b5c6cb55657809c18f10a77f99c10d01eeb56554ccc892a8bb9ed99d0d366070b86  deviceinfo
-9800dab94aecbb3ad4f40ba81e8e3cf2886fd824661b334fcf098d4578d009a1533c9082e8809c8995f5f9994df3c1c4bf72c215da01c6eacea2d4210713d413  kernel-cmdline.conf
+3d24adbe14e370aee3c8949a00f13a5b9bac75a2fc299812aa4723458922f381acf19a735cede996ce504eb9f9a722df245c5b2663b3fda8bcfaa1ee046c7ad3  deviceinfo
 "
