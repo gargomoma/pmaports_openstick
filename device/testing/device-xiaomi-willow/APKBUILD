@@ -1,9 +1,7 @@
-# Archived: Maintainer had no pmOS GitLab account
-
 # Reference: <https://postmarketos.org/devicepkg>
-maintainer=""
-pkgname=device-xiaomi-laurel
-pkgdesc="Xiaomi Mi A3"
+maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
+pkgname=device-xiaomi-willow
+pkgdesc="Xiaomi Redmi Note 8T"
 pkgver=5
 pkgrel=0
 url="https://postmarketos.org"
@@ -11,12 +9,15 @@ license="MIT"
 arch="aarch64"
 options="!check !archcheck"
 depends="
-	linux-postmarketos-qcom-sm6125
-	mkbootimg
+	android-tools-mkbootimg
+	linux-postmarketos-qcom-sm61x5
 	postmarketos-base
 "
 makedepends="devicepkg-dev"
-source="deviceinfo kernel-cmdline.conf"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+"
 
 build() {
 	devicepkg_build $startdir $pkgname
@@ -27,6 +28,6 @@ package() {
 }
 
 sha512sums="
-7a7ef8415dd5a1f7a6784ec91c2f82f3f865dfad116bb39dd71d0c4968376edd02505d3529f08e948e21609ed5270d66d809ca3a3feeca31a55263253f4c6344  deviceinfo
+17d77c863739eaa0f9f31d3ec34461a51475c45ee1ead7553549d469a8a44c4cd60ca1033396ea0fc34bb6b243d456d0bf138e1464a0348f65185b637739fd3b  deviceinfo
 2b5d4ffa85b94bb81e21883c64955480fb09d50f7dd52118763f6b0b136ba7e3efe08ef29a759fa00ec1d7d0a9e87ba08d41f378452e0f41ff9881db34ec777c  kernel-cmdline.conf
 "
