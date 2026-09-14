@@ -2,7 +2,7 @@
 # Co-Maintainer: Stefan Hansson <newbyte@postmarketos.org>
 maintainer="Alistair Francis <alistair@alistair23.me>"
 pkgname=device-purism-librem5
-pkgver=16
+pkgver=17
 pkgrel=0
 _confver=77
 _purismrel=2
@@ -52,6 +52,7 @@ source="
 	xorg.conf
 	70-librem5-xwayland-accel.sh
 	0001-udev-cameras-use-correct-path-for-modprobe-on-Alpine.patch
+	0002-pulse-librem5-comment-out-HiFi.patch
 	l5-brcm-bt-enable.initd
 	l5-brcm-bt-enable.service
 	l5-btsleep.sh
@@ -210,6 +211,7 @@ a0740e405781ec6ef765fdc9f5700c95adbb241c45c97b9384ba68cdece662cb216ca5918640042f
 1cbc65cf2cb8fad4b0332d012a0256a266205b9b64371f5c0dae09dbb7f1e45b254e8c43993b896097e9d7035a72d547d9bce1ab2133addc56a5abdb80b44616  xorg.conf
 fad386071fc45f9880a94cc8004fabd5d98b3e6a12606c98d8e72e0208f22ab54f03b921f5967a959782507e2bff67d2fa92e46d8cd242011a3afcdbda529279  70-librem5-xwayland-accel.sh
 b45749fcddfd65a302b502bcabfa5828d1b63e45d844fd50e44009a756b919db20fe9526102947c0f0dfcdffe4a037e5050fe1b24fb915933ce0837f49759378  0001-udev-cameras-use-correct-path-for-modprobe-on-Alpine.patch
+6bb4926583d4b11d9b616094f66fd5df39539fa959c135b8f566ccd4ae77ba4040ebd760b9c2da68ba79eb5924aeccb67aa6adfb913fa60be7a4fc483def8edb  0002-pulse-librem5-comment-out-HiFi.patch
 177ec87ec1f110d7c4253a20375c6771c6cfac41057b02bd673caea5399a799a59c5e087037fccf7a104447e6890499a2194aa34bab14df203fa95168ced75d7  l5-brcm-bt-enable.initd
 58edf35607606b7ef9079bfe015b8867c32ff3c0d3c87e11246e9077311017645d1a2d58917eab2990d25a26b85191fb3b9843195387643e4bafe3f3567cd0d2  l5-brcm-bt-enable.service
 32b6866226a97624a65deedc2a90a76b8da353bfeda060c606d8da20584d5a18e4b5ebe56415cb28d5645bda7c3c96689b0eddb5c11b999a1ac3385b27fd71ad  l5-btsleep.sh
