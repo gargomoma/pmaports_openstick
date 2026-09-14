@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+# Re-emits volume-down from the hidden qpnp_pon device on a virtual input device.
+
+name="qpnp-volume-relay"
+description="gts7fewifi volume-down relay (qpnp_pon is hidden from libinput)"
+supervisor=supervise-daemon
+command=/usr/sbin/qpnp-volume-relay
+respawn_delay=2
+respawn_max=0
+
+depend() {
+	need dev
+	after udev
+}

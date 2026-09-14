@@ -1,0 +1,22 @@
+#!/bin/sh
+# Relax the msm_vidc nodes (denied by 99-block-broken-vidc.rules) only when the vpu20_1v
+# firmware is installed; without it opening a node wedges the caller in D state.
+
+FW=/lib/firmware/vpu20_1v.mdt
+
+# The .mdt is the header; without at least one segment the loader still fails.
+if [ ! -e "$FW" ] || [ ! -e /lib/firmware/vpu20_1v.b00 ]; then
+	echo "16-vidc-unblock: $FW missing, leaving video32/33 blocked" >&2
+	exit 0
+fi
+
+for node in /dev/video32 /dev/video33; do
+	[ -e "$node" ] || continue
+	# elogind may have attached a uaccess ACL; drop it so the mode bits below
+	# are the only thing granting access.
+	setfacl -b "$node" 2>/dev/null
+	chown root:video "$node" 2>/dev/null
+	chmod 0660 "$node" 2>/dev/null
+done
+
+exit 0

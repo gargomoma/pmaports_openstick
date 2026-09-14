@@ -1,0 +1,58 @@
+Bluetooth: survive a proto ->create() that succeeds but leaves sk NULL.
+
+Opening ANY AF_BLUETOOTH socket panics this kernel. bluetoothd does it within
+a minute of starting, so enabling the bluetooth service turns the device into
+a ~90-second reboot loop that presents as "the tablet keeps turning itself
+off". Diagnosed 2026-08-02 from two independent ramoops captures:
+
+    Internal error: Oops - BUG: 0 [#1] PREEMPT SMP
+    CPU: 3 PID: 3349 Comm: bluetoothd Tainted: G S WC 5.4.254-qgki #7
+    pc : bt_sock_reclassify_lock+0x5c/0x60
+    lr : bt_sock_create+0xdc/0x108
+    x0 : 0000000000000000
+    Call trace:
+     bt_sock_reclassify_lock+0x5c/0x60
+     __sock_create+0x164/0x2dc
+     __sys_socket+0x60/0x120
+
+x0 is the sk argument: NULL. bt_sock_create() does
+
+    err = bt_proto[proto]->create(net, sock, proto, kern);
+    if (!err)
+        bt_sock_reclassify_lock(sock->sk, proto);
+
+and bt_sock_reclassify_lock() opens with BUG_ON(!sk). Some proto backend in
+this downstream tree (proto 1, BTPROTO_HCI, per x1/x2/x20 in the dump)
+returns 0 with sock->sk never populated, so the BUG_ON fires and Samsung's
+sec_debug escalates the Oops to a full panic + watchdog bite.
+
+The backend lying about success is the real bug, but it is vendor blob-side
+glue; guarding the core costs one branch and turns "any BT socket = reboot"
+into "BT socket fails with -EPROTO", which userspace (bluetoothd) already
+handles by giving up cleanly.
+
+Upstream kernels never see this because their hci_sock_create always sets sk
+or returns an error; do NOT try to upstream this guard, fix the caller in
+techpack instead if BT is ever actually wanted.
+
+--- a/net/bluetooth/af_bluetooth.c
++++ b/net/bluetooth/af_bluetooth.c
+@@ -129,6 +129,17 @@
+ 	if (bt_proto[proto] && try_module_get(bt_proto[proto]->owner)) {
+ 		err = bt_proto[proto]->create(net, sock, proto, kern);
+-		if (!err)
++		if (!err && !sock->sk) {
++			/*
++			 * Downstream HCI glue can return success while never
++			 * attaching an sk. bt_sock_reclassify_lock() BUG_ONs
++			 * on that, which on this device is a full panic plus
++			 * watchdog reboot. Refuse the socket instead.
++			 */
++			WARN_ONCE(1, "BT proto %d create() left sk NULL\n",
++				  proto);
++			err = -EPROTO;
++		}
++		if (!err)
+ 			bt_sock_reclassify_lock(sock->sk, proto);
+ 		module_put(bt_proto[proto]->owner);
+ 	}

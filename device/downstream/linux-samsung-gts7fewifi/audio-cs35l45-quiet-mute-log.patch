@@ -1,0 +1,30 @@
+Stop the cs35l45 amps flooding the kernel log on every mute callback.
+
+cs35l45_pcm_mute() is the ASoC .digital_mute op, which the core calls on every
+PCM prepare and trigger, not once per stream. On this tablet that is 3 to 37
+calls a second while audio is routed, and it logs one dev_info line per amp per
+call, so two lines each time.
+
+Measured on the running device 2026-08-17: 10,318 of these lines against 2
+actual mutes, arriving fast enough that dmesg retained only the last ~190
+seconds of history. That is not a cosmetic problem. It destroyed the ability to
+debug anything else on this device, including the speaker fault that was being
+investigated at the time, because every kernel message older than three minutes
+had already been pushed out of the ring buffer.
+
+dev_dbg keeps the message available through dynamic debug for anyone who wants
+it, and costs nothing when it is off. The status-register dump below it is left
+at dev_info deliberately: it only runs on an actual mute, which happened twice
+in an hour, and it is genuinely useful when a fault is being diagnosed.
+
+--- a/sound/soc/codecs/cs35l45.c
++++ b/sound/soc/codecs/cs35l45.c
+@@ -1271,7 +1271,7 @@
+ 	struct cs35l45_private *cs35l45 =
+ 				snd_soc_component_get_drvdata(dai->component);
+
+-	dev_info(cs35l45->dev, "%s mute=%d\n", __func__, mute);
++	dev_dbg(cs35l45->dev, "%s mute=%d\n", __func__, mute);
+
+ 	if (mute)
+ 		cs35l45_log_status(cs35l45, mute);

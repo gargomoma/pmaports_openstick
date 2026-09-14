@@ -1,0 +1,111 @@
+Audio: skip PDR on this Wi-Fi-only device, saving five minutes of every boot.
+
+WHAT IT COSTS TODAY
+-------------------
+There is no sound card for the first five and a half minutes after boot, on
+every boot. Not a slow card: no card at all, and nothing userspace does can
+create one before then.
+
+WHY
+---
+audio_notifier prefers PDR over SSR for the ADSP domain. PDR needs the
+servreg_locator QMI service, and on Qualcomm platforms that service is hosted by
+the MODEM. This tablet is Wi-Fi-only: /sys/bus/msm_subsys reports `modem` as
+OFFLINING on every boot and nothing ever starts it.
+
+So the locator never appears, and drivers/soc/qcom/service-locator.c waits out
+its entire LOCATOR_SERVICE_TIMEOUT of 300000 ms before giving up:
+
+    servloc: pd_locator_work: Unable to connect to service locator!, rc = -62
+
+measured on gts7fewifi at t = 316.38 s. Until that fires, PDR_ADSP sits at
+UNINIT_SERVICE and audio_notifier_reg_client() takes its "if a service is not
+initialized, wait for it to come up" branch, so apr is registered with NOTHING.
+
+That matters more than a delayed notification, because apr_adsp_up() is the only
+caller of of_platform_populate() for the soc:qcom,msm-audio-apr node:
+
+    spin_lock(&apr_priv->apr_lock);
+    if (apr_priv->is_initial_boot)
+            schedule_work(&apr_priv->add_chld_dev_work);
+    spin_unlock(&apr_priv->apr_lock);
+
+No subscription means no up event, which means qcom,q6core-audio and the `sound`
+device under it are never created, which means the qcom,lahaina-asoc-snd machine
+driver has nothing to bind and there is no card. Measured: ADSP power-ups at
+t = 70, 170, 275 and 311 s each took the DSP to ONLINE and produced zero apr
+children; the same write after the timeout produced all fifteen instantly.
+
+THE FIX
+-------
+Ask for SSR directly for the ADSP domain. SSR delivers the same up and down
+notifications through subsys_notif and is available from probe. The only thing
+PDR adds is per-protection-domain granularity, which nothing on this device
+uses.
+
+audio_notifier_reg_client() walks services downward from the default, and SSR is
+index 0, so returning SSR simply registers there and never consults PDR. The
+modem domain is untouched; it already defaults to SSR.
+
+SHIPPING
+--------
+audio_notifier.c builds into q6_notifier_dlkm.ko, a MODULE on the rootfs, so
+this does not need a flash: build the kernel package and push that one file.
+
+The pr_info is deliberate, not debug noise. Userspace needs to know which
+service was chosen: 72-audio-bringup.start behaves completely differently on a
+kernel that still waits out the PDR timeout, and inferring that from the absence
+of a log line is exactly the kind of guess that has gone wrong on this port
+before. One line, once, at client registration.
+
+VERIFY
+------
+    # card should exist within seconds of boot, not at ~340 s
+    grep -c lahaina /proc/asound/cards
+    dmesg | grep "Q6 is Up"
+    logger output of 72-audio-bringup.start should no longer wait for the
+    locator message at all
+
+--- a/techpack/audio/dsp/audio_notifier.c
++++ b/techpack/audio/dsp/audio_notifier.c
+@@ -109,7 +109,39 @@
+ 	/* initial service to connect per domain */
+ 	switch (domain) {
+ 	case AUDIO_NOTIFIER_ADSP_DOMAIN:
+-		service = AUDIO_NOTIFIER_PDR_SERVICE;
++		/*
++		 * PDR is unreachable on a Wi-Fi-only device and costs five
++		 * minutes of every boot, so go straight to SSR.
++		 *
++		 * PDR needs the servreg_locator QMI service, which is hosted by
++		 * the MODEM. This tablet has no modem: /sys/bus/msm_subsys
++		 * reports it OFFLINING on every boot and nothing ever starts
++		 * it. So the locator never appears and service-locator.c waits
++		 * out its full LOCATOR_SERVICE_TIMEOUT of 300000 ms:
++		 *
++		 *   servloc: pd_locator_work: Unable to connect to service
++		 *            locator!, rc = -62
++		 *
++		 * measured at t = 316.38 s. Until that fires, PDR_ADSP sits at
++		 * UNINIT_SERVICE, audio_notifier_reg_client() takes its
++		 * "wait for it to come up" branch, and apr is subscribed to
++		 * NOTHING. apr_adsp_up() therefore never runs, and since it is
++		 * the only caller of of_platform_populate() for the
++		 * msm-audio-apr node, qcom,q6core-audio and the `sound` device
++		 * under it are never created and there is no sound card at all.
++		 *
++		 * The practical effect was that audio appeared five and a half
++		 * minutes into every boot, and only because userspace waited
++		 * for that log line before booting the DSP.
++		 *
++		 * SSR gives the same up/down notifications through
++		 * subsys_notif and works from probe. Nothing on this device
++		 * uses per-protection-domain granularity, which is the only
++		 * thing PDR adds.
++		 */
++		pr_info("%s: using SSR for ADSP (PDR skipped: no modem on this device)\n",
++			__func__);
++		service = AUDIO_NOTIFIER_SSR_SERVICE;
+ 		break;
+ 	case AUDIO_NOTIFIER_MODEM_DOMAIN:
+ 		service = AUDIO_NOTIFIER_SSR_SERVICE;

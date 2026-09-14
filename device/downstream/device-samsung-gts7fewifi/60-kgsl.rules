@@ -1,0 +1,6 @@
+# The Adreno 642L is only /dev/kgsl-3d0 (renderD128 is the SDE display controller); the node
+# ships root-only. Without the a660_zap shader loaded, open() times out instead of failing.
+KERNEL=="kgsl-3d0", MODE="0660", GROUP="video"
+
+# /dev/ion: Turnip needs it (no dma_heap on this kernel) for VK_KHR_external_memory_fd.
+KERNEL=="ion", MODE="0660", GROUP="video"

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<labwc_config>
+  <!-- 1600x2560 on a 12.4in panel. At scale 1 everything is unreadably small
+       and untappable; 2 matches what XFCE used (icon-size 48 at 96px panel). -->
+  <core><gap>0</gap></core>
+  <theme>
+    <name></name>
+    <cornerRadius>6</cornerRadius>
+    <font><name>sans</name><size>14</size></font>
+  </theme>
+  <!-- Touch has no right-click, so long-press opens the root menu. Without
+       this there is no way to launch anything from a bare session. -->
+  <mouse>
+    <context name="Root">
+      <mousebind button="Right" action="Press"><action name="ShowMenu"><menu>root-menu</menu></action></mousebind>
+    </context>
+  </mouse>
+</labwc_config>

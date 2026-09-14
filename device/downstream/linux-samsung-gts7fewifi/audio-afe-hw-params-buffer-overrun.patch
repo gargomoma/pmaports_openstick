@@ -1,0 +1,131 @@
+Audio: stop msm_afe_hw_params writing past the end of its DMA buffer.
+
+This is a kernel panic that any PipeWire or PulseAudio system will hit within
+seconds of the sound card appearing. Android never hits it, which is why it
+shipped.
+
+THE PANIC, captured on gts7fewifi 2026-08-15 via /sys/fs/pstore
+--------------------------------------------------------------
+
+    Internal error: Oops: 96000047 [#1] PREEMPT SMP
+    CPU: 5 PID: 4210 Comm: wireplumber
+    pc : __memset+0x16c/0x188
+    lr : msm_afe_hw_params+0xc8/0x19c [platform_dlkm]
+    x0 : ffffffc02de58000    (destination)
+    x1 : 0000000000000000    (fill byte)
+    x2 : 00000000004fffc0    (length: 5242816 bytes)
+    Call trace:
+      __memset
+      snd_soc_component_hw_params
+      soc_pcm_hw_params
+      snd_pcm_hw_params
+      snd_pcm_common_ioctl
+      snd_pcm_ioctl
+      do_vfs_ioctl
+    Kernel panic - not syncing: Fatal exception
+
+ESR 0x96000047 decodes as a data abort, DFSC 0x07 (translation fault, level 3)
+with WnR set, so it is a WRITE to an unmapped page: the memset ran off the end
+of the mapping. The mapped region was 0x100000 bytes; the memset was asked for
+0x4fffc0.
+
+WHY IT HAPPENS
+--------------
+techpack/audio/dsp/q6afe.c, q6afe_audio_client_buf_alloc_contiguous():
+
+        if (ac->port[dir].buf) {
+                pr_debug("%s: buffer already allocated\n", __func__);
+                return 0;
+        }
+
+It returns SUCCESS without allocating when a buffer already exists for this
+direction, and it does not look at the requested size while doing so.
+
+techpack/audio/asoc/msm-pcm-afe-v2.c, msm_afe_hw_params():
+
+        rc = q6afe_audio_client_buf_alloc_contiguous(dir, prtd->audio_client,
+                (params_buffer_bytes(params) / params_periods(params)),
+                params_periods(params));
+        ...
+        buf = prtd->audio_client->port[dir].buf;
+        dma_buf->area  = buf[0].data;                    /* OLD, small buffer */
+        dma_buf->bytes = params_buffer_bytes(params);    /* NEW, large size   */
+        ...
+        memset(dma_buf->area, 0, params_buffer_bytes(params));
+
+So the SECOND hw_params on a substream, asking for a bigger buffer than the
+first, keeps the first allocation and then zeroes the new, larger size into it.
+
+ALSA explicitly permits repeated SNDRV_PCM_IOCTL_HW_PARAMS on the same open
+substream, and that is exactly how a session manager probes a device: open,
+refine, try a size, try another. WirePlumber does it to every PCM it finds, so
+the card cannot survive being enumerated. Android's audio HAL sets its buffer
+once and never grows it, so the bug is invisible there.
+
+Note the constraints make a large request legal: the capture PCM advertises
+buffer_bytes_max = MAX_CAPTURE_PERIOD_SIZE * MAX_CAPTURE_NUM_PERIODS =
+24576 * 384 = 9437184 bytes, so a 5 MB buffer is a perfectly valid thing for
+userspace to ask for.
+
+THE FIX
+-------
+Refuse the request instead of corrupting memory. -ENOMEM from hw_params is a
+normal, non-fatal answer: snd_pcm_hw_params() propagates it to userspace, which
+retries with smaller parameters, which is what a probing session manager does
+anyway.
+
+Deliberately NOT freeing and reallocating the buffer here. The DSP already has
+this memory mapped through msm_audio_ion, and tearing that down inside
+hw_params, on a substream that may be mid-probe, is a much larger change than
+this bug justifies.
+
+The first hw_params is unaffected: the allocation is made with exactly the
+requested size, so alloc_bytes equals params_buffer_bytes(params) and the check
+passes. Only a LATER, larger request is refused.
+
+VERIFY AFTER FLASHING
+---------------------
+    # with the card up, this used to panic the kernel within seconds:
+    systemctl --user restart wireplumber   # or: pkill wireplumber
+    dmesg | grep -i "only .* allocated"    # expect the refusal, not a panic
+    speaker-test -c2 -twav -l1             # expect audio, no reset
+
+--- a/techpack/audio/asoc/msm-pcm-afe-v2.c
++++ b/techpack/audio/asoc/msm-pcm-afe-v2.c
+@@ -764,6 +764,7 @@
+ 	struct snd_dma_buffer *dma_buf = &substream->dma_buffer;
+ 	struct pcm_afe_info *prtd = runtime->private_data;
+ 	struct afe_audio_buffer *buf;
++	size_t alloc_bytes;
+ 	int dir, rc;
+ 
+ 	pr_debug("%s:\n", __func__);
+@@ -796,6 +797,28 @@
+ 		mutex_unlock(&prtd->lock);
+ 		return -ENOMEM;
+ 	}
++
++	/*
++	 * q6afe_audio_client_buf_alloc_contiguous() returns 0 WITHOUT
++	 * allocating when a buffer already exists for this direction, and it
++	 * ignores the requested size while doing so. A second hw_params asking
++	 * for a bigger buffer therefore keeps the first, smaller allocation,
++	 * and the memset below then writes past the end of it and panics the
++	 * kernel. ALSA allows repeated hw_params on an open substream and that
++	 * is exactly how a session manager probes a device, so this is
++	 * reachable by any unprivileged process that can open the PCM.
++	 *
++	 * Refuse rather than corrupt memory. -ENOMEM is a normal answer here;
++	 * userspace retries with smaller parameters.
++	 */
++	alloc_bytes = (size_t)buf[0].size *
++		      prtd->audio_client->port[dir].max_buf_cnt;
++	if (params_buffer_bytes(params) > alloc_bytes) {
++		pr_err("%s: asked for %u bytes but only %zu allocated\n",
++		       __func__, params_buffer_bytes(params), alloc_bytes);
++		mutex_unlock(&prtd->lock);
++		return -ENOMEM;
++	}
+ 
+ 	pr_debug("%s:buf = %pK\n", __func__, buf);
+ 	dma_buf->dev.type = SNDRV_DMA_TYPE_DEV;

@@ -1,0 +1,4 @@
+# Show minimize/maximize/close in GTK titlebars (phosh's default shows only close). Minimize
+# is a no-op on phosh; Electron and X11 apps draw their own decorations.
+[org/gnome/desktop/wm/preferences]
+button-layout='appmenu:minimize,maximize,close'

@@ -1,0 +1,33 @@
+# Settings for the camera bridge (/etc/init.d/camera-bridge).
+
+# Both sensors from one process into two nodes, so applications can offer a camera chooser.
+# 1 is the front GC5035 (first: video calls), 0 the rear IMX355.
+CAMERA_ID=1
+CAMERA_OUT=/dev/video10
+
+# The rear sensor; comment out to run only the front one.
+CAMERA_ID2=0
+CAMERA_OUT2=/dev/video11
+
+# Stream size; the ceiling is 1920x1080 (the bridge's static output buffer).
+CAMERA_W=1280
+CAMERA_H=720
+
+# The rear camera at 1080p; without these it copies the front camera's size.
+CAMERA_W2=1920
+CAMERA_H2=1080
+
+# Set to 1 only if the stream really is NV12; the HAL hands back NV21.
+#CAMERA_NV12=1
+
+# Capture the HAL's log into /var/log/android-hal.log (costs about a quarter of a core).
+#CAMERA_LOG_SINK=yes
+
+# Nice value for the HAL's pipeline threads so the compositor keeps priority; 0 disables.
+#CAMERA_NICE=10
+
+# Stop a sensor when nothing has read its node for this many seconds and restart it on the
+# next read (the first frame then waits for the HAL to reopen). 0 keeps both streaming.
+#CAMERA_IDLE_SECONDS=30
+
+# Full-resolution stills (BLOB stream): off unless CAMERA_STILL_W/H and _W2/_H2 are set.

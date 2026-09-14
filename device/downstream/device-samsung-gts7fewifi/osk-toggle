@@ -1,0 +1,11 @@
+#!/bin/sh
+# Show/hide the on-screen keyboard via stevia's sm.puri.OSK0 interface: X11 apps cannot
+# raise it themselves. If Visible cannot be read, default to showing it.
+V=$(gdbus call --session --dest sm.puri.OSK0 \
+	--object-path /sm/puri/OSK0 \
+	--method org.freedesktop.DBus.Properties.Get sm.puri.OSK0 Visible 2>/dev/null \
+	| grep -oE "true|false" | head -1)
+if [ "$V" = "true" ]; then N=false; else N=true; fi
+exec gdbus call --session --dest sm.puri.OSK0 \
+	--object-path /sm/puri/OSK0 \
+	--method sm.puri.OSK0.SetVisible "$N" >/dev/null 2>&1

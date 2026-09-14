@@ -1,0 +1,9 @@
+#!/bin/sh
+# restart_level RELATED: reload only the failed remote processor (ADSP, WPSS, Venus)
+# instead of the vendor default SYSTEM, which reboots the device.
+
+for d in /sys/bus/msm_subsys/devices/*; do
+    if [ -w "$d/restart_level" ]; then
+        echo "RELATED" > "$d/restart_level"
+    fi
+done

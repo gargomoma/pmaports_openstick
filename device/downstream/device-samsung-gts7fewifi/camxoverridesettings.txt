@@ -1,0 +1,8 @@
+# CamX override settings: silence INFO logging. With no logd, liblog retries the log socket
+# connect for every message inside the pipeline threads; errors stay on.
+logInfoMask=0
+logConfigMask=0
+logVerboseMask=0
+logEntryExitMask=0
+logPerfInfoMask=0
+enableAsciiLogging=0

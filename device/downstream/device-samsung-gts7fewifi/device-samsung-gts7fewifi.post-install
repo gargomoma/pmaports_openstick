@@ -1,0 +1,10 @@
+#!/bin/sh
+# PipeWire realtime priority: the @pipewire rtprio limit only applies to group members.
+addgroup user pipewire 2>/dev/null || true
+
+# Compile the hwdb quirks shipped in /usr/lib/udev/hwdb.d and reload the input devices.
+udevadm hwdb --update 2>/dev/null || true
+udevadm control --reload 2>/dev/null || true
+udevadm trigger --subsystem-match=input 2>/dev/null || true
+
+exit 0

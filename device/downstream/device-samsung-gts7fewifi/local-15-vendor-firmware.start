@@ -1,0 +1,50 @@
+#!/bin/sh
+# Copy vendor PIL firmware (ADSP audio, IPA, Venus video, a660 GPU zap shader) from the
+# device's own apnhlos partition instead of redistributing the blobs.
+set -u
+A=$(blkid -t PARTLABEL=apnhlos -o device 2>/dev/null | head -1)
+[ -n "$A" ] || exit 0
+M=/mnt/apnhlos
+mkdir -p "$M"
+mount -o ro "$A" "$M" 2>/dev/null || exit 0
+
+for f in adsp vpu20_1v yupik_ipa_fws a660_zap; do
+	for src in "$M"/image/$f.*; do
+		[ -e "$src" ] || continue
+		dst=/lib/firmware/$(basename "$src")
+		[ -e "$dst" ] || cp "$src" "$dst"
+	done
+done
+umount "$M" 2>/dev/null
+rmdir "$M" 2>/dev/null
+
+# Raise the subsystem-restart escalation limit: the vendor default of 0 hard-resets the
+# board on the first crash of any subsystem.
+echo 100 > /sys/module/subsystem_restart/parameters/max_restarts 2>/dev/null || true
+
+# The audio DSP is booted by 72-audio-bringup.start, once apr can receive its notification.
+
+# /dev/kgsl-3d0 ships root-only; fix it here too for a running system (60-kgsl.rules covers udev).
+[ -e /dev/kgsl-3d0 ] && { chgrp video /dev/kgsl-3d0; chmod 660 /dev/kgsl-3d0; }
+
+# hci_qca requests qca/msbtfw11.mbn and qca/msnv11.bin but the vendor ships them at the
+# top of /lib/firmware; symlink them into qca/.
+if [ -f /lib/firmware/msbtfw11.mbn ]; then
+	mkdir -p /lib/firmware/qca
+	for f in msbtfw11.mbn msbtfw11.tlv msnv11.bin; do
+		[ -f "/lib/firmware/$f" ] && ln -sf "../$f" "/lib/firmware/qca/$f"
+	done
+fi
+
+# On the first boot after a flash hci_uart_qca probed before the firmware existed; rebind
+# it once when dmesg shows that failure.
+BT_DRV=/sys/bus/serial/drivers/hci_uart_qca
+if [ -d "$BT_DRV" ] && [ -e "$BT_DRV/serial0-0" ] &&
+   [ -f /lib/firmware/qca/msbtfw11.mbn ] &&
+   dmesg | grep -q 'Direct firmware load for qca/msbtfw11.mbn failed'; then
+	echo serial0-0 > "$BT_DRV/unbind" 2>/dev/null || true
+	sleep 1
+	echo serial0-0 > "$BT_DRV/bind" 2>/dev/null || true
+fi
+
+exit 0

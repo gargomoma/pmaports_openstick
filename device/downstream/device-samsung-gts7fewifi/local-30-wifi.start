@@ -1,0 +1,30 @@
+#!/bin/sh
+# Start the WLAN subsystem by writing icnss2's wpss_boot.
+[ -e /sys/class/net/wlan0 ] && exit 0
+
+# Wait until qcacld has registered with icnss2: booting WPSS earlier leaves nobody to
+# receive FW_READY and wlan0 never appears.
+n=0
+while [ $n -lt 40 ]; do
+	lsmod 2>/dev/null | grep -q '^wlan ' && break
+	n=$((n+1)); sleep 1
+done
+
+n=0
+while [ $n -lt 30 ]; do
+	for f in /sys/bus/platform/drivers/icnss2/*/wpss_boot; do
+		[ -w "$f" ] || continue
+		echo 1 > "$f"
+		m=0
+		while [ $m -lt 30 ]; do
+			if [ -e /sys/class/net/wlan0 ]; then
+				ip link set wlan0 up
+				exit 0
+			fi
+			m=$((m+1)); sleep 1
+		done
+		exit 0
+	done
+	n=$((n+1)); sleep 1
+done
+exit 0

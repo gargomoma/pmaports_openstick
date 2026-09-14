@@ -1,0 +1,8 @@
+#!/bin/sh
+# seatd must run or phoc cannot take DRM master; nothing else enables it.
+rc-update -q add seatd default 2>/dev/null || true
+
+# bluetoothd for the WCN6750 (the kernel-side panics are fixed in linux-samsung-gts7fewifi).
+rc-update -q add bluetooth default 2>/dev/null || true
+
+exit 0

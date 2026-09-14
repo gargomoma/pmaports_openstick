@@ -1,0 +1,167 @@
+drm/msm/dsi: report a mode clock that matches the mode's own timings
+
+THE WHOLE DESKTOP RUNS AT 24 fps ON A 60 Hz PANEL WITHOUT THIS.
+
+Measured on gts7fewifi (FT8203 WQXGA, 1600x2560) 2026-08-02. modetest:
+
+    #0 1600x2560x60x112346vidNS 24.21 1600 1690 1698 1787 2560 2576 2584 2597 112346
+
+Two numbers in that line disagree. The mode is NAMED 60 and drm_mode->vrefresh
+is 60, but the advertised clock of 112346 kHz against the advertised 1787x2597
+timings works out to 24.21 Hz, and 24.21 is what every DRM client believes.
+wlroots logs it verbatim:
+
+    Found connector 'DSI-1'
+      1600x2560 @ 24.208 Hz (preferred)
+    connector DSI-1: Modesetting with 1600x2560 @ 24.208 Hz
+
+Phosh then schedules one frame every 41 ms on a panel that is really scanning
+out every 16.7 ms. The device feels broken; dh called it "unusable laggy". No
+amount of GPU work fixes it, because the compositor is deliberately idling.
+
+WHY THE NUMBER IS WRONG
+
+The panel uses DSC. For a compressed link the driver computes the pixel clock
+over the COMPRESSED line width, dsi_panel.c:
+
+    pixel_clk_khz = (dsi_h_total_dce(&mode->timing) *
+                     DSI_V_TOTAL(&mode->timing) *
+                     mode->timing.refresh_rate);
+    do_div(pixel_clk_khz, 1000);
+
+and dsi_h_total_dce() -> dsi_h_active_dce() returns dsc->pclk_per_line rather
+than h_active whenever DSC is on (dsi_defs.h). That is CORRECT for programming
+the link: the DSI clock carries compressed pixels. 112346 kHz over the
+uncompressed 2597 vtotal implies ~721 h units against the mode's 1787, i.e.
+the expected ~3:1 DSC ratio, so the value is exactly what the hardware needs.
+
+The bug is exporting that link rate as drm_display_mode.clock, whose timings
+are the UNCOMPRESSED 1787x2597. DRM defines a mode's refresh as
+
+    refresh = clock * 1000 / (htotal * vtotal)
+
+(drm_mode_vrefresh(); userspace open-codes the same). A clock belonging to a
+different htotal makes that identity produce nonsense. The two fields must
+describe the same picture, and only drm_mode->clock is free to change:
+hdisplay/htotal are what the compositor must actually scan out.
+
+THE FIX
+
+Derive the exported clock from the timings exported beside it, so
+drm_mode_vrefresh() returns refresh_rate by construction. dsi_mode->
+pixel_clk_khz is untouched, so DSI/pclk programming is unaffected: this
+changes only what is advertised to userspace.
+
+Non-DSC panels keep the same value (h_total_dce == htotal there, so the old
+and new expressions are equal), which is why this is not gated on dsc_enabled:
+fewer paths, identical result.
+
+VERIFY AFTER FLASHING
+
+    modetest -M msm_drm -c | grep 1600x2560      # refresh ~60.00, clock ~278450
+    grep "Modesetting with" ~/phosh-session.log  # "@ 60.0xx Hz", not 24.208
+
+INCOMPLETE FIRST ATTEMPT (recorded so it is not repeated): changing only the
+forward conversion boots to a DEAD DISPLAY. Two places match a drm mode back
+to a dsi mode BY THAT CLOCK, so correcting it made the driver unable to find
+its own mode:
+
+    [drm:dsi_display_find_mode] *ERROR* failed to find mode for
+        v_active 2560 h_active 1600 fps 60 pclk 278450
+
+Both comparison sites are therefore taught the same derivation. For a non-DSC
+panel the derived value equals pixel_clk_khz exactly, so those paths are
+unchanged; only DSC panels, which are the broken case, see any difference.
+
+Checked while writing this: nothing in techpack/display/msm/sde/ reads
+mode->clock, so SDE clock budgeting is not affected by the new value.
+
+--- a/techpack/display/msm/dsi/dsi_defs.h
++++ b/techpack/display/msm/dsi/dsi_defs.h
+@@ -809,10 +809,36 @@
+ static inline u64 dsi_h_total_dce(struct dsi_mode_info *mode)
+ {
+ 	u64 h_total = dsi_h_active_dce(mode);
+ 
+ 	h_total += mode->h_back_porch + mode->h_front_porch +
+ 			mode->h_sync_width;
+ 	return h_total;
+ }
+ 
++/*
++ * The pixel clock a DRM client must be shown for this mode. DRM defines
++ *	refresh = clock * 1000 / (htotal * vtotal)
++ * so the advertised clock has to be derived from the advertised (i.e.
++ * UNCOMPRESSED) timings or every client computes a bogus refresh rate.
++ *
++ * This deliberately differs from dsi_display_mode.pixel_clk_khz on a DSC
++ * panel: that one is computed over the COMPRESSED line width because it
++ * describes the DSI link, and it stays the value used to program the
++ * hardware. On a non-DSC panel the two are identical.
++ */
++static inline u32 dsi_drm_visible_clk_khz(const struct dsi_mode_info *t)
++{
++	u32 htot, vtot;
++
++	if (!t || !t->refresh_rate)
++		return 0;
++
++	htot = DSI_H_TOTAL(t);
++	vtot = DSI_V_TOTAL(t);
++	if (!htot || !vtot)
++		return 0;
++
++	return (htot * vtot * t->refresh_rate) / 1000;
++}
++
+ #endif /* _DSI_DEFS_H_ */
+--- a/techpack/display/msm/dsi/dsi_drm.c
++++ b/techpack/display/msm/dsi/dsi_drm.c
+@@ -122,6 +122,16 @@
+ 	drm_mode->vtotal = drm_mode->vsync_end + dsi_mode->timing.v_back_porch;
+ 
+ 	drm_mode->vrefresh = dsi_mode->timing.refresh_rate;
+-	drm_mode->clock = dsi_mode->pixel_clk_khz;
++	/*
++	 * NOT pixel_clk_khz: on a DSC panel that is the COMPRESSED link
++	 * rate, while the timings written above are uncompressed, and DRM
++	 * derives refresh from clock/(htotal*vtotal). This panel advertised
++	 * 112346 kHz against 1787x2597, so userspace drove the 60 Hz display
++	 * at 24.2 fps. pixel_clk_khz itself is untouched and still programs
++	 * the hardware; the two match-by-clock sites accept this form too.
++	 */
++	drm_mode->clock = dsi_drm_visible_clk_khz(&dsi_mode->timing);
++	if (!drm_mode->clock)
++		drm_mode->clock = dsi_mode->pixel_clk_khz;
+ 
+ 	drm_mode->private = (int *)dsi_mode->priv_info;
+--- a/techpack/display/msm/dsi/dsi_drm.c
++++ b/techpack/display/msm/dsi/dsi_drm.c
+@@ -641,8 +641,11 @@
+ 	for (i = 0; i < count; i++) {
+ 		dsi_mode = &dsi_display->modes[i];
+ 		if ((dsi_mode->timing.v_active == drm_mode->vdisplay) &&
+ 		    (dsi_mode->timing.h_active == drm_mode->hdisplay) &&
+-		    (dsi_mode->pixel_clk_khz == drm_mode->clock) &&
++		    /* drm_mode->clock is the timings-derived form now */
++		    ((dsi_mode->pixel_clk_khz == drm_mode->clock) ||
++		     (dsi_drm_visible_clk_khz(&dsi_mode->timing) ==
++						drm_mode->clock)) &&
+ 		    (dsi_mode->timing.refresh_rate == drm_mode->vrefresh)) {
+ 			bit_clk_rate = dsi_mode->timing.clk_rate_hz;
+ 			break;
+--- a/techpack/display/msm/dsi/dsi_display.c
++++ b/techpack/display/msm/dsi/dsi_display.c
+@@ -7618,3 +7618,11 @@
+ 			cmp->panel_mode == m->panel_mode &&
+-			cmp->pixel_clk_khz == m->pixel_clk_khz) {
++			/*
++			 * cmp came from a drm mode, so its clock is the
++			 * timings-derived form; m holds the raw DSI clock.
++			 * Requiring the raw one made this fail with -ENOENT
++			 * and left the display dead on a DSC panel.
++			 */
++			(cmp->pixel_clk_khz == m->pixel_clk_khz ||
++			 cmp->pixel_clk_khz ==
++					dsi_drm_visible_clk_khz(&m->timing))) {
+ 			*out_mode = m;

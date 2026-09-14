@@ -1,0 +1,10 @@
+#!/bin/sh
+# Kick chrony when a connection comes up: no readable RTC, so every boot starts in 1970 and
+# chronyd's DNS backoff can leave it there. online re-arms resolution, burst measures now.
+case "$2" in
+up|connectivity-change)
+	chronyc online >/dev/null 2>&1
+	chronyc burst 4/4 >/dev/null 2>&1
+	;;
+esac
+exit 0

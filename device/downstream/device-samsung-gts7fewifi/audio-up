@@ -1,0 +1,149 @@
+#!/bin/sh
+# audio-up: bring the sound card up by hand when 72-audio-bringup.start did not. The card
+# only exists once the ADSP's first up notification reaches apr, after PDR's locator timeout.
+
+set -e
+
+if [ "$(id -u)" != 0 ]; then
+	echo "audio-up: must run as root (try: sudo audio-up)" >&2
+	exit 1
+fi
+
+# Refuse on a kernel without audio-afe-hw-params-buffer-overrun.patch: WirePlumber's probe
+# of the AFE PCMs would panic it. Checked in the module itself, which can be hand-pushed.
+AFEKO=/lib/modules/$(uname -r)/kernel/techpack/audio/asoc/platform_dlkm.ko
+if ! grep -aqs 'asked for %u bytes but only' "$AFEKO" &&
+   [ ! -e /etc/gts7fewifi-audio-enable ]; then
+	cat <<'EOF' >&2
+audio-up: refusing. This kernel's platform_dlkm does NOT carry the
+          msm_afe_hw_params fix, so bringing the card up panics the box as soon
+          as a session manager enumerates it.
+
+          Fix it properly (no flash needed, it is a module):
+              pmbootstrap build linux-samsung-gts7fewifi
+              # push lib/modules/*/kernel/techpack/audio/asoc/platform_dlkm.ko
+              # then: depmod -a && sync && reboot
+
+          To proceed anyway, with nothing unsaved and someone watching:
+              sudo touch /etc/gts7fewifi-audio-enable
+EOF
+	exit 1
+fi
+
+if grep -q lahaina /proc/asound/cards 2>/dev/null; then
+	echo "audio-up: sound card is already up:"
+	sed -n '1,2p' /proc/asound/cards
+	exit 0
+fi
+
+APR=/sys/devices/platform/soc/soc:qcom,msm-audio-apr
+Q6=$APR/soc:qcom,msm-audio-apr:qcom,q6core-audio
+
+SUBSYS=
+for d in /sys/bus/msm_subsys/devices/subsys*; do
+	if [ "$(cat "$d/name" 2>/dev/null)" = "adsp" ]; then
+		SUBSYS=$d
+		break
+	fi
+done
+[ -n "$SUBSYS" ] || { echo "audio-up: no adsp subsystem found" >&2; exit 1; }
+STATE=$(cat "$SUBSYS/state" 2>/dev/null || echo unknown)
+
+# Raise the subsystem-restart escalation limit (vendor default 0 hard-resets the board).
+echo 100 > /sys/module/subsystem_restart/parameters/max_restarts 2>/dev/null || true
+
+# Has the service locator given up yet? Until it has, nothing here can work.
+if ! dmesg 2>/dev/null | grep -q "Unable to connect to service locator"; then
+	UP=$(cut -d. -f1 /proc/uptime)
+	LEFT=$((320 - UP))
+	[ "$LEFT" -lt 0 ] && LEFT=0
+	cat <<EOF
+audio-up: the service locator has not given up yet, so apr is not subscribed to
+          anything and booting the DSP now would notify nobody.
+
+          uptime ${UP}s; the timeout usually fires around 316s, so roughly
+          ${LEFT}s to go. Waiting.
+EOF
+	i=0
+	while [ $i -lt 120 ]; do
+		dmesg 2>/dev/null | grep -q "Unable to connect to service locator" && break
+		sleep 5
+		i=$((i + 5))
+	done
+	if ! dmesg 2>/dev/null | grep -q "Unable to connect to service locator"; then
+		echo "audio-up: still nothing from the locator after 10 more minutes. Giving up." >&2
+		exit 1
+	fi
+	echo "audio-up: locator gave up; apr should be on SSR now."
+fi
+
+if [ ! -d "$Q6" ] && [ "$STATE" = ONLINE ]; then
+	cat <<EOF >&2
+audio-up: the ADSP is already ONLINE but q6core-audio was never populated, which
+          means it was powered up during the window where apr was still deaf.
+          apr is subscribed now, but nothing will notify it until the DSP powers
+          up again, and the only way to force that is a subsystem restart, which
+          was measured rebooting this tablet.
+
+          REBOOT. Do not restart the subsystem.
+EOF
+	exit 1
+fi
+
+if [ ! -d "$Q6" ]; then
+	if [ ! -e /sys/kernel/boot_adsp/boot ]; then
+		modprobe adsp_loader_dlkm 2>/dev/null || true
+		i=0
+		while [ ! -e /sys/kernel/boot_adsp/boot ] && [ $i -lt 10 ]; do
+			sleep 1
+			i=$((i + 1))
+		done
+	fi
+	if [ ! -e /sys/kernel/boot_adsp/boot ]; then
+		echo "audio-up: /sys/kernel/boot_adsp/boot missing; adsp_loader_dlkm did not probe." >&2
+		exit 1
+	fi
+
+	# Load every driver first, so nothing has to defer when the devices appear.
+	echo "audio-up: loading the non-autoloading audio modules."
+	for m in pinctrl_lpi_dlkm pinctrl_wcd_dlkm wcd_core_dlkm stub_dlkm \
+			native_dlkm bolero_cdc_dlkm va_macro_dlkm tx_macro_dlkm \
+			rx_macro_dlkm machine_dlkm; do
+		modprobe "$m" 2>/dev/null || true
+	done
+
+	echo "audio-up: booting the ADSP (once)."
+	echo 1 > /sys/kernel/boot_adsp/boot
+	i=0
+	while [ ! -d "$Q6" ] && [ $i -lt 20 ]; do
+		sleep 1
+		i=$((i + 1))
+	done
+fi
+
+if [ ! -d "$Q6" ]; then
+	echo "audio-up: DSP booted but apr still created no children. REBOOT and retry." >&2
+	exit 1
+fi
+echo "audio-up: q6core-audio populated ($(ls "$Q6" | grep -c 'q6core-audio:') children)."
+
+i=0
+while [ $i -lt 25 ]; do
+	if grep -q lahaina /proc/asound/cards 2>/dev/null; then
+		echo "audio-up: card is up."
+		sed -n '1,2p' /proc/asound/cards
+		# Re-apply the speaker route: the mixer resets with the card.
+		amixer -c0 cset name='QUAT_TDM_RX_0 Audio Mixer MultiMedia1' 1 >/dev/null 2>&1 || true
+		amixer -c0 cset name='Left AMP Enable Switch' 1 >/dev/null 2>&1 || true
+		amixer -c0 cset name='Right AMP Enable Switch' 1 >/dev/null 2>&1 || true
+		amixer -c0 cset name='Left AMP Mute' 0 >/dev/null 2>&1 || true
+		amixer -c0 cset name='Right AMP Mute' 0 >/dev/null 2>&1 || true
+		exit 0
+	fi
+	sleep 1
+	i=$((i + 1))
+done
+
+echo "audio-up: children exist but no card after 25s. Deferred probes:" >&2
+cat /sys/kernel/debug/devices_deferred 2>/dev/null | sed 's/^/          /' >&2
+exit 1

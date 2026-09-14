@@ -1,0 +1,298 @@
+Bluetooth: backport WCN6750 support so this tablet has Bluetooth at all
+
+Without this the tablet has NO Bluetooth: Settings shows "No Bluetooth
+found" because no hci device is ever created. Measured on gts7fewifi
+2026-08-03:
+
+    /sys/class/bluetooth/          empty
+    hci_uart / btqca / hci_qca     not built at all
+    btqca.h soc types known        QCA_ROME, QCA_WCN3990, QCA_WCN3991,
+                                   QCA_WCN3998
+
+The chip here is a WCN6750. Upstream gained support for it around Linux
+6.0, roughly two years after this 5.4 vendor tree was forked, and Samsung
+never backported it. So even a correct device-tree node cannot help: no
+driver in this kernel can drive this part.
+
+WHAT MADE THIS TRACTABLE (all verified before writing a line of code):
+
+  - the tree HAS serdev: drivers/tty/serdev/{core.o,serdev-ttyport.o}
+  - serial_core.c calls tty_port_register_device_attr_serdev(), so any
+    uart_add_one_port() driver registers a serdev controller
+  - msm_geni_serial.c does call uart_add_one_port()
+  - the WCN6750 firmware is already on the device, shipped by the vendor
+    firmware package: msbtfw11.mbn, msbtfw11.tlv, msnv11.bin
+
+So the only real gap was the driver, and the gap is narrow: WCN6750 wants
+the same modern WCN code paths as WCN399x, differing in the firmware file
+names and in having its own regulator set.
+
+THE APPROACH
+
+qca_is_wcn399x() is deliberately widened to include QCA_WCN6750 rather
+than adding a second predicate at all 13 call sites (11 in hci_qca.c, 2 in
+btqca.c). Every one of those sites is asking "is this a modern WCN part
+that uses the in-band-sleep/power-sequenced path?", and for WCN6750 the
+answer is yes. The name is now slightly inaccurate; a comment says so.
+Where WCN6750 genuinely differs - the firmware file names - it gets its own
+branch, gated by the new qca_is_wcn6750().
+
+Firmware naming, matching the files the vendor actually ships:
+    rampatch   qca/msbtfw%02x.mbn      (vs crbtfw%02x.tlv on WCN399x)
+    nvm        qca/msnv%02x.bin        (vs crnv%02x.bin)
+
+VERIFY AFTER FLASHING
+
+    dmesg | grep -i qca          # expect the serdev probe, firmware load
+    ls /sys/class/bluetooth/     # expect hci0
+    bluetoothctl show            # expect a controller
+
+--- a/drivers/bluetooth/btqca.h
++++ b/drivers/bluetooth/btqca.h
+@@ -127,4 +127,5 @@
+ 	QCA_WCN3990,
+ 	QCA_WCN3991,
+-	QCA_WCN3998,
++	QCA_WCN3998,
++	QCA_WCN6750,
+ };
+--- a/drivers/bluetooth/btqca.h
++++ b/drivers/bluetooth/btqca.h
+@@ -142,6 +142,19 @@
+ static inline bool qca_is_wcn399x(enum qca_btsoc_type soc_type)
+ {
+-	return soc_type == QCA_WCN3990 || soc_type == QCA_WCN3991 ||
+-	       soc_type == QCA_WCN3998;
+-}
++	/*
++	 * DELIBERATELY includes QCA_WCN6750 despite the name. All 13 callers
++	 * of this predicate are asking "is this a modern WCN part that uses
++	 * the power-sequenced, in-band-sleep path?", and for WCN6750 that is
++	 * yes. Widening here beats adding a second test at every call site.
++	 * Where WCN6750 really differs - the firmware file names - use
++	 * qca_is_wcn6750() below.
++	 */
++	return soc_type == QCA_WCN3990 || soc_type == QCA_WCN3991 ||
++	       soc_type == QCA_WCN3998 || soc_type == QCA_WCN6750;
++}
++
++static inline bool qca_is_wcn6750(enum qca_btsoc_type soc_type)
++{
++	return soc_type == QCA_WCN6750;
++}
+ #else
+--- a/drivers/bluetooth/btqca.h
++++ b/drivers/bluetooth/btqca.h
+@@ -171,5 +171,10 @@
+ static inline bool qca_is_wcn399x(enum qca_btsoc_type soc_type)
+ {
+ 	return false;
+-}
++}
++
++static inline bool qca_is_wcn6750(enum qca_btsoc_type soc_type)
++{
++	return false;
++}
+ 
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -438,4 +438,11 @@
+ 			    (soc_ver & 0x0000000f);
+-		snprintf(config.fwname, sizeof(config.fwname),
+-			 "qca/crbtfw%02x.tlv", rom_ver);
++		if (qca_is_wcn6750(soc_type))
++			/* WCN6750 uses a different prefix and .mbn; these are
++			 * the names the vendor firmware package ships.
++			 */
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca/msbtfw%02x.mbn", rom_ver);
++		else
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca/crbtfw%02x.tlv", rom_ver);
+ 	} else {
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1343,2 +1343,21 @@
++static const struct qca_vreg_data qca_soc_data_wcn6750 = {
++	.soc_type = QCA_WCN6750,
++	.vregs = (struct qca_vreg []) {
++		/* Voltages copied verbatim from this board's own
++		 * qcom,bt-vdd-*-config properties in yupik.dtsi, so the
++		 * ranges match what the vendor stack programs.
++		 */
++		{ "vddio",     1800000, 2000000, 15000  },
++		{ "vddaon",     824000, 1120000, 15000  },
++		{ "vddbtcxmx",  824000, 1120000, 15000  },
++		{ "vddrfacmn",  824000, 1120000, 15000  },
++		{ "vddrfa0p8",  824000, 1120000, 15000  },
++		{ "vddrfa1p7", 1872000, 2040000, 15000  },
++		{ "vddrfa1p2", 1256000, 1500000, 15000  },
++		{ "vddasd",    2800000, 3544000, 15000  },
++	},
++	.num_vregs = 8,
++};
++
+ static const struct qca_vreg_data qca_soc_data_wcn3991 = {
+ 	.soc_type = QCA_WCN3991,
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1580,4 +1580,5 @@
+ 	{ .compatible = "qcom,wcn3990-bt", .data = &qca_soc_data_wcn3990},
+ 	{ .compatible = "qcom,wcn3991-bt", .data = &qca_soc_data_wcn3991},
+-	{ .compatible = "qcom,wcn3998-bt", .data = &qca_soc_data_wcn3998},
++	{ .compatible = "qcom,wcn3998-bt", .data = &qca_soc_data_wcn3998},
++	{ .compatible = "qcom,wcn6750-bt", .data = &qca_soc_data_wcn6750},
+ 	{ /* sentinel */ }
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1524,4 +1524,27 @@
+ 		qcadev->bt_power->vregs_on = false;
+ 
+-		device_property_read_u32(&serdev->dev, "max-speed",
++		/*
++		 * WCN6750 additionally needs its BT_EN line asserted; the
++		 * WCN399x parts power up from the regulators alone, which is
++		 * why this branch never touched a GPIO. Without it the chip
++		 * stays down and the very first command times out:
++		 *   Bluetooth: hci0: command 0xfc00 tx timeout
++		 *   Bluetooth: hci0: Reading QCA version information failed (-110)
++		 * Measured on gts7fewifi 2026-08-03. Optional so the WCN399x
++		 * parts, which have no such property, are unaffected.
++		 */
++		if (qca_is_wcn6750(data->soc_type)) {
++			qcadev->bt_en = devm_gpiod_get_optional(&serdev->dev,
++							"enable",
++							GPIOD_OUT_LOW);
++			if (IS_ERR(qcadev->bt_en))
++				return PTR_ERR(qcadev->bt_en);
++			if (qcadev->bt_en) {
++				gpiod_set_value_cansleep(qcadev->bt_en, 1);
++				/* datasheet: allow the SoC to come out of reset */
++				msleep(50);
++			}
++		}
++
++		device_property_read_u32(&serdev->dev, "max-speed",
+ 					 &qcadev->oper_speed);
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -35,3 +35,9 @@
+-	if (soc_type == QCA_WCN3991) {
++	/*
++	 * WCN6750 answers the version request with the same layout as
++	 * WCN3991: one extra leading byte, so 15 bytes rather than 14.
++	 * Measured on gts7fewifi 2026-08-03, where treating it as WCN3990
++	 * gave "QCA Version size mismatch len 15" and -EILSEQ.
++	 */
++	if (soc_type == QCA_WCN3991 || qca_is_wcn6750(soc_type)) {
+ 		event_type = 0;
+ 		rlen += 1;
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -72,2 +72,2 @@
+-	if (soc_type == QCA_WCN3991)
++	if (soc_type == QCA_WCN3991 || qca_is_wcn6750(soc_type))
+ 		memmove(&edl->data, &edl->data[1], sizeof(*ver));
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -141,4 +141,5 @@
+-static void qca_tlv_check_data(struct qca_fw_config *config,
+-				const struct firmware *fw)
++static void qca_tlv_check_data(struct qca_fw_config *config,
++				const struct firmware *fw,
++				enum qca_btsoc_type soc_type)
+ {
+ 	const u8 *data;
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -173,3 +173,16 @@
+-		config->dnld_mode = tlv_patch->download_mode;
+-		config->dnld_type = config->dnld_mode;
++		config->dnld_mode = tlv_patch->download_mode;
++
++		/*
++		 * WCN6750 ships a .mbn rather than a .tlv and does NOT carry a
++		 * usable download_mode in its header, so the value read above
++		 * is meaningless for it. Upstream forces VSE+CC skipping here.
++		 * Without this the controller stops acking mid-download and the
++		 * transfer dies with -110:
++		 *   QCA Failed to request file: qca/msbtfw11.mbn (-110)
++		 * Measured on gts7fewifi 2026-08-03.
++		 */
++		if (qca_is_wcn6750(soc_type))
++			config->dnld_mode = QCA_SKIP_EVT_VSE_CC;
++
++		config->dnld_type = config->dnld_mode;
+ 
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -357,2 +357,2 @@
+-	qca_tlv_check_data(config, fw);
++	qca_tlv_check_data(config, fw, soc_type);
+ 
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -266,4 +266,4 @@
+-	if (soc_type == QCA_WCN3991) {
+-		event_type = 0;
+-		rlen = sizeof(*edl);
++	if (soc_type == QCA_WCN3991 || qca_is_wcn6750(soc_type)) {
++		event_type = 0;
++		rlen = sizeof(*edl);
+ 		rtype = EDL_PATCH_TLV_REQ_CMD;
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -300,4 +300,7 @@
+-	if (soc_type == QCA_WCN3991)
+-		goto out;
++	/* Same as WCN3991: the ack is a command-complete with no
++	 * tlv_seg_resp payload, so there is nothing further to check.
++	 */
++	if (soc_type == QCA_WCN3991 || qca_is_wcn6750(soc_type))
++		goto out;
+ 
+ 	tlv_resp = (struct tlv_seg_resp *)(edl->data);
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1218,2 +1218,22 @@
+-	/* Forcefully enable wcn3990 to enter in to boot mode. */
++	/*
++	 * WCN6750: its supplies are shared always-on rails, so the
++	 * regulator cycle above does NOT reset the controller. Toggle the
++	 * enable GPIO instead, or a warm hci-up finds the chip still
++	 * running firmware and the bootloader version read (0xfc00) times
++	 * out. Measured gts7fewifi 2026-08-03: first setup OK, every power
++	 * cycle after failed until this reset was added.
++	 */
++	if (hu->serdev) {
++		struct qca_serdev *qcadev =
++			serdev_device_get_drvdata(hu->serdev);
++
++		if (qca_is_wcn6750(qcadev->btsoc_type) && qcadev->bt_en) {
++			gpiod_set_value_cansleep(qcadev->bt_en, 0);
++			usleep_range(2000, 3000);
++			gpiod_set_value_cansleep(qcadev->bt_en, 1);
++			msleep(50);
++		}
++	}
++
++	/* Forcefully enable wcn3990 to enter in to boot mode. */
+ 	host_set_baudrate(hu, 2400);
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1379,4 +1379,13 @@
+ 	host_set_baudrate(hu, 2400);
+ 	qca_send_power_pulse(hu, false);
+-	qca_power_setup(hu, false);
++	qca_power_setup(hu, false);
++
++	if (hu->serdev) {
++		struct qca_serdev *qcadev =
++			serdev_device_get_drvdata(hu->serdev);
++
++		/* Hold WCN6750 in reset until the next hci-up. */
++		if (qca_is_wcn6750(qcadev->btsoc_type) && qcadev->bt_en)
++			gpiod_set_value_cansleep(qcadev->bt_en, 0);
++	}
+ }

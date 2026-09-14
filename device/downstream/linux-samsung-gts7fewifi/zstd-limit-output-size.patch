@@ -1,0 +1,38 @@
+From 1c4dd334df3a0627ff57b35612057e2b497e373b Mon Sep 17 00:00:00 2001
+From: Paul Cercueil <paul@crapouillou.net>
+Date: Tue, 1 Sep 2020 16:26:50 +0200
+Subject: lib: decompress_unzstd: Limit output size
+
+The zstd decompression code, as it is right now, will most likely fail
+on 32-bit systems, as the default output buffer size causes the buffer's
+end address to overflow.
+
+Address this issue by setting a sane default to the default output size,
+with a value that won't overflow the buffer's end address.
+
+Signed-off-by: Paul Cercueil <paul@crapouillou.net>
+Reviewed-by: Nick Terrell <terrelln@fb.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ lib/decompress_unzstd.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/lib/decompress_unzstd.c b/lib/decompress_unzstd.c
+index 0ad2c15479ed0..790abc472f5be 100644
+--- a/lib/decompress_unzstd.c
++++ b/lib/decompress_unzstd.c
+@@ -178,8 +178,13 @@ static int INIT __unzstd(unsigned char *in_buf, long in_len,
+ 	int err;
+ 	size_t ret;
+ 
++	/*
++	 * ZSTD decompression code won't be happy if the buffer size is so big
++	 * that its end address overflows. When the size is not provided, make
++	 * it as big as possible without having the end address overflow.
++	 */
+ 	if (out_len == 0)
+-		out_len = LONG_MAX; /* no limit */
++		out_len = UINTPTR_MAX - (uintptr_t)out_buf;
+ 
+ 	if (fill == NULL && flush == NULL)
+ 		/*

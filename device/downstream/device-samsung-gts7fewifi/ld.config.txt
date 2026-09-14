@@ -1,0 +1,10 @@
+dir.system = /system/bin
+dir.vendor = /vendor/bin
+
+[system]
+namespace.default.isolated = false
+namespace.default.search.paths = /apex/com.android.runtime/lib64/bionic:/system/lib64:/vendor/lib64:/vendor/lib64/hw
+
+[vendor]
+namespace.default.isolated = false
+namespace.default.search.paths = /vendor/lib64:/vendor/lib64/hw:/vendor/lib64/camera:/apex/com.android.runtime/lib64/bionic:/system/lib64

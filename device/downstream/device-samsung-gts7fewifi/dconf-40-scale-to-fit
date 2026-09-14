@@ -1,0 +1,5 @@
+# scale-to-fit shrinks windows taller than the 1280x800 logical screen so their buttons stay
+# reachable. auto-maximize stays false: windows without titlebars could never leave it.
+[sm/puri/phoc]
+scale-to-fit=true
+auto-maximize=false

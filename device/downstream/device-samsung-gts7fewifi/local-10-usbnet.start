@@ -1,0 +1,13 @@
+#!/bin/sh
+# Bring up the USB gadget network; retry because usb0 may appear after local.d starts.
+n=0
+while [ $n -lt 30 ]; do
+	if [ -e /sys/class/net/usb0 ]; then
+		ip link set usb0 up
+		ip addr replace 172.16.42.1/24 dev usb0
+		exit 0
+	fi
+	n=$((n+1))
+	sleep 1
+done
+exit 0

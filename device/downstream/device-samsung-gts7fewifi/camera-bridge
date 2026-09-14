@@ -1,0 +1,32 @@
+#!/bin/sh
+# Run the camera bridge in the foreground: libbridge.so is an LD_PRELOAD constructor run by
+# bionic's linker in a dummy /system/bin/sh. LD_PRELOAD is set last so musl helpers stay clean.
+
+: "${CAMERA_ID:=0}"
+: "${CAMERA_OUT:=/dev/video10}"
+
+export PMOS_CAM_ID="$CAMERA_ID"
+export PMOS_CAM_OUT="$CAMERA_OUT"
+# Only set when configured, so the bridge keeps its own default otherwise.
+[ -n "${CAMERA_W:-}" ] && export PMOS_CAM_W="$CAMERA_W"
+[ -n "${CAMERA_H:-}" ] && export PMOS_CAM_H="$CAMERA_H"
+[ -n "${CAMERA_NV12:-}" ] && export PMOS_CAM_NV12="$CAMERA_NV12"
+
+# Second sensor in the same process: CamX cannot serve two bridge processes.
+[ -n "${CAMERA_ID2:-}" ] && export PMOS_CAM_ID2="$CAMERA_ID2"
+[ -n "${CAMERA_OUT2:-}" ] && export PMOS_CAM_OUT2="$CAMERA_OUT2"
+# The second camera keeps the first one's size unless given its own.
+[ -n "${CAMERA_NICE:-}" ] && export PMOS_CAM_NICE="$CAMERA_NICE"
+[ -n "${CAMERA_IDLE_SECONDS:-}" ] && export PMOS_CAM_IDLE="$CAMERA_IDLE_SECONDS"
+# Full-resolution stills; unset means no BLOB stream is configured.
+[ -n "${CAMERA_STILL_W:-}" ] && export PMOS_CAM_STILL_W="$CAMERA_STILL_W"
+[ -n "${CAMERA_STILL_H:-}" ] && export PMOS_CAM_STILL_H="$CAMERA_STILL_H"
+[ -n "${CAMERA_STILL_W2:-}" ] && export PMOS_CAM_STILL_W2="$CAMERA_STILL_W2"
+[ -n "${CAMERA_STILL_H2:-}" ] && export PMOS_CAM_STILL_H2="$CAMERA_STILL_H2"
+[ -n "${CAMERA_W2:-}" ] && export PMOS_CAM_W2="$CAMERA_W2"
+[ -n "${CAMERA_H2:-}" ] && export PMOS_CAM_H2="$CAMERA_H2"
+# CamX trips a CFI diagnostic on a call that returns correct results; do not halt on it.
+export UBSAN_OPTIONS=halt_on_error=0:print_stacktrace=0
+export LD_PRELOAD=/system/lib64/libselinux_shim.so:/system/lib64/libpmos_props.so:/system/lib64/libbridge.so
+
+exec /system/bin/linker64 /system/bin/sh -c true

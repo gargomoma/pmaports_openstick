@@ -1,0 +1,76 @@
+Audio: stop the sound card waiting on a Bluetooth codec that never probes.
+
+Symptom, on every boot:
+
+    lahaina-asoc-snd ...:sound: ASoC: failed to init link SLIMBUS_7_RX: -517
+
+-517 is -EPROBE_DEFER, so the card never registers and the device has NO
+soundcards at all. The speakers are Cirrus cs35l45 behind bolero/WCD and do not
+touch SLIMbus, so they are held hostage by a Bluetooth link they never needed.
+
+WHY THE CARD WAITS
+------------------
+The chain, measured (see AUDIO.md):
+
+  slimbus-ngd.ko has zero modaliases, so udev can never autoload it
+    -> no SLIMbus master
+    -> bt_fm_slim never probes
+    -> the btfmslim_slave ASoC component is never registered
+    -> DAI link SLIMBUS_7_RX has no codec and defers forever
+    -> the whole card defers
+
+WHY THIS IS A DEVICE TREE FIX AND NOT A DRIVER ONE
+--------------------------------------------------
+This was nearly written off as needing a driver patch, because the sound node's
+codec list has no BT entry:
+
+    asoc-codec-names = "msm-stub-codec.1", "bolero_codec", "wcd937x_codec",
+                       "wsa-codec1", "wsa-codec2", "msm-ext-disp-audio-codec-rx";
+
+and SLIMBUS_7 appears nowhere in the DTS. Both true, and both irrelevant. The
+links live in techpack/audio/asoc/lahaina.c as msm_wcn_be_dai_links[], and they
+are added to the card only when a DT property says so:
+
+    rc = of_property_read_u32(dev->of_node, "qcom,wcn-bt", &val);
+    if (!rc && val) {
+            memcpy(msm_lahaina_dai_links + total_links,
+                   msm_wcn_be_dai_links, sizeof(msm_wcn_be_dai_links));
+            total_links += ARRAY_SIZE(msm_wcn_be_dai_links);
+    }
+
+yupik-audio.dtsi sets `qcom,wcn-bt = <1>`, so they are added. Setting it to 0
+means the driver never appends them, nothing looks for btfmslim_slave, and the
+card can finish registering with the codecs it does have.
+
+WHAT THIS COSTS
+---------------
+Bluetooth AUDIO routed over SLIMbus. That is already impossible on this port:
+the codec cannot probe, which is the whole reason for this patch. It does not
+touch the Bluetooth radio itself. Note also that Bluetooth is a known panic
+landmine here (bt_sock_create() hits a BUG_ON), so this removes nothing that
+was safe to use.
+
+WHICH DTB THIS AFFECTS
+----------------------
+The kernel package ships arch/arm64/boot/dts/vendor/qcom/yupik.dtb as
+gts7fewifi.dtb, and yupik.dtsi includes yupik-audio.dtsi, so this lands in the
+DTB this port actually boots. The board's revision-keyed dtbo overlays come
+from the stock dtbo partition and are left untouched; if one of them re-asserts
+qcom,wcn-bt the property will need overriding in the board node instead.
+
+VERIFY AFTER FLASHING
+---------------------
+    dmesg | grep -i "SLIMBUS_7_RX"      # expect NOTHING
+    aplay -l                            # expect a card, not "no soundcards"
+
+--- a/arch/arm64/boot/dts/vendor/qcom/yupik-audio.dtsi
++++ b/arch/arm64/boot/dts/vendor/qcom/yupik-audio.dtsi
+@@ -161,7 +161,7 @@
+ 		compatible = "qcom,lahaina-asoc-snd";
+ 		qcom,mi2s-audio-intf = <1>;
+ 		qcom,auxpcm-audio-intf = <1>;
+-		qcom,wcn-bt = <1>;
++		qcom,wcn-bt = <0>;
+ 		qcom,ext-disp-audio-rx = <1>;
+ 		qcom,afe-rxtx-lb = <0>;
+ 

@@ -1,0 +1,3 @@
+# Pin the screen-lock keys: a stale user-db value would otherwise shadow the system default.
+/org/gnome/desktop/lockdown/disable-lock-screen
+/org/gnome/desktop/screensaver/lock-enabled

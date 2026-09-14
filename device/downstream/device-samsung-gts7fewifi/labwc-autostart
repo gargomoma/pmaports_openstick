@@ -1,0 +1,5 @@
+# labwc autostart: the on-screen keyboard is the only keyboard on this tablet.
+squeekboard &
+
+# A bare labwc session has no touch way in (the root menu needs a right-click).
+foot &

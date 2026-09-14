@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Disable DPMS and screen blanking
+Comment=This panel cannot be powered back on once blanked. See repo display/README.md.
+Exec=/bin/sh -c "xset -dpms; xset s off; xset s noblank"
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

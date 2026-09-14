@@ -1,0 +1,24 @@
+Backport of upstream commit a30d8a39f0571425a459816ed8680e987a2ff279
+("usr: Add support for zstd compressed initramfs", Linux 5.9) reduced to the
+RD_ZSTD symbol: this 5.4 tree lacks the zstd rules in scripts/Makefile.lib, so
+the built-in initramfs compression choice is not carried over. The external
+initramfs only needs the ramdisk decompressor.
+
+--- a/usr/Kconfig
++++ b/usr/Kconfig
+@@ -100,6 +100,15 @@ config RD_LZ4
+ 	  Support loading of a LZ4 encoded initial ramdisk or cpio buffer
+ 	  If unsure, say N.
+ 
++config RD_ZSTD
++	bool "Support initial ramdisk/ramfs compressed using ZSTD"
++	default y
++	depends on BLK_DEV_INITRD
++	select DECOMPRESS_ZSTD
++	help
++	  Support loading of a ZSTD encoded initial ramdisk or cpio buffer.
++	  If unsure, say N.
++
+ choice
+ 	prompt "Built-in initramfs compression mode"
+ 	depends on INITRAMFS_SOURCE!=""

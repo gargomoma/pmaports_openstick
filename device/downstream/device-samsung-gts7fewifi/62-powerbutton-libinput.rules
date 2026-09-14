@@ -1,0 +1,3 @@
+# Hide qpnp_pon from libinput: the desktop's reaction to the power key (DPMS blank) kills the
+# panel. It also carries volume-down, which qpnp-volume-relay re-emits on a visible device.
+ACTION!="remove", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="qpnp_pon", ENV{LIBINPUT_IGNORE_DEVICE}="1"

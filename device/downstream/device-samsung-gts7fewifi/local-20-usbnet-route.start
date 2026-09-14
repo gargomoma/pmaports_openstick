@@ -1,0 +1,17 @@
+#!/bin/sh
+# USB link default route at metric 30000, below wlan0, plus ignore_routes_with_linkdown
+# so an unplugged cable cannot blackhole the box.
+echo 1 > /proc/sys/net/ipv4/conf/all/ignore_routes_with_linkdown
+echo 1 > /proc/sys/net/ipv4/conf/default/ignore_routes_with_linkdown
+n=0
+while [ $n -lt 40 ]; do
+	if ip addr show usb0 2>/dev/null | grep -q 172.16.42.1; then
+		ip route del default via 172.16.42.2 dev usb0 2>/dev/null
+		ip route replace default via 172.16.42.2 dev usb0 metric 30000
+		# USB-only DNS; NetworkManager rewrites resolv.conf when wlan0 connects.
+		printf 'nameserver 9.9.9.9\nnameserver 149.112.112.112\n' > /etc/resolv.conf
+		exit 0
+	fi
+	n=$((n+1)); sleep 1
+done
+exit 0

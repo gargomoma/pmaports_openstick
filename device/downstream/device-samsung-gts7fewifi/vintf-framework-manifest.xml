@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Framework manifest for the pmOS camera stack, stripped to nothing: a declared but absent
+  service (ISensorManager) stalls the thread feeding CamX's pipeline until its watchdog
+  tears the session down. Nothing here provides a framework HAL.
+-->
+<manifest version="1.0" type="framework"/>

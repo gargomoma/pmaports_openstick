@@ -1,0 +1,5 @@
+# /etc/conf.d/udev-settle: config file for udev-settle (replaces the udev-init-scripts-openrc copy).
+
+# Timeout in seconds to wait for processing of uevents at boot. udev-settle never completes
+# on this device and runs three times per boot, so the 120 s default costs six minutes.
+udev_settle_timeout=1

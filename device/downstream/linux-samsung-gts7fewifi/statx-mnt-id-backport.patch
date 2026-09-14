@@ -1,0 +1,57 @@
+fs: statx: report a synthetic STATX_MNT_ID so modern flatpak works on 5.4
+
+Every Flatpak app refuses to launch on this device with:
+
+    error: statx didn't return all required fields: No data available
+
+Root-caused 2026-08-03. Flatpak (via libglnx/ostree) calls
+
+    statx(fd, "", AT_EMPTY_PATH,
+          STATX_TYPE|STATX_INO|STATX_MNT_ID|STATX_MNT_ID_UNIQUE, &stx)
+
+and then requires the mount-id bits to come back set in stx.stx_mask. Those
+fields were added upstream in 5.8 (STATX_MNT_ID) and 6.8
+(STATX_MNT_ID_UNIQUE); this 5.4 vendor kernel returns stx_mask=STATX_ALL
+without them, so libglnx treats it as a hard failure and no app starts.
+
+A userspace LD_PRELOAD shim does NOT fix this: libglnx issues statx via the
+raw syscall, not the libc wrapper, so the interposed statx() is never
+called (verified: the shim corrects a libc-wrapper statx but not flatpak's).
+The fix therefore has to be in the kernel, in the one place every caller
+goes through - cp_statx().
+
+WHAT THIS DOES: report a mount id synthesised from the file's device number,
+and set the STATX_MNT_ID / STATX_MNT_ID_UNIQUE bits. flatpak only uses the
+mount id to decide whether two paths share a mount, and two paths on one
+filesystem do, so a per-device id is correct for that use. This is the exact
+value the (rejected) userspace shim used, which was confirmed to satisfy the
+libglnx check via the libc path.
+
+The value lands in __spare2[0], which is the slot upstream 5.8 repurposed as
+stx_mnt_id, so the on-the-wire layout matches what userspace expects. No
+struct or uapi change is needed; only cp_statx writes two extra words.
+
+Not a real mount id (this kernel has no per-mount id infrastructure), but
+correct for flatpak and harmless to anything that ignores the bits. Drop
+this when moving to a mainline kernel, which reports a real one.
+
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -551,4 +551,17 @@
+ 	tmp.stx_dev_major = MAJOR(stat->dev);
+ 	tmp.stx_dev_minor = MINOR(stat->dev);
++
++	/*
++	 * Backport of STATX_MNT_ID (5.8) / STATX_MNT_ID_UNIQUE (6.8): modern
++	 * flatpak/ostree hard-require these and refuse to run without them.
++	 * This kernel has no per-mount id, so synthesise a stable one from
++	 * the device number - flatpak only uses it to test whether two paths
++	 * share a mount, and same-device is a correct proxy. __spare2[0] is
++	 * the slot upstream 5.8 turned into stx_mnt_id, so userspace reads it
++	 * correctly. STATX_MNT_ID=0x1000, STATX_MNT_ID_UNIQUE=0x4000 (neither
++	 * is in this kernel's headers).
++	 */
++	tmp.__spare2[0] = ((__u64)MAJOR(stat->dev) << 32) | MINOR(stat->dev);
++	tmp.stx_mask |= 0x00001000U | 0x00004000U;
+ 
+ 	return copy_to_user(buffer, &tmp, sizeof(tmp)) ? -EFAULT : 0;

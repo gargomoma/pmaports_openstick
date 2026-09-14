@@ -1,0 +1,45 @@
+#!/bin/sh
+# Cap charging at MAX_CHARGE and resume at RESUME_CHARGE (siop_level 0 stops charging).
+
+CONF=/usr/share/battery-protect/battery-protect.conf
+MAX_CHARGE=90
+RESUME_CHARGE=85
+POLL_INTERVAL=30
+
+if [ -f "$CONF" ]; then
+    . "$CONF"
+fi
+
+BATT=/sys/class/power_supply/battery
+
+stop_charging() {
+    [ -w "$BATT/siop_level" ] && echo 0 > "$BATT/siop_level" 2>/dev/null || true
+}
+
+start_charging() {
+    [ -w "$BATT/siop_level" ] && echo 100 > "$BATT/siop_level" 2>/dev/null || true
+}
+
+trap 'start_charging; exit 0' TERM INT HUP
+
+echo "battery-protect: started (Max: ${MAX_CHARGE}%, Resume: ${RESUME_CHARGE}%)"
+
+while true; do
+    if [ -r "$BATT/capacity" ]; then
+        read -r CAP < "$BATT/capacity" 2>/dev/null || CAP=0
+        read -r SIOP < "$BATT/siop_level" 2>/dev/null || SIOP=100
+
+        if [ "$CAP" -ge "$MAX_CHARGE" ]; then
+            if [ "$SIOP" -ne 0 ]; then
+                echo "battery-protect: capacity ${CAP}% >= ${MAX_CHARGE}%, stopping charge"
+                stop_charging
+            fi
+        elif [ "$CAP" -le "$RESUME_CHARGE" ]; then
+            if [ "$SIOP" -ne 100 ]; then
+                echo "battery-protect: capacity ${CAP}% <= ${RESUME_CHARGE}%, resuming charge"
+                start_charging
+            fi
+        fi
+    fi
+    sleep "$POLL_INTERVAL"
+done
