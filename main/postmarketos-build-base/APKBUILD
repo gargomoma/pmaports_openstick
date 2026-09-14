@@ -1,0 +1,26 @@
+maintainer="Aster Boese <asterboese@mailbox.org>"
+pkgname=postmarketos-build-base
+pkgver=1
+pkgrel=0
+pkgdesc="Meta package for postmarketos build base"
+arch="noarch"
+url=https://postmarketos.org
+license="MIT"
+depends="
+	clang
+	file
+	fortify-headers
+	libc-dev
+	lld
+	llvm
+	make
+	patch
+	"
+options="!check"
+
+package() {
+	# Install a symlink for clang because Alpine's packaging isn't the best
+	mkdir -p "$pkgdir"/usr/lib
+	ln -s libgcc_s.so.1 \
+		"$pkgdir"/usr/lib/libgcc_s.so
+}
