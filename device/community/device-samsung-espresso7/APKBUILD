@@ -3,7 +3,7 @@
 maintainer="Mithil Bavishi <bavishimithil@gmail.com>"
 pkgname=device-samsung-espresso7
 pkgdesc="Samsung Galaxy Tab 2 (7.0 inch)"
-pkgver=9
+pkgver=10
 pkgrel=0
 url="https://postmarketos.org"
 license="MIT"
@@ -16,7 +16,11 @@ depends="
 	postmarketos-base
 	"
 makedepends="devicepkg-dev"
-source="deviceinfo"
+subpackages="$pkgname-wayland"
+source="
+	deviceinfo
+	etc-profile.d-25wlr-pixman.sh
+	"
 replaces="device-samsung-espresso3g"
 provides="device-samsung-espresso3g=$pkgver-r$pkgrel"
 
@@ -28,6 +32,15 @@ package() {
 	devicepkg_package $startdir $pkgname
 }
 
+wayland() {
+	# This is only useful on wlroots, but it has too many verions in Alpine
+	# at the moment to come up with a sane install_if
+	install_if="$pkgname=$pkgver-r$pkgrel wayland-libs-server"
+	install -D -m644 "$srcdir"/etc-profile.d-25wlr-pixman.sh \
+		"$subpkgdir"/etc/profile.d/25wlr-pixman.sh
+}
+
 sha512sums="
 a6123bd79af39a869eac8b099e259340f95909550de10830609a2551e742a36598a7f6ff8a1c65b8eba568c6afdfbe26dd723b8d9d5f95bb0e43e2465461de5e  deviceinfo
+1c7499eb84948eb5b73d58474b1b71a5f2f63116a2a3e1f9a4238064dcf6c152ccefa108bd4ab1074712a2319111c8fdd4bfcf0dbe4d26b5a319404def1b11d2  etc-profile.d-25wlr-pixman.sh
 "
