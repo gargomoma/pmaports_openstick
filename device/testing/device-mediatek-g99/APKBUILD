@@ -1,0 +1,37 @@
+# Co-Maintainer: Robert Eckelmann <longnoserob@postmarketos.org>
+maintainer="Alicja Michalska <ellyqw@mainlining.org>"
+pkgname=device-mediatek-g99
+pkgdesc="Generic package for MT6789/MT8781 devices"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-mediatek-g99
+	postmarketos-base
+	make-dynpart-mappings
+	systemd-boot
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+fe3ee61defd3531a0d4de428482a2ca40afeae6db1842b8404574251566536441b766117d1a574a220e7b5857f8cd78d0a0d9006b3cec607c8340ab6c4b20bb7  deviceinfo
+08e5de5efed396903ebdad3d559a076160ad55ee16e78980bf6ba14f98026e3c664645725bfa700c61a400a1a0925e084ddf1660ae561cb51c3df12db947d220  kernel-cmdline.conf
+22f6efc7be21b14095a4eb78bfc7c16d95d158da66bb524b80b9725ef9e8544a4a55824d673b23bc663d5e2978a712515e559759fea1e27f49318b0c0fc973fa  modules-initfs
+"

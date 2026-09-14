@@ -1,0 +1,10 @@
+# Common: Internal storage
+ufshcd-platform
+ufs-mediatek
+
+# Touchscreen: motorola-vicky
+goodix-berlin-spi
+
+# Touchscreen: zinwa-q25 (might not be correct)
+rmi-core
+rmi-i2c
