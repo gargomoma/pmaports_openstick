@@ -1,0 +1,38 @@
+maintainer="YuanLang <tsushdkjfajxnxm@gmail.com>"
+pkgname=honor6x-faccessat-compat
+pkgdesc="Honor 6X Linux 4.4 faccessat compatibility library"
+pkgver=1
+pkgrel=0
+url="https://gitlab.postmarketos.org/"
+arch="aarch64"
+license="MIT"
+# The crossdirect environment cannot execute its host cc1 through the target
+# root. Build this small native-aarch64 library through the qemu path instead.
+options="!pmb:crossdirect"
+makedepends="build-base"
+source="
+	h6x-faccessat-compat.c
+	LICENSE
+	"
+
+build() {
+	$CC $CFLAGS -Os -fPIC -fno-stack-protector -shared -nostdlib \
+		-Wl,-soname,libh6x-faccessat-compat.so $LDFLAGS \
+		-o libh6x-faccessat-compat.so "$srcdir"/h6x-faccessat-compat.c
+}
+
+check() {
+	$CC $CFLAGS -fsyntax-only "$srcdir"/h6x-faccessat-compat.c
+}
+
+package() {
+	install -Dm755 libh6x-faccessat-compat.so \
+		"$pkgdir"/usr/lib/honor6x/compat/libh6x-faccessat-compat.so
+	install -Dm644 "$srcdir"/LICENSE \
+		"$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+}
+
+sha512sums="
+ebbc4e3fdcf0606cca7bc5d6c93b8dffe332e6015a6159123d9f73cf940020e74f0a672356b7ddf788782504ab14263a0c3aa81903eca1e11272f726df4baa4a  h6x-faccessat-compat.c
+202af06f83fe71d20ce7ff88415fcce74eaf59ceeebe85cc94682d8287887c8ba0fcc23992450661341fc6a18b6d507d55657904f3fffe657b9f6b88191ae446  LICENSE
+"

@@ -1,0 +1,36 @@
+#!/bin/sh
+set -eu
+
+state_file=/var/lib/honor6x/display-orientation
+mode=portrait
+[ -r "$state_file" ] && mode=$(sed -n '1p' "$state_file")
+
+case "$mode" in
+landscape|landscape-ccw)
+	image=/usr/share/backgrounds/honor6x/honor6x-pmos-v26-landscape.png
+	;;
+*)
+	image=/usr/share/backgrounds/honor6x/honor6x-pmos-v26-portrait.png
+	;;
+esac
+
+export DISPLAY=${DISPLAY:-:0}
+backdrop=/backdrop/screen0/monitordefault/workspace0
+
+i=0
+while [ "$i" -lt 10 ]; do
+	if pgrep -x xfdesktop >/dev/null 2>&1; then
+		xfconf-query -c xfce4-desktop -p "$backdrop/last-image" -s "$image" \
+			>/dev/null 2>&1 || \
+		xfconf-query -c xfce4-desktop -p "$backdrop/last-image" \
+			--create -t string -s "$image" >/dev/null 2>&1 || true
+		xfconf-query -c xfce4-desktop -p "$backdrop/image-style" -s 5 \
+			>/dev/null 2>&1 || \
+		xfconf-query -c xfce4-desktop -p "$backdrop/image-style" \
+			--create -t int -s 5 >/dev/null 2>&1 || true
+		xfdesktop --reload >/dev/null 2>&1 || true
+		exit 0
+	fi
+	i=$((i + 1))
+	sleep 1
+done

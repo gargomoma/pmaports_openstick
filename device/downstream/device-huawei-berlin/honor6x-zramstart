@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+
+mem_size_mb="$(LC_ALL=C free -m | awk '/^Mem:/{print $2}')"
+size_mb=$((mem_size_mb / 2))
+
+[ "$size_mb" -gt 0 ] || exit 0
+if swapon --show=NAME --noheadings | grep -q '^/dev/zram'; then
+	exit 0
+fi
+
+if [ ! -e /sys/block/zram0 ]; then
+	modprobe -q zram num_devices=1
+fi
+
+device="$(zramctl -f -a lz4 -s "${size_mb}M")"
+mkswap "$device" >/dev/null
+swapon "$device"
+sysctl -w vm.page-cluster=0 vm.swappiness=100 >/dev/null
+
+if [ "$mem_size_mb" -ge 1024 ]; then
+	current="$(cat /proc/sys/vm/min_free_kbytes)"
+	if [ "$current" -lt 100000 ]; then
+		sysctl -w vm.min_free_kbytes=100000 >/dev/null
+	fi
+fi

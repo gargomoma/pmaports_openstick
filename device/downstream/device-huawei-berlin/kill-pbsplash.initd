@@ -1,0 +1,18 @@
+#!/sbin/openrc-run
+
+name="kill-pbsplash"
+description="Require the original Honor 6X pbsplash to release the framebuffer"
+
+depend() {
+	need localmount
+	after udev
+	before honor6x-display-manager display-manager lightdm
+}
+
+start() {
+	ebegin "Stopping the boot splash before the Honor 6X display manager"
+	local status=0
+	/usr/libexec/honor6x-p31-splash-stop || status=$?
+	eend "$status"
+	return "$status"
+}

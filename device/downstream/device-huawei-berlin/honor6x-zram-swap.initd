@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+
+name="Honor 6X zram swap"
+description="Start Linux 4.4-compatible lz4 zram swap"
+
+depend() {
+	need localmount
+	after bootmisc modules
+}
+
+start() {
+	ebegin "Starting Honor 6X zram swap"
+	/usr/sbin/honor6x-zramstart
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping Honor 6X zram swap"
+	/usr/bin/zramstop
+	eend $?
+}

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+rc-update add honor6x-screen-toggle default
+rc-update add honor6x-health-led default
+rc-update add honor6x-zram-swap default
+rc-update add honor6x-wifi default
+rc-update add kill-pbsplash default
+rc-update add networking boot

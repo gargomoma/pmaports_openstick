@@ -1,0 +1,30 @@
+#!/bin/sh
+# Idempotent, bounded release of the one allowed early framebuffer owner.
+# Install these same bytes in p56 and make display-manager startup require
+# successful completion. This script never starts a second renderer.
+set -u
+
+killall pbsplash 2>/dev/null || true
+count=0
+while pgrep -x pbsplash >/dev/null 2>&1; do
+    count=$((count + 1))
+    if [ "$count" -ge 500 ]; then
+        killall -KILL pbsplash 2>/dev/null || true
+        break
+    fi
+    sleep 0.01
+done
+count=0
+while pgrep -x pbsplash >/dev/null 2>&1; do
+    count=$((count + 1))
+    if [ "$count" -ge 100 ]; then
+        echo "ERROR: pbsplash did not release framebuffer; do not start LightDM" >&2
+        exit 1
+    fi
+    sleep 0.01
+done
+if pgrep -x plymouthd >/dev/null 2>&1; then
+    echo "ERROR: unexpected second splash renderer; do not start LightDM" >&2
+    exit 1
+fi
+exit 0

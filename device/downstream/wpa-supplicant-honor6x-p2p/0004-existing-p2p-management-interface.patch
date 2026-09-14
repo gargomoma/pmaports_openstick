@@ -1,0 +1,40 @@
+diff --git a/wpa_supplicant/main.c b/wpa_supplicant/main.c
+index d033f32..1ce8fb8 100644
+--- a/wpa_supplicant/main.c
++++ b/wpa_supplicant/main.c
+@@ -50,5 +50,6 @@ static void usage(void)
+ #ifdef CONFIG_P2P
+ 	       "        [-m<P2P Device config file>] \\\n"
++	       "        [-Q] \\\n"
+ #endif /* CONFIG_P2P */
+ 	       "        [-p<driver_param>] [-b<br_ifname>] [-I<config file>] "
+ 	       "...]\n"
+@@ -91,5 +92,7 @@ static void usage(void)
+ #ifdef CONFIG_P2P
+ 	       "  -m = Configuration file for the P2P Device interface\n"
++	       "  -Q = use the current interface as an existing dedicated "
++	       "P2P Device management interface\n"
+ #endif /* CONFIG_P2P */
+ #ifdef CONFIG_MATCH_IFACE
+ 	       "  -M = start describing new matching interface\n"
+@@ -202,7 +206,7 @@ int main(int argc, char *argv[])
+ 
+ 	for (;;) {
+ 		c = getopt(argc, argv,
+-			   "b:Bc:C:D:de:f:g:G:hi:I:KLMm:No:O:p:P:qsTtuvW");
++			   "b:Bc:C:D:de:f:g:G:hi:I:KLMm:NQo:O:p:P:qsTtuvW");
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+@@ -268,6 +272,9 @@ int main(int argc, char *argv[])
+ 		case 'm':
+ 			params.conf_p2p_dev = optarg;
+ 			break;
++		case 'Q':
++			iface->p2p_mgmt = 1;
++			break;
+ #endif /* CONFIG_P2P */
+ 		case 'o':
+ 			params.override_driver = optarg;
+
+

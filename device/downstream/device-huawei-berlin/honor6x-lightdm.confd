@@ -1,0 +1,3 @@
+# Device-owned OpenRC dependency: ordering alone does not propagate failures.
+# The upstream lightdm service also retains its own localmount/dbus needs.
+rc_need="kill-pbsplash honor6x-display-manager"

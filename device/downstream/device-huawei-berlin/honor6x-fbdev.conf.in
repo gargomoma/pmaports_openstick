@@ -1,0 +1,34 @@
+Section "Device"
+    Identifier "Honor6XFramebuffer"
+    Driver "fbdev"
+    Option "fbdev" "/dev/fb0"
+    Option "ShadowFB" "true"
+@ROTATE@
+EndSection
+
+Section "Monitor"
+    Identifier "Honor6XPanel"
+EndSection
+
+Section "Screen"
+    Identifier "Honor6XScreen"
+    Device "Honor6XFramebuffer"
+    Monitor "Honor6XPanel"
+    DefaultDepth 24
+    SubSection "Display"
+        Depth 24
+    EndSubSection
+EndSection
+
+Section "InputClass"
+    Identifier "Honor6XTouchscreen"
+    MatchProduct "cyttsp5_mt"
+    MatchIsTouchscreen "on"
+    Driver "libinput"
+    Option "CalibrationMatrix" "@MATRIX@"
+EndSection
+
+Section "ServerLayout"
+    Identifier "Honor6XLayout"
+    Screen "Honor6XScreen"
+EndSection

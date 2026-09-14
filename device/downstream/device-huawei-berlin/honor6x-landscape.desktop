@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Honor 6X Landscape
+Name[zh_CN]=荣耀畅玩6X 横屏模式
+Comment=Restart the graphical session in landscape mode
+Comment[zh_CN]=切换横屏、触摸坐标与横屏壁纸，并重新登录桌面
+Exec=/usr/bin/honor6x-displayctl landscape
+Icon=video-display
+Terminal=false
+Categories=Settings;HardwareSettings;X-XFCE-SettingsDialog;
+OnlyShowIn=XFCE;

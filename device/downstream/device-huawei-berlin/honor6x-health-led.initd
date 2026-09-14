@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+
+name="Honor 6X health status LED"
+description="Show red during startup and green after runtime checks pass"
+
+depend() {
+	need localmount
+	after sshd lightdm honor6x-screen-toggle
+}
+
+start() {
+	ebegin "Checking Honor 6X runtime"
+	/usr/sbin/honor6x-health-led healthy
+	eend $?
+}
+
+stop() {
+	ebegin "Turning off Honor 6X status LEDs"
+	/usr/sbin/honor6x-health-led off
+	eend $?
+}

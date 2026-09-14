@@ -1,0 +1,311 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="YuanLang <tsushdkjfajxnxm@gmail.com>"
+pkgname=device-huawei-berlin
+pkgdesc="Huawei Honor 6X"
+pkgver=12
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!archcheck"
+checkdepends="python3"
+depends="
+	curl
+	firmware-huawei-berlin
+	hisi-wlan
+	honor6x-hotspot
+	ifupdown-ng
+	iproute2
+	linux-huawei-berlin
+	mkbootimg
+	msm-fb-refresher
+	postmarketos-base
+	postmarketos-base-downstream
+	procps-ng
+	python3
+	util-linux-misc
+	wpa_supplicant
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-openrc
+	$pkgname-xfce:xfce
+	$pkgname-xfce-openrc:xfce_openrc
+"
+install="
+	$pkgname-openrc.post-install
+	$pkgname-xfce-openrc.post-install
+"
+source="
+	49-honor6x-power.rules
+	49-honor6x-wifi.rules
+	50-honor6x-lightdm.conf
+	90-honor6x-rndis.conf
+	90-honor6x-wifi.conf
+	honor6x-display-manager
+	honor6x-display-manager.initd
+	honor6x-lightdm.confd
+	honor6x-p31-splash-stop
+	honor6x-display-orientation
+	honor6x-display-setup
+	honor6x-displayctl
+	honor6x-brightness-control
+	honor6x-brightness.py
+	honor6x-brightness.desktop
+	honor6x-fbdev.conf.in
+	honor6x-health-led
+	honor6x-health-led.initd
+	honor6x-xfce-session
+	honor6x-xfce.desktop
+	honor6x-screen-toggle.initd
+	honor6x-screen-toggle.py
+	honor6x-xorg-policy.conf
+	honor6x-zram-swap.initd
+	honor6x-zramstart
+	honor6x-wifi-control
+	honor6x-wifi-psk.py
+	honor6x-wifi-tray.desktop
+	honor6x-wifi-tray.py
+	honor6x-wifi.desktop
+	honor6x-wifi.initd
+	kill-pbsplash.initd
+	honor6x-wallpaper
+	honor6x-wallpaper.desktop
+	honor6x-landscape.desktop
+	honor6x-portrait.desktop
+	honor6x-terminal.desktop
+	honor6x-files.desktop
+	honor6x-settings.desktop
+	honor6x-appfinder.desktop
+	v26-honor6x-desktop.xml
+	v26-honor6x-panel.xml
+	v26-honor6x-xsettings.xml
+	v26-honor6x-xfwm4.xml
+	v26-honor6x-appfinder.xml
+	v26-honor6x-power-manager.xml
+	v26-honor6x-screensaver.xml
+	nm-applet.desktop
+	blueman.desktop
+	honor6x-network-interfaces
+	90_honor6x-slick-greeter.gschema.override
+	honor6x-pmos-v26-landscape.png
+	honor6x-pmos-v26-portrait.png
+	deviceinfo
+	kernel-cmdline.conf
+	test_device_integration.py
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+check() {
+	sh -n "$srcdir"/kill-pbsplash.initd
+	sh -n "$srcdir"/honor6x-p31-splash-stop
+	sh -n "$srcdir"/honor6x-lightdm.confd
+	H6X_DEVICE_SOURCE="$startdir" python3 -B "$srcdir"/test_device_integration.py
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/90-honor6x-rndis.conf \
+		"$pkgdir"/usr/lib/NetworkManager/conf.d/90-honor6x-rndis.conf
+	install -Dm644 "$srcdir"/90-honor6x-wifi.conf \
+		"$pkgdir"/usr/lib/NetworkManager/conf.d/90-honor6x-wifi.conf
+	install -Dm755 "$srcdir"/honor6x-screen-toggle.py \
+		"$pkgdir"/usr/sbin/honor6x-screen-toggle
+	install -Dm755 "$srcdir"/honor6x-health-led \
+		"$pkgdir"/usr/sbin/honor6x-health-led
+	install -Dm755 "$srcdir"/honor6x-zramstart \
+		"$pkgdir"/usr/sbin/honor6x-zramstart
+	install -Dm755 "$srcdir"/honor6x-wifi-control \
+		"$pkgdir"/usr/libexec/honor6x/honor6x-wifi-control
+	install -Dm755 "$srcdir"/honor6x-wifi-psk.py \
+		"$pkgdir"/usr/libexec/honor6x/honor6x-wifi-psk
+	install -Dm644 "$srcdir"/honor6x-network-interfaces \
+		"$pkgdir"/etc/network/interfaces
+	install -Dm755 "$srcdir"/honor6x-p31-splash-stop \
+		"$pkgdir"/usr/libexec/honor6x-p31-splash-stop
+	install -Dm755 -t "$pkgdir"/etc/init.d/ \
+		"$srcdir"/honor6x-screen-toggle.initd \
+		"$srcdir"/honor6x-health-led.initd \
+		"$srcdir"/honor6x-zram-swap.initd \
+		"$srcdir"/honor6x-wifi.initd \
+		"$srcdir"/kill-pbsplash.initd
+	mv "$pkgdir"/etc/init.d/honor6x-screen-toggle.initd \
+		"$pkgdir"/etc/init.d/honor6x-screen-toggle
+	mv "$pkgdir"/etc/init.d/honor6x-health-led.initd \
+		"$pkgdir"/etc/init.d/honor6x-health-led
+	mv "$pkgdir"/etc/init.d/honor6x-zram-swap.initd \
+		"$pkgdir"/etc/init.d/honor6x-zram-swap
+	mv "$pkgdir"/etc/init.d/honor6x-wifi.initd \
+		"$pkgdir"/etc/init.d/honor6x-wifi
+	mv "$pkgdir"/etc/init.d/kill-pbsplash.initd \
+		"$pkgdir"/etc/init.d/kill-pbsplash
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	depends="openrc"
+
+	amove etc/init.d/honor6x-screen-toggle
+	amove etc/init.d/honor6x-health-led
+	amove etc/init.d/honor6x-zram-swap
+	amove etc/init.d/honor6x-wifi
+	amove etc/init.d/kill-pbsplash
+}
+
+xfce() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-xfce4"
+	depends="faenza-icon-theme font-noto-cjk gtk+3.0 honor6x-faccessat-compat honor6x-fbdevhw-compat lightdm polkit postmarketos-ui-xfce4 py3-gobject3 xf86-input-libinput xf86-video-fbdev xset"
+
+	install -Dm644 "$srcdir"/honor6x-fbdev.conf.in \
+		"$subpkgdir"/usr/share/honor6x/honor6x-fbdev.conf.in
+	install -Dm644 "$srcdir"/honor6x-xorg-policy.conf \
+		"$subpkgdir"/usr/share/X11/xorg.conf.d/22-honor6x-xorg-policy.conf
+	install -Dm644 "$srcdir"/50-honor6x-lightdm.conf \
+		"$subpkgdir"/etc/lightdm/lightdm.conf.d/50-honor6x.conf
+	install -Dm644 "$srcdir"/49-honor6x-power.rules \
+		"$subpkgdir"/usr/share/polkit-1/rules.d/49-honor6x-power.rules
+	install -Dm644 "$srcdir"/49-honor6x-wifi.rules \
+		"$subpkgdir"/usr/share/polkit-1/rules.d/49-honor6x-wifi.rules
+	install -Dm755 "$srcdir"/honor6x-display-setup \
+		"$subpkgdir"/usr/sbin/honor6x-display-setup
+	install -Dm755 "$srcdir"/honor6x-display-orientation \
+		"$subpkgdir"/usr/sbin/honor6x-display-orientation
+	install -Dm755 "$srcdir"/honor6x-display-manager \
+		"$subpkgdir"/usr/sbin/honor6x-display-manager
+	install -Dm755 "$srcdir"/honor6x-displayctl \
+		"$subpkgdir"/usr/bin/honor6x-displayctl
+	install -Dm755 "$srcdir"/honor6x-brightness-control \
+		"$subpkgdir"/usr/libexec/honor6x/honor6x-brightness-control
+	install -Dm755 "$srcdir"/honor6x-brightness.py \
+		"$subpkgdir"/usr/bin/honor6x-brightness
+	install -Dm644 "$srcdir"/honor6x-brightness.desktop \
+		"$subpkgdir"/usr/share/applications/honor6x-brightness.desktop
+	install -Dm755 "$srcdir"/honor6x-xfce-session \
+		"$subpkgdir"/usr/bin/honor6x-xfce-session
+	install -Dm644 "$srcdir"/honor6x-xfce.desktop \
+		"$subpkgdir"/usr/share/xsessions/honor6x-xfce.desktop
+	install -Dm755 "$srcdir"/honor6x-wifi-tray.py \
+		"$subpkgdir"/usr/bin/honor6x-wifi-tray
+	install -Dm644 "$srcdir"/honor6x-wifi.desktop \
+		"$subpkgdir"/usr/share/applications/honor6x-wifi.desktop
+	install -Dm644 "$srcdir"/honor6x-wifi-tray.desktop \
+		"$subpkgdir"/etc/xdg/autostart/honor6x-wifi-tray.desktop
+	install -Dm755 "$srcdir"/honor6x-wallpaper \
+		"$subpkgdir"/usr/bin/honor6x-wallpaper
+	install -Dm644 "$srcdir"/honor6x-wallpaper.desktop \
+		"$subpkgdir"/etc/xdg/autostart/honor6x-wallpaper.desktop
+	install -Dm644 "$srcdir"/honor6x-landscape.desktop \
+		"$subpkgdir"/usr/share/applications/honor6x-landscape.desktop
+	install -Dm644 "$srcdir"/honor6x-portrait.desktop \
+		"$subpkgdir"/usr/share/applications/honor6x-portrait.desktop
+	install -Dm644 "$srcdir"/honor6x-appfinder.desktop \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/panel/launcher-15/honor6x-appfinder.desktop
+	install -Dm644 "$srcdir"/honor6x-terminal.desktop \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/panel/launcher-12/honor6x-terminal.desktop
+	install -Dm644 "$srcdir"/honor6x-files.desktop \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/panel/launcher-13/honor6x-files.desktop
+	install -Dm644 "$srcdir"/honor6x-settings.desktop \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/panel/launcher-14/honor6x-settings.desktop
+	install -Dm644 "$srcdir"/v26-honor6x-desktop.xml \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml
+	install -Dm644 "$srcdir"/v26-honor6x-panel.xml \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
+	install -Dm644 "$srcdir"/v26-honor6x-xsettings.xml \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
+	install -Dm644 "$srcdir"/v26-honor6x-xfwm4.xml \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml
+	install -Dm644 "$srcdir"/v26-honor6x-appfinder.xml \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/xfconf/xfce-perchannel-xml/xfce4-appfinder.xml
+	install -Dm644 "$srcdir"/v26-honor6x-power-manager.xml \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/xfconf/xfce-perchannel-xml/xfce4-power-manager.xml
+	install -Dm644 "$srcdir"/v26-honor6x-screensaver.xml \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/xfce4/xfconf/xfce-perchannel-xml/xfce4-screensaver.xml
+	install -Dm644 "$srcdir"/nm-applet.desktop \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/autostart/nm-applet.desktop
+	install -Dm644 "$srcdir"/blueman.desktop \
+		"$subpkgdir"/etc/xdg/xfce4-phone-honor6x/autostart/blueman.desktop
+	install -d "$subpkgdir"/etc/skel "$subpkgdir"/usr/share/pixmaps/faces
+	ln -s ../../usr/share/icons/Faenza/stock/96/avatar-default.png \
+		"$subpkgdir"/etc/skel/.face
+	ln -s ../../icons/Faenza/stock/96/avatar-default.png \
+		"$subpkgdir"/usr/share/pixmaps/faces/default.png
+	install -Dm644 "$srcdir"/90_honor6x-slick-greeter.gschema.override \
+		"$subpkgdir"/usr/share/glib-2.0/schemas/90_honor6x-slick-greeter.gschema.override
+	install -Dm644 "$srcdir"/honor6x-pmos-v26-landscape.png \
+		"$subpkgdir"/usr/share/backgrounds/honor6x/honor6x-pmos-v26-landscape.png
+	install -Dm644 "$srcdir"/honor6x-pmos-v26-portrait.png \
+		"$subpkgdir"/usr/share/backgrounds/honor6x/honor6x-pmos-v26-portrait.png
+}
+
+xfce_openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-xfce4 openrc"
+	depends="$pkgname-xfce=$pkgver-r$pkgrel openrc"
+
+	install -Dm755 "$srcdir"/honor6x-display-manager.initd \
+		"$subpkgdir"/etc/init.d/honor6x-display-manager
+	install -Dm644 "$srcdir"/honor6x-lightdm.confd \
+		"$subpkgdir"/etc/conf.d/lightdm
+}
+
+sha512sums="
+fcb33d1b8b4c5d63c693a35505341efa088bb5137bf92c072a4920be3c6c48cc40ec84f994899e8fa57890cb90995a52edff560c7a9998d42aae379bfda86009  49-honor6x-power.rules
+d13f26a937ee6758b3afabd4bd7a5b8f56d44b370eeaaeeef28d093d9cd87680a255b7f3c4f553c7d719673cccc40e48afbf22927b02e2edf2ddacc04c2df19d  49-honor6x-wifi.rules
+3bd8a64233091d10fac272423bf7a1119fee506bda44c8b2b928d2457020596fde7cffb1fb4212a181983f3ebcb60a027df72d7fb0b33a5e2bda4d39be7ad1f9  50-honor6x-lightdm.conf
+270b8d26971d76f29c1bd6af9c8e0f2074d8ebba0d8ea8093379762e78bbdd50297370fc19b90867dab9445813df9976ba4bb5bd1705aaa4d733ad035bf5a717  90-honor6x-rndis.conf
+ab2168fd3eefc7ef1fc7276b2decd8d9130fab58ec0ecd53083b464437257be97f6235cbbeac8c82578828d6b18c22e66b12fb70f9af930284bf2dcf5d9c2e1a  90-honor6x-wifi.conf
+49a2d12929c7529ba7b17d85e67b282dfabe4c902e9b7d2cf66b2d5d9d10106555f29be176edcec204383f9f9391e94126af38d8c55cd501fbb580ef635e4ffb  honor6x-display-manager
+3664618f8c5ceb3070d65af29c8fb9201b8e02f6bcb893b39bf2d086e4e3bdc45707b36eebb0db603d1248a5079731164745e80508a7e1cbbb406759573700ed  honor6x-display-manager.initd
+f76f80f1b3fde85a36da5c9c3d40ed2f56049cdaa5413a70567ebdeda8fda248caef0a1b5074e519e312e65ed7dfa126210a66427fa91f0d36f89671e80376b7  honor6x-lightdm.confd
+4ee7c1f684f694346b18c5fd70b6cba885327946a537e561760f9f13ac578f43afd717509a6df7a69861912477ed35eaa4de433c9d30526fe12a3f090415daed  honor6x-p31-splash-stop
+cb7547ade1882b545a346cec0f1525f55e7cf7b38d487699e3c79dffb3a231822d7ed394835af1d199d48edcbcfd910782574782b45b37cd4de448c38cf091f2  honor6x-display-orientation
+dba57ad482376a0b7696238c9d04f813ccd2c23d81b29aece3c526212df060cc3a1288e075faba600a590c2efa4f7402e0489a11cc03cf3322638a165e0f34f5  honor6x-display-setup
+c3bcfd70ea23915e39f5c7ed63b0c706b36510dd2a6e20b0abd24927c933dfb082cd89d19d88a71a81291c5baa784a963cdb396156759bc299f0cd376b6d0e99  honor6x-displayctl
+9284855053ec1efd5997bc4c8e7eec9d958b8f6238daae77ec5bc45b5857b7dd5c7c8494a043ce66f382ba681c495c78665d9ac14398de18988a6b7cec9a921a  honor6x-brightness-control
+8db05e130b2715be93e0a6afdbd24a5b5f79526453451e2b3eac17455b4cb41574f3f04121cfc970686c8ac387c215b30bb38c5a964166ac42d9163f35aec79f  honor6x-brightness.py
+625fb0b49439264dff2ef36c862e8588a0d9e325ea01b94de623089b9fd80c610a2a3fb1eb34be395cfc1917110f0f3a5140646648ae7f70f24a23eb59e048e8  honor6x-brightness.desktop
+a98f24ee6bf7c272f30cf2247a937897af26d0eeac0fc8190717fe6603c898db0ee6bcd9dba5bf406d8f3878341162018e9019ceed7400c6db74e31011e8ce54  honor6x-fbdev.conf.in
+3576ce0d3f6e5de7e05058480afc897f129dc0b6ca47f7d49b7e90a0778e62ae81ac782d7500ce0e2be27329e3338f5766a67060567949e4e7861c10c3a6678a  honor6x-health-led
+60449d50d786223835bb62915c561a1732d34ddc11dcbbc38d9ff18609fbe93b74286ca4f4a4492310283ccde6874fc6f1246b7893c44a23596854d7864ada26  honor6x-health-led.initd
+7b8387b9cc2b70b9beb37b7544e555d97e7f4b1818a4b7cdfa24396e0b6882e49ff20590cf63f2abc32ca9897caf9c187bf15ace621555fd83ad1d710b70a4ca  honor6x-xfce-session
+790b1b8034bfaaaf2bf2ec988303dc7ccf5fac359e3aaa70649f1bdc9d1ca2a7a6c27b1e414c4daa3c05dbc1f3bfe14e3dd55af10817501fee18c27d8dfeef5a  honor6x-xfce.desktop
+c986e2f10cb379e21b22fb4994d8c686a919c36976ed9197d3eb052b15df9f09c1c95758fa3b12f666e1f4cfbec8df134030085c1e874c9fd8eed0318d1aae45  honor6x-screen-toggle.initd
+855a9e28e4834fbe545fcefc9e54d6f3fdfa53a834d196484f26b3bfda31e6d6b83119ad097046397cf8cde400c086cf83f86e077da8ff8f01925621bdff53cf  honor6x-screen-toggle.py
+1b7b351f9b05cd08d631e8de0f0bf5fd4fd530fdb173fd6355d7f05b00d8267579806da4ac7418e36bdcb61263f067b66bb2f4164145698ff5850d831cc31e12  honor6x-xorg-policy.conf
+eafba39ef747b5ea0f425c09c2103868cd0a6b0a61ec69ac88ab985e120cf3bff21659359e786ae44e5648d0581cb3ad95bc32a01a306ffd2de639d086b4bee1  honor6x-zram-swap.initd
+daa576322a488e0b896a1d02f9212d62548500cc778a5caf84ec2a819ffe8b42f7aebae46e51a7167ab0c20db4e388ea91d9168ef56a5beb95be198a0619b278  honor6x-zramstart
+c1cb41d6d86b9d72205cba35fa097a20e36c5082d02f70ee14711cdbcec5fc6480616cd565dc62ee29e910146093183013e8470a3d2500a2fa9499b9196ce99e  honor6x-wifi-control
+ec14a1000174b634df84f8b54287dc51cb9daa744a897a84cac22ddfca990902f12a42a3a18c76b800ed93f7264d89d955f5f6eedbb3e93d94b792649f49ca91  honor6x-wifi-psk.py
+7ce9a1110fd6e02e91d4397eca6cba35b4e230bb1546e7eec7df50ea026554716240fa7d3554c27fdae3dfea158df00d870b317277e68a8adf3ee7e3540e6501  honor6x-wifi-tray.desktop
+578c52592318473620d1f6737ba78b94a8660709cbb002bdf4040e9b36a7cbed8f272a39ed512a7f8bf8173ce6e4d1aa5b915cf7bd52a18c491338469cf80bac  honor6x-wifi-tray.py
+9953f3e839494ca573622e2d50033f3f763a38bbd20d1e18ed3d077bc4a141636656395141a19b8d2de1aff40703d61a81b9f3bcde2e195734a22c6c2a2364fa  honor6x-wifi.desktop
+692446432e9ee610bfa4b0646877b5dd4a929498524289c1f147d271ff68a894af8ce552cda218c6fb3978594b0d6a30c5ff4647ab040eb44af0483c5ef61368  honor6x-wifi.initd
+27e9d1e9d2e2d5b5f442906a9f81d6acfd4b895a598f04010f7c216e885fb8241b825f5545140c92083fbb4455e920758c63ba4b49ba4511d2c60c8288eeed20  kill-pbsplash.initd
+9f8ba046dac942b408e7a9093a3979827e49e6b0b505f8733239cb9274b374731a2bd50e0d704dcf29dde0efa55d39463ff62a5df356c91120ed33b511e12c19  honor6x-wallpaper
+b9d7e352f81cdccb4ff4def8e3445b9c40db8c42365c0651d192d0be77d4b0b6b99146065c3ea036592f092cd73a648af336cb25cb3d6126b85614f8f119bde5  honor6x-wallpaper.desktop
+f970dc735fbfab4578925438130e49362627c1b6d6442b2954bfd83a5ccf08811a29b47a69841bf7215d981f825418f40f07a0066a7b562d2278071d51e67468  honor6x-landscape.desktop
+2fe925f239bc6dd614618a28d188322dd6daadbc5c8785328f0ede68963e4636a3cb821a5cb7033866344ff257474d27f321b1897f1cf90a578a16a08d5596db  honor6x-portrait.desktop
+afe40ba127d42b2ddd98df1c5953839c3b9fb5c5388483fd10e144e1f928623c3bd74b0d28004eaa6367f2d864597860df7894c2333ee900b335172e36a04918  honor6x-terminal.desktop
+f340505af121a4743bddada31cc603e80332c633324a208e27f297fd8ea6853b07e11dfb498f70177503974363f4d333186b9219ee35b2ca5ce6a05b186b72bf  honor6x-files.desktop
+6f7f5b6850743695af08c2d73557afd6b2b8db99d1f1a138f4b6810456637df23aeb13c8e82ed94f558576de3227a9bd5492ba7efe10190964b676726e32b8e3  honor6x-settings.desktop
+bade8bdf390f34873b8798dddc9a49410d2b97579235d6f3b902f22e55eccbf634adac7ca62921e799387ced71e9675f8b8e4e5bc6c672eecc4f0bcef53522c8  honor6x-appfinder.desktop
+2e6d8df73a16e341aa4e012ab9767956a9e68bd4aad54d39f98fa278521edb2cf9469ebbb572919f39ccd1cd3c5e08284eefa124be8e51b8924bae4fcca42192  v26-honor6x-desktop.xml
+93203b0fd8968fd6ecaba23679cace0cbbd0087bdb8aa30524880d11f35ceec2b15180abc0ff70b53cdaf2188a0987a5b90d8a7ec2c23256840eb61b6545fc43  v26-honor6x-panel.xml
+987767594d711d4bd2b351b0e4b5624568fe2329799fb1459b1038907797b5dbae69c2d7c91b3abd661f5e5fab5c1f55639942834b68601a22fcb7d6964faadc  v26-honor6x-xsettings.xml
+3e733d3a7f4c6a47a53cf357e5e2dee3c324bf9e8de6848c761f685df10a0fdcb4e8dbb6751cdeecfaece4144e0ce864125a7e833b764602cf1884ad6c373a8a  v26-honor6x-xfwm4.xml
+06fd795cde7329d272c4ede7004bb4741bd1ccc741950787529bf2b5eed6114fba5cb7d0df348a47ad650ce78436d3176a2df2c163b2bced6ea57c83024f6be2  v26-honor6x-appfinder.xml
+0b7d0a5b891b302dd61158f7c4d6aec9e164d5f4253733fafae62b2f43a16071a7aa3769c80558960c2a11d7c7ea5daa17e5c496e486cc65cdd5ed0d07ff32a1  v26-honor6x-power-manager.xml
+66f4e61788cb0dfd4425995a2382e0ba0aa093592b8993501e3577d50961370b56b9d52768ef56bce9851b384dbce20f086e9dd5efa1ed9c5a1d03db1945d17e  v26-honor6x-screensaver.xml
+08c636fd86afd1fe9aec8c550cf56e300fbdf045dbde419cb15684bec63cfe15949839147ccc5db659fd3c3a0efbc785a772694d151bf785dae15e220fa77d6d  nm-applet.desktop
+98f2b462e2d7162a5a83c5d513085b2a955c8f69888e38dac3e92be2561f8afafc0f8a2ecf445cf7908311d3ee06dfb4041cdf0d3a020860b4f7a84ba060255d  blueman.desktop
+1030fa3fee449ee8f3709d6c83839a2a7724b4e9e1235134887c4c185b0c64c0f0e2c5462fba495858a20b3f245b771d3a69043436ef099391ec87de26d79540  honor6x-network-interfaces
+514b29cdd66c93bfd19021ee27c3d4c49476fe1e854998a1a40b7162969f7998d00733e22800b4f882435e1c920494ba9ab8489eeb907a445041b1f627cabf8b  90_honor6x-slick-greeter.gschema.override
+3037377a46745c3abecef4f5d577ab8faeb72a4d992bad6ffef37187105794486796062672f808cf9ada8fe2a4db6300c53d65ed429f712b5d0b2992f8e78b4c  honor6x-pmos-v26-landscape.png
+297f54b2a3ad2c32b49d49cd3ef81d2a8aaf3b86854ff2f29b521920641a2ce49299fcd1fb565c5485479a07e4b4687842b4c8eaeb383ec4a413bc7fda5ac70d  honor6x-pmos-v26-portrait.png
+ded77ab699d6cc87e62ca65ea4e3bec925e076bbbd2ac3265d9083133419a9f51c12988280278f4fd334a3161f5b30828c2cb0933c5b3c95b9b6548b2f6b2701  deviceinfo
+e30d7197b06041ce52e0e923c021abbf8f1ed305f6d5657ce3af1b81543d29adcf2755743e4b11bce1ee1badf4b424f22e1de45966b671c1fff8109d1e27aec5  kernel-cmdline.conf
+0d32a4ed55d9f36cad394e3589857bef4e4b483ef8b26cd05eee39b89578cd99b8aabfcd9972a191ebf20e71a1fe260664ed1a49a65dfbe717921aad14d330dc  test_device_integration.py
+"

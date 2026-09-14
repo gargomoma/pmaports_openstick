@@ -1,0 +1,105 @@
+maintainer="YuanLang <tsushdkjfajxnxm@gmail.com>"
+pkgname=honor6x-fbdevhw-compat
+pkgver=21.1.24
+pkgrel=0
+pkgdesc="Xorg fbdevhw compatibility module for the Honor 6X virtual framebuffer"
+url="https://gitlab.freedesktop.org/xorg/xserver"
+arch="aarch64"
+license="MIT"
+depends="xorg-server"
+# The crossdirect environment cannot execute its host cc1 through the target
+# root. Build this Xorg module through the native-aarch64 QEMU path instead.
+options="!pmb:crossdirect"
+makedepends="
+	eudev-dev
+	libdrm-dev
+	libepoxy-dev
+	libpciaccess-dev
+	libx11-dev
+	libxau-dev
+	libxcb-dev
+	libxcvt-dev
+	libxdmcp-dev
+	libxext-dev
+	libxfont2-dev
+	libxkbfile-dev
+	libxshmfence-dev
+	mesa-dev
+	meson
+	nettle-dev
+	pixman-dev
+	wayland-dev
+	wayland-protocols
+	xcb-util-dev
+	xcb-util-image-dev
+	xcb-util-keysyms-dev
+	xcb-util-renderutil-dev
+	xcb-util-wm-dev
+	xkbcomp-dev
+	xorgproto
+	xtrans
+"
+source="
+	https://www.x.org/releases/individual/xserver/xorg-server-$pkgver.tar.xz
+	honor6x-virtual-framebuffer.patch
+"
+builddir="$srcdir/xorg-server-$pkgver"
+
+prepare() {
+	default_prepare
+	sed -i -e 's/termio.h/termios.h/' hw/xfree86/os-support/xf86_OSlib.h
+}
+
+build() {
+	export CFLAGS="${CFLAGS/-fno-plt} -Wno-error=array-bounds"
+	export CXXFLAGS="${CXXFLAGS/-fno-plt}"
+	export LDFLAGS="$LDFLAGS -Wl,-z,lazy"
+	_fontroot="/usr/share/fonts"
+
+	abuild-meson \
+		-Db_lto=true \
+		-Dxorg=true \
+		-Dxephyr=false \
+		-Dglamor=true \
+		-Dxnest=false \
+		-Dxvfb=false \
+		-Dxwin=false \
+		-Ddefault_font_path=$_fontroot/misc,$_fontroot/100dpi:unscaled,$_fontroot/75dpi:unscaled,$_fontroot/TTF,$_fontroot/Type1 \
+		-Dglx=true \
+		-Dxdmcp=true \
+		-Dxdm-auth-1=true \
+		-Dxcsecurity=true \
+		-Dsecure-rpc=false \
+		-Dipv6=true \
+		-Dxkb_dir=/usr/share/X11/xkb \
+		-Dxkb_output_dir=/var/lib/xkb \
+		-Dlisten_tcp=false \
+		-Dlisten_unix=true \
+		-Dlisten_local=true \
+		-Dsuid_wrapper=true \
+		-Dpciaccess=true \
+		-Dudev=true \
+		-Dhal=false \
+		-Dsystemd_logind=false \
+		-Ddpms=true \
+		-Ddri1=false \
+		-Ddri2=true \
+		-Ddri3=true \
+		. output
+	meson compile -C output fbdevhw
+}
+
+check() {
+	readelf -Ws output/hw/xfree86/fbdevhw/libfbdevhw.so |
+		grep -q 'fbdevhwModuleData'
+}
+
+package() {
+	install -Dm755 output/hw/xfree86/fbdevhw/libfbdevhw.so \
+		"$pkgdir"/usr/lib/honor6x/xorg/modules/libfbdevhw.so
+}
+
+sha512sums="
+f51372b04fe21632fc778ff240705161ed2dccc0114dbe3ee25156d8ac85ec945e2ac05d8638bc7d8d54bad4dfc89cb26b6bd2058b7804d54ab7179e1ac2eb13  xorg-server-21.1.24.tar.xz
+8cec46afbfadcc31f84f42e7db2d7a32fe7764d2e97444355a1cf69cf1a9f401b1fcdcc8378dbbb031c3097e711321aa62db28444772cebc5dc1b8e2a8bfc9ef  honor6x-virtual-framebuffer.patch
+"

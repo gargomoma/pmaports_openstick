@@ -1,0 +1,35 @@
+From: Honor 6X postmarketOS contributors
+Subject: [PATCH] fbdevhw: allow virtual framebuffer devices without subsystem
+
+Linux virtual framebuffer devices do not have a backing device/subsystem
+symlink. Its absence does not identify a PCI framebuffer. Keep rejecting a
+known PCI subsystem, but allow virtual framebuffer devices such as hisifb0.
+
+---
+ hw/xfree86/fbdevhw/fbdevhw.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/hw/xfree86/fbdevhw/fbdevhw.c b/hw/xfree86/fbdevhw/fbdevhw.c
+index 5785c21..845820a 100644
+--- a/hw/xfree86/fbdevhw/fbdevhw.c
++++ b/hw/xfree86/fbdevhw/fbdevhw.c
+@@ -338,6 +338,16 @@ fbdev_open(int scrnIndex, const char *dev, char **namep)
+-        if (asprintf(&sysfs_path, "/sys/class/graphics/%s/device/subsystem", node) < 0 ||
+-            readlink(sysfs_path, buf, sizeof(buf) - 1) < 0 ||
+-            strstr(buf, "bus/pci")) {
++        if (asprintf(&sysfs_path,
++                     "/sys/class/graphics/%s/device/subsystem", node) < 0) {
++            close(fd);
++            return -1;
++        }
++
++        if (readlink(sysfs_path, buf, sizeof(buf) - 1) >= 0) {
++            if (strstr(buf, "bus/pci")) {
++                free(sysfs_path);
++                close(fd);
++                return -1;
++            }
++        } else if (errno != ENOENT && errno != ENOTDIR) {
+             free(sysfs_path);
+             close(fd);
+             return -1;

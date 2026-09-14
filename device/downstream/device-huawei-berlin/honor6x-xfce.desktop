@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Honor 6X XFCE
+Comment=XFCE session for the Honor 6X downstream port
+Exec=/usr/bin/honor6x-xfce-session
+TryExec=/usr/bin/honor6x-xfce-session
+Type=Application

@@ -1,0 +1,87 @@
+From: Honor 6X local port <honor6x-local@example.invalid>
+Date: Sat, 5 Sep 2026 18:00:00 +0800
+Subject: [PATCH] nl80211: preserve externally owned P2P Device interfaces
+
+Some vendor drivers create a dedicated P2P Device before wpa_supplicant is
+started. When such an interface is passed as a top-level interface, nl80211
+currently treats it as a station because it was not dynamically created by
+this process. This changes the interface type and loses the vendor's P2P
+management object.
+
+Preserve an existing P2P Device without issuing SET_INTERFACE. Subscribe to
+management frames directly, remember that the interface is externally owned,
+and do not delete it during deinitialization. Dynamically created P2P Device
+interfaces retain the existing lifecycle.
+---
+ src/drivers/driver_nl80211.c | 22 ++++++++++++++++++----
+ src/drivers/driver_nl80211.h |  1 +
+ 2 files changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/src/drivers/driver_nl80211.h b/src/drivers/driver_nl80211.h
+index 34ec3dd..226adb8 100644
+--- a/src/drivers/driver_nl80211.h
++++ b/src/drivers/driver_nl80211.h
+@@ -81,6 +81,7 @@ struct i802_bss {
+ 	unsigned int wdev_id_set:1;
+ 	unsigned int added_if:1;
+ 	unsigned int static_ap:1;
++	unsigned int externally_owned_p2p_device:1;
+ 
+ 	u8 addr[ETH_ALEN];
+ 	u8 prev_addr[ETH_ALEN];
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 1b94ad7..945ba6f 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -2985,6 +2985,9 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv,
+ 	bss->if_dynamic = drv->ifindex == drv->global->if_add_ifindex;
+ 	bss->if_dynamic = bss->if_dynamic || drv->global->if_add_wdevid_set;
+ 	drv->global->if_add_wdevid_set = 0;
++	bss->externally_owned_p2p_device =
++		!bss->if_dynamic &&
++		nl80211_get_ifmode(bss) == NL80211_IFTYPE_P2P_DEVICE;
+ 
+ 	if (!bss->if_dynamic && nl80211_get_ifmode(bss) == NL80211_IFTYPE_AP)
+ 		bss->static_ap = 1;
+@@ -3015,14 +3018,24 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv,
+ 	if (drv->hostapd || bss->static_ap)
+ 		nlmode = NL80211_IFTYPE_AP;
+ 	else if (bss->if_dynamic ||
++		 bss->externally_owned_p2p_device ||
+ 		 nl80211_get_ifmode(bss) == NL80211_IFTYPE_MESH_POINT)
+ 		nlmode = nl80211_get_ifmode(bss);
+ 	else
+ 		nlmode = NL80211_IFTYPE_STATION;
+ 
+-	if (wpa_driver_nl80211_set_mode(bss, nlmode) < 0) {
+-		wpa_printf(MSG_ERROR, "nl80211: Could not configure driver mode");
+-		return -1;
++	if (bss->externally_owned_p2p_device) {
++		drv->nlmode = nlmode;
++		wpa_printf(MSG_DEBUG,
++			   "nl80211: Preserve externally owned P2P Device %s",
++			   bss->ifname);
++		if (nl80211_mgmt_subscribe_non_ap(bss) < 0)
++			wpa_printf(MSG_DEBUG,
++				   "nl80211: Failed to register Action frame processing - ignore for now");
++	} else if (wpa_driver_nl80211_set_mode(bss, nlmode) < 0) {
++		wpa_printf(MSG_ERROR,
++			   "nl80211: Could not configure driver mode");
++		return -1;
+ 	}
+ 
+ 	if (nlmode == NL80211_IFTYPE_P2P_DEVICE)
+@@ -3214,7 +3227,8 @@ static void wpa_driver_nl80211_deinit(struct i802_bss *bss)
+ 		nl80211_mgmt_unsubscribe(bss, "deinit");
+ 	} else {
+ 		nl80211_mgmt_unsubscribe(bss, "deinit");
+-		nl80211_del_p2pdev(bss);
++		if (!bss->externally_owned_p2p_device)
++			nl80211_del_p2pdev(bss);
+ 	}
+ 
+ 	nl80211_destroy_bss(drv->first_bss);
+-- 
+2.51.0
+
+

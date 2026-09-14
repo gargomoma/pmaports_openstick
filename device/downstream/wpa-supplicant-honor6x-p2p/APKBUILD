@@ -1,0 +1,50 @@
+maintainer="YuanLang <tsushdkjfajxnxm@gmail.com>"
+pkgname=wpa-supplicant-honor6x-p2p
+pkgver=2.11
+pkgrel=0
+pkgdesc="Disabled-by-default isolated wpa_supplicant for Honor 6X P2P-GO"
+url="https://w1.fi/wpa_supplicant/"
+arch="aarch64"
+license="BSD-3-Clause"
+# The crossdirect buildroot lacks the GCC LTO linker plugin for this package.
+# Keep this isolated probe on the qemu-only build path instead.
+options="!check !pmb:crossdirect"
+makedepends="linux-headers openssl-dev>3 dbus-dev libnl3-dev pcsc-lite-dev"
+source="https://w1.fi/releases/wpa_supplicant-$pkgver.tar.gz
+	0001-nl80211-extra-ies.patch
+	0002-ap-ft-sae-guard.patch
+	0003-authorization-revert.patch
+	0004-existing-p2p-management-interface.patch
+	0005-nl80211-preserve-external-p2p-device.patch
+	0006-nl80211-skip-external-p2p-lifecycle.patch
+	config
+	README.md
+	"
+builddir="$srcdir/wpa_supplicant-$pkgver"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config" "$builddir/wpa_supplicant/.config"
+}
+
+build() {
+	make -C wpa_supplicant LIBDIR=/lib BINDIR=/sbin wpa_supplicant
+}
+
+package() {
+	install -Dm755 wpa_supplicant/wpa_supplicant \
+		"$pkgdir/usr/libexec/honor6x/wpa_supplicant-p2p"
+	install -Dm644 "$srcdir/README.md" "$pkgdir/usr/share/doc/$pkgname/README.md"
+}
+
+sha512sums="
+9a0a3a9d6fa2235903c40aa57b5955f0c9dd1dccfd0e3825a3b6f92b3e32db8d464b3ea0aef3285ba3ee109e7b190560cedd744902e954f0003cdba543e277b2  wpa_supplicant-2.11.tar.gz
+f0710a3b371c147de1b0a4df0b12f6b65560ad85d938daa1a3890fce79814fbfe75b93a38eb530c27397896377ec476a8917cdb8b63cb2e3fd63c0147a23ab38  0001-nl80211-extra-ies.patch
+92b5c4fb6937e1e18cb1213fe89b4371526ae8fb2e75728c652239647f4ca718bac34e2d1862b9d335d9a2b255b2a3bb246a55416570d31efd98d59e0492fdd6  0002-ap-ft-sae-guard.patch
+8dc26d5cddb1fad06f150d769846892fb5ba0b9ed7e1c2c7e3f6431b4472640e63a53314b1e6028dfb3f25b4900505b4b35591202222cdd27d929af0e90848d7  0003-authorization-revert.patch
+c355d67e2254167fdb753d760c59d9447a4caa900c8fbd46023d6a71096be0c655b6d4b70e4cfed743056fc7bb3b8c76e4dc92ac5199bd54dadb587678802f90  0004-existing-p2p-management-interface.patch
+e475f015327820653159991668f288a3d00cfb7e2484b24ed175a41f54a7fbd2f240e266c1ba8b55bb59408dc8f1e915390751673859ce3c214b128a2bac36e8  0005-nl80211-preserve-external-p2p-device.patch
+6e871dcba312e6602cd69334ef9e633026af5007922e4f0b239abd828d4738ccd2a6614b66b118e0fbcf42eadece09f498f5e4d155a2e962fc20e84e260a69ca  0006-nl80211-skip-external-p2p-lifecycle.patch
+c60cf9ab8e695fc83a681046ed019a145c8ad3303afba38b79596fc7ab38f7056035ce25b891872578f4feba20e99f938b6b97f65c1374f24d429cf613142161  config
+3f56d5ee42b04cef90142682afb429a319846833b5c5c8f5d6ab02954b685f4a8d880177c2a149ce8ddbd744695a0bcac36ebb74fa9ac2357a8da44d047ed503  README.md
+"

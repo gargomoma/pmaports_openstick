@@ -1,0 +1,66 @@
+#!/bin/sh
+set -eu
+
+mode="${1:-status}"
+state_dir=/var/lib/honor6x
+state_file="$state_dir/display-orientation"
+template=/usr/share/honor6x/honor6x-fbdev.conf.in
+output=/etc/X11/xorg.conf.d/20-honor6x-fbdev.conf
+
+current_mode() {
+	if [ -r "$state_file" ]; then
+		sed -n '1p' "$state_file"
+	else
+		printf 'portrait\n'
+	fi
+}
+
+render() {
+	selected="$1"
+	case "$selected" in
+		portrait)
+			rotate=""
+			matrix="1 0 0 0 1 0 0 0 1"
+			;;
+		landscape)
+			rotate='    Option "Rotate" "CW"'
+			matrix="0 1 0 -1 0 1 0 0 1"
+			;;
+		*)
+			echo "Unsupported orientation: $selected" >&2
+			exit 2
+			;;
+	esac
+
+	[ "$(id -u)" -eq 0 ] || {
+		echo "Root privileges are required to change orientation." >&2
+		exit 1
+	}
+	[ -r "$template" ]
+	mkdir -p "$state_dir" "$(dirname "$output")"
+	temporary="$(mktemp "$output.XXXXXX")"
+	trap 'rm -f "$temporary"' EXIT INT TERM
+	sed -e "s|@ROTATE@|$rotate|" -e "s|@MATRIX@|$matrix|" \
+		"$template" >"$temporary"
+	chmod 0644 "$temporary"
+	mv -f "$temporary" "$output"
+	printf '%s\n' "$selected" >"$state_file"
+	chmod 0644 "$state_file"
+	trap - EXIT INT TERM
+}
+
+case "$mode" in
+	status)
+		printf 'orientation=%s\n' "$(current_mode)"
+		;;
+	apply-current)
+		render "$(current_mode)"
+		;;
+	portrait|landscape)
+		render "$mode"
+		;;
+	*)
+		echo "Usage: $0 {portrait|landscape|apply-current|status}" >&2
+		exit 2
+		;;
+esac

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Honor 6X Portrait
+Name[zh_CN]=荣耀畅玩6X 竖屏模式
+Comment=Restart the graphical session in portrait mode
+Comment[zh_CN]=恢复竖屏、触摸坐标与竖屏壁纸，并重新登录桌面
+Exec=/usr/bin/honor6x-displayctl portrait
+Icon=video-display
+Terminal=false
+Categories=Settings;HardwareSettings;X-XFCE-SettingsDialog;
+OnlyShowIn=XFCE;

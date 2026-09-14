@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<channel name="xsettings" version="1.0">
+  <property name="Net" type="empty">
+    <property name="IconThemeName" type="string" value="Faenza-Ambiance"/>
+    <property name="DoubleClickDistance" type="int" value="32"/>
+  </property>
+  <property name="Xft" type="empty">
+    <property name="DPI" type="int" value="96"/>
+  </property>
+  <property name="Gtk" type="empty">
+    <property name="FontName" type="string" value="Sans 11"/>
+    <property name="MonospaceFontName" type="string" value="Monospace 11"/>
+    <property name="CursorThemeSize" type="int" value="24"/>
+    <property name="ButtonImages" type="bool" value="true"/>
+  </property>
+  <property name="Gdk" type="empty">
+    <property name="WindowScalingFactor" type="int" value="2"/>
+  </property>
+</channel>
