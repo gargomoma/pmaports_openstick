@@ -1,0 +1,181 @@
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg28xx.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg28xx.dts
+index e5291112c298..baba1b3456b9 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg28xx.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg28xx.dts
+@@ -8,9 +8,8 @@
+ 
+ / {
+ 	model = "Anbernic RG28XX";
+ 	compatible = "anbernic,rg28xx", "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg28xx";
+ };
+ 
+ &panel {
+ 	compatible = "anbernic,rg28xx-panel", "panel-mipi-dpi-spi";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg34xx-sp.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg34xx-sp.dts
+index bb9bcc80f86c..755ad9402782 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg34xx-sp.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg34xx-sp.dts
+@@ -8,9 +8,8 @@
+ 
+ / {
+ 	model = "Anbernic RG34XX-SP";
+ 	compatible = "anbernic,rg34xx-sp", "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg34xx-sp";
+ };
+ 
+ &panel {
+ 	compatible = "anbernic,rg34xx-sp-panel", "panel-mipi-dpi-spi";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg34xx.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg34xx.dts
+index ea5b010f67be..7bfca131217d 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg34xx.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg34xx.dts
+@@ -8,9 +8,8 @@
+ 
+ / {
+ 	model = "Anbernic RG34XX";
+ 	compatible = "anbernic,rg34xx", "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg34xx";
+ };
+ 
+ &panel {
+ 	compatible = "anbernic,rg34xx-panel", "panel-mipi-dpi-spi";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024-rev6-panel.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024-rev6-panel.dts
+index 2cbaaf45beb4..f54bf82afca4 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024-rev6-panel.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024-rev6-panel.dts
+@@ -8,9 +8,8 @@
+ 
+ / {
+ 	compatible = "anbernic,rg35xx-2024-rev6-panel", "anbernic,rg35xx-2024",
+ 		     "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg35xx-2024-rev6-panel";
+ };
+ 
+ &panel {
+ 	compatible = "anbernic,rg35xx-plus-rev6-panel", "panel-mipi-dpi-spi";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-h-rev6-panel.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-h-rev6-panel.dts
+index ed99983bff0e..d4894ba51e5d 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-h-rev6-panel.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-h-rev6-panel.dts
+@@ -8,9 +8,8 @@
+ 
+ / {
+ 	compatible = "anbernic,rg35xx-h-rev6-panel", "anbernic,rg35xx-h",
+ 		     "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg35xx-h-rev6-panel";
+ };
+ 
+ &panel {
+ 	compatible = "anbernic,rg35xx-plus-rev6-panel", "panel-mipi-dpi-spi";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-plus-rev6-panel.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-plus-rev6-panel.dts
+index aa36e14269cb..6049b200b977 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-plus-rev6-panel.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-plus-rev6-panel.dts
+@@ -8,9 +8,8 @@
+ 
+ / {
+ 	compatible = "anbernic,rg35xx-plus-rev6-panel", "anbernic,rg35xx-plus",
+ 		     "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg35xx-plus-rev6-panel";
+ };
+ 
+ &panel {
+ 	compatible = "anbernic,rg35xx-plus-rev6-panel", "panel-mipi-dpi-spi";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-pro.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-pro.dts
+index b0c7fa23c384..0243dce900d5 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-pro.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-pro.dts
+@@ -8,8 +8,7 @@
+ 
+ / {
+ 	model = "Anbernic RG35XX Pro";
+ 	compatible = "anbernic,rg35xx-pro", "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg35xx-pro";
+ };
+ 
+ 
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-sp-v2-panel.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-sp-v2-panel.dts
+index e802661ad7cd..ace2f5870749 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-sp-v2-panel.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-sp-v2-panel.dts
+@@ -8,9 +8,8 @@
+ 
+ / {
+ 	compatible = "anbernic,rg35xx-sp-v2-panel", "anbernic,rg35xx-sp",
+ 		     "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg35xx-sp-v2-panel";
+ };
+ 
+ &panel {
+ 	compatible = "anbernic,rg35xx-sp-v2-panel", "panel-mipi-dpi-spi";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-h-v2-panel.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-h-v2-panel.dts
+index 139adcac6989..0acd7015dadf 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-h-v2-panel.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-h-v2-panel.dts
+@@ -7,9 +7,8 @@
+ 
+ / {
+ 	compatible = "anbernic,rg40xx-h-v2-panel", "anbernic,rg40xx-h",
+ 		     "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg40xx-h-v2-panel";
+ };
+ 
+ &panel {
+ 	compatible = "anbernic,rg40xx-v2-panel", "panel-mipi-dpi-spi";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-h.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-h.dts
+index 098e6f863005..1f5a0c15dbd8 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-h.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-h.dts
+@@ -7,9 +7,8 @@
+ 
+ / {
+ 	model = "Anbernic RG40XX H";
+ 	compatible = "anbernic,rg40xx-h", "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg40xx-h";
+ 
+ 	adc-joystick {
+ 		compatible = "adc-joystick";
+ 		io-channels = <&adc_mux 0>,
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-v-v2-panel.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-v-v2-panel.dts
+index b3fdbb7c523e..032566791849 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-v-v2-panel.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-v-v2-panel.dts
+@@ -7,9 +7,8 @@
+ 
+ / {
+ 	compatible = "anbernic,rg40xx-v-v2-panel", "anbernic,rg40xx-v",
+ 		     "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg40xx-v-v2-panel";
+ };
+ 
+ &panel {
+ 	compatible = "anbernic,rg40xx-v2-panel", "panel-mipi-dpi-spi";
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-v.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-v.dts
+index ee712c7ec67e..c7b8edd4d504 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-v.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg40xx-v.dts
+@@ -7,9 +7,8 @@
+ 
+ / {
+ 	model = "Anbernic RG40XX V";
+ 	compatible = "anbernic,rg40xx-v", "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rg40xx-v";
+ 
+ 	adc-joystick {
+ 		compatible = "adc-joystick";
+ 		io-channels = <&adc_mux 0>,
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rgcubexx.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rgcubexx.dts
+index 963997da54ae..af632656824a 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rgcubexx.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rgcubexx.dts
+@@ -8,9 +8,8 @@
+ 
+ / {
+ 	model = "Anbernic RG CubeXX";
+ 	compatible = "anbernic,rgcubexx", "allwinner,sun50i-h700";
+-	rocknix-dt-id = "sun50i-h700-anbernic-rgcubexx";
+ 
+ 	adc-joystick {
+ 		compatible = "adc-joystick";
+ 		io-channels = <&adc_mux 0>,

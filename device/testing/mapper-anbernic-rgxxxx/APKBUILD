@@ -1,0 +1,36 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Kevin Widjaja <kevinwidjaja_dev@proton.me>"
+pkgname=mapper-anbernic-rgxxxx
+pkgdesc="Anbernic H700 D-pad to mouse mapper"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="py3-evdev"
+install="$pkgname-openrc.post-install"
+subpackages="
+	$pkgname-systemd
+	$pkgname-openrc
+"
+source="
+	mapper-anbernic-rgxxxx.init
+	mapper-anbernic-rgxxxx.service
+	rgxxxx-control-mapper.py
+"
+
+package() {
+	install -Dm755 "$srcdir"/rgxxxx-control-mapper.py \
+		"$pkgdir"/usr/bin/rgxxxx-control-mapper
+	install -Dm755 "$srcdir"/$pkgname.init \
+		"$pkgdir"/etc/init.d/rgxxxx-control-mapper
+	install -Dm644 "$srcdir"/$pkgname.service -t \
+		"$pkgdir"/usr/lib/systemd/system
+}
+
+sha512sums="
+aea5b98524563c0e4ab8b8fc7382ed9a43ddcbaa8dc88682ff88481d033e23011bbac07ebd08959b2f385a3189c425213773a2313f5165d4c37307a891fee617  mapper-anbernic-rgxxxx.init
+ca87e2e89d26847989858131033cc2a58d2687bba11923e6d2089c1e1be296c4c31e87302af453814abe3fffd0612bebab982301974c74ede16bafaccd789f57  mapper-anbernic-rgxxxx.service
+dd0c17ed55fe2b70dfd5996687613d222416d5fea5a41cbe7807d5db7d14ed87f923f26aaad9fad5a537e3866f1221a38443118f72ddd44089613624099c3fa9  rgxxxx-control-mapper.py
+"

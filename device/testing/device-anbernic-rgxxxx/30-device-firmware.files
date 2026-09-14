@@ -1,0 +1,11 @@
+/usr/lib/firmware/panels/anbernic,rg28xx-panel.panel
+/usr/lib/firmware/panels/anbernic,rg34xx-panel.panel
+/usr/lib/firmware/panels/anbernic,rg34xx-sp-panel.panel
+/usr/lib/firmware/panels/anbernic,rg35xx-plus-panel.panel
+/usr/lib/firmware/panels/anbernic,rg35xx-plus-rev6-panel.panel
+/usr/lib/firmware/panels/anbernic,rg35xx-sp-v2-panel.panel
+/usr/lib/firmware/panels/anbernic,rg40xx-panel.panel
+/usr/lib/firmware/panels/anbernic,rg40xx-v2-panel.panel
+/usr/lib/firmware/panels/anbernic,rgcubexx-panel.panel
+/usr/lib/firmware/rtl_bt/rtl8821cs_fw.bin.zst
+/usr/lib/firmware/rtw88/rtw8821c_fw.bin.zst
