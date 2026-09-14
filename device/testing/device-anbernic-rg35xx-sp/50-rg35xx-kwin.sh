@@ -1,0 +1,3 @@
+#!/bin/sh
+export KWIN_FORCE_SW_CURSOR=1
+export KWIN_IM_SHOW_ALWAYS=1

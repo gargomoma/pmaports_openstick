@@ -1,0 +1,39 @@
+#!/sbin/openrc-run
+
+name="RG35XX Control Mapper Service"
+description="RG35XX Control Mapper Service"
+
+command="/usr/bin/python3"
+command_args="/usr/bin/rg35xx-control-mapper"
+command_user="root:root"
+command_background="yes"
+pidfile="/run/rg35xx-control-mapper.pid"
+
+depend()
+{
+	need udev
+}
+
+start_pre() {
+	checkpath --directory --owner root:root --mode 0755 /run
+}
+
+start() {
+	ebegin "Starting ${name}"
+	start-stop-daemon --start \
+		--background \
+		--make-pidfile \
+		--pidfile "${pidfile}" \
+		--user "${command_user}" \
+		--exec "${command}" \
+		-- ${command_args}
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping ${name}"
+	start-stop-daemon --stop \
+		--pidfile "${pidfile}" \
+		--retry 15
+	eend $?
+}

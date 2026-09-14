@@ -1,0 +1,114 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: https://github.com/ROCKNIX/distribution/blob/fdf54964181293e2dfacf8750d2ea2a80c10d2d9/projects/Allwinner/devices/H700/linux/linux.aarch64.conf
+# Contributor: Seshan Ravikumar <seshan@sineware.ca>
+# Maintainer: Seshan Ravikumar <seshan@sineware.ca>
+pkgname=linux-anbernic-rg35xx
+pkgver=6.15.2
+pkgrel=0
+pkgdesc="Anbernic RG35XX SP kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="anbernic-rg35xx"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="linux"
+_commit="6.15.2"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://www.kernel.org/pub/${_repository}/kernel/v${_commit/.*/}.x/linux-${_commit}.tar.gz
+	$_config
+	0001-v8_20250310_ryan_drm_sun4i_add_display_engine_3_3_de33_support.patch
+	0003-20250216_ryan_arm64_dts_allwinner_h616_add_lcd_timing_controller_and_display_engine_support.patch
+	0004-v3_20250215_ryan_asoc_sun4i_codec_add_headphone_dectection_for_anbernic_rg35xx_devices.patch
+	0005-v2_20250416_andre_przywara_arm64_sunxi_h616_enable_mali_gpu.patch
+	0006-v2_20250403_simons_philippe_drm_panfrost_enable_g31_on_h616.patch
+	0007-rg35xx-add-GPU-opp.patch
+	0008-sun20i-add-pwm-driver.patch
+	0009-h616-add-pwm-node.patch
+	0010-rg35xx-enable-pwm-backlight.patch
+	0040-Revert-usb-musb-Fix-hardware-lockup-on-first-Rx-endp.patch
+	0110-v2_20250226_kikuchan98_drm_panel_add_generic_mipi_panel_driver.patch
+	0111-rg35xx-2024-use-panel-mipi-dpi-spi-driver.patch
+	0124-battery-name.patch
+	0126-20241018_macroalpha82_rg35xx_add_additional_hardware_support.patch
+	0127-enable-mmc1-for-RG35XX-2024.patch
+	0133-add-rg35xx-panel-variants-dts.patch
+	0151-phy-fix-OTG-host-mode.patch
+	0152-rg35xx-2024-enable-usb-otg.patch
+	0155-sun4i-set-rgb-connector-as-DSI.patch
+	0200-h700-update-opps.patch
+	0201-drm-sun4i-add-TCON-global-control-reg-for-pad-select.patch
+	0901-dts-rg35xx-2024-fix-led-1-color.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		allwinner/sun50i-h700-anbernic-rg35xx-2024-rev6-panel.dtb \
+		allwinner/sun50i-h700-anbernic-rg35xx-h-rev6-panel.dtb \
+		allwinner/sun50i-h700-anbernic-rg35xx-plus-rev6-panel.dtb \
+		allwinner/sun50i-h700-anbernic-rg35xx-sp-v2-panel.dtb
+}
+
+package() {
+	downstreamkernel_package \
+		"$builddir" "$pkgdir" "$_carch" "$_flavor" "$_outdir"
+
+	mkdir -p "$pkgdir/boot/dtbs"
+
+	for dtb in "$_outdir/arch/$_carch/boot/dts/"*.dtb "$_outdir/arch/$_carch/boot/dts/"*/*.dtb; do
+		if [ -f "$dtb" ]; then
+			cp -v "$dtb" "$pkgdir/boot/dtbs/"
+		fi
+	done
+}
+
+sha512sums="
+bba3657a6ae2c345ece440702173dfaec28131f2a14d45a62d8189411a2a42eb504bdb7e6cc01f01b7f2cbc420e9f96dc9b47eea8b852b98170d87889eba0c91  linux-anbernic-rg35xx-6.15.2.tar.gz
+878134b3d73620b021330599eff8e3a1bc116e9736d1bef80305c79311bcb076a0bb6942d66088b0cd7d971796d0fe801f5f25596e6dcfbfff5d6980234baa51  config-anbernic-rg35xx.aarch64
+dbd9fae33db2c9a2b29ac2af59fc1c8699b54d9d787f409de4ca88c78e35b19564bc1e5afdb80c0361d286b597f929ca64979e724239f730a2fa31f26e080029  0001-v8_20250310_ryan_drm_sun4i_add_display_engine_3_3_de33_support.patch
+cb1e5d07f3f7907998d5caa0ca60506b5126b238b4422ca5ba5dbb6f97b317deb5db68d077619a1becdf6d1a929748c43328363e06ae2ba47d09f0a7e018252f  0003-20250216_ryan_arm64_dts_allwinner_h616_add_lcd_timing_controller_and_display_engine_support.patch
+b49b5115f723bec39da933c7bcb989ea679527dda2ab859a42620920fc0e2f74ae68f9e19b23c360e50a210e334e06e55ec79dde12aa08e6fdec2be36078060b  0004-v3_20250215_ryan_asoc_sun4i_codec_add_headphone_dectection_for_anbernic_rg35xx_devices.patch
+73ce777222ff7cc9a142e4f0417bd788d898cee7917f2243a4d5fc035a9c319b0e4d9187334574863589afa336f08589845f8d8ec9cddc980ecbf316327c6b06  0005-v2_20250416_andre_przywara_arm64_sunxi_h616_enable_mali_gpu.patch
+7f37c5338cd37f77f67fddee3f365a8198c47921b8a87200e6815cd0b3dac344192418b484ed9544013cd41b073a472eaa1624fddd9938cabc1351480fb0a082  0006-v2_20250403_simons_philippe_drm_panfrost_enable_g31_on_h616.patch
+4b7b75b5f6f5825c6c5d1dfae0f7912e8d3329bdbe8e752d28e0400b3650ecbe9b2b288c7cf277af15172999ee9026dca7f6e74d8ebeaa89651b0a4a9f6fde47  0007-rg35xx-add-GPU-opp.patch
+5d4ae6a8e07ce0a24ae5d691333b12ceccdca2d5f13e224880c2a83603ac3d44ed5940341baa88f4d69a3200356f1ab22e018320db3ae1819582b8fabf431a65  0008-sun20i-add-pwm-driver.patch
+3f3b6586ecb7dcbef5d7a6e7912d4c1da759c27fac9a31f7d35376e568795b1a44b53cf3a381ffaec79964b6ddc2cba6528e7199f83ec7782855d56663ddd8fe  0009-h616-add-pwm-node.patch
+9dceadf4b8f4f6117ab7907925141bc2c1785c6cadce87e3c111d7110a4feb58b859753a3e4123c1bf445ce353cc0e712011f440392fdd50650530eb939c0bce  0010-rg35xx-enable-pwm-backlight.patch
+464a4a43af9b25d5515be403c9d67a59257992ce2cbefd84b179930ffc9a47554b37e6e85816134a1ea55ff03704ae2ff488e03f2609a866f079ddde2e2eaf79  0040-Revert-usb-musb-Fix-hardware-lockup-on-first-Rx-endp.patch
+def98290c8642bdc0fa78c6451b01531792094647023a9f3550f6d91bbbab4c873e3abab0d8d3da876160b154806f1e54588acaa74e71846950a42f62048b13f  0110-v2_20250226_kikuchan98_drm_panel_add_generic_mipi_panel_driver.patch
+12f0c7324762d7fe09c3c3a999ded0f421f8fa50fc77936609011c46668e54325f8ee1b6f0c9465f1aa4ddfd4a217b6b88632be7109a4f9fce524a322ad22353  0111-rg35xx-2024-use-panel-mipi-dpi-spi-driver.patch
+fc3edb3ae7554b33a1d25953f21124a6f3bfd46a932a73e592884074abd901b1e6edafd87c83b457349b8bd0fe60955d9244abb16fcae4905fc60fd93ae1c9d7  0124-battery-name.patch
+b7d7ed85d5fca95ae04f544ebe872fdf017a73c5fcc58145c91a81d3f32e0acb26358e2ee949f3938444cee9f91f15d21dbef2edef8a92c7281b9e1267e6dae9  0126-20241018_macroalpha82_rg35xx_add_additional_hardware_support.patch
+2e8a818dbba2d1d05d317e1def81317ce5466e9a8f9f93b0886072f5531f59e4abafd739a9417f9010c9269d55860a13a664c1ceaaac44b40e0f5470b4e10a49  0127-enable-mmc1-for-RG35XX-2024.patch
+fa07cb810488c168065d34cf50960994e4884066a9be76fa56bb5343270b99b6e8869a9c508cbe7d94bc7dd5350e395982af326b816b7754c88de908e4863846  0133-add-rg35xx-panel-variants-dts.patch
+f427ced3d4874c64a47dd03f2670f30f68c40d5f4cff599ae8403adcadbe5ef1fce0221ba834978149d800dc3336aeedca8ff0575c832bb25686b6a9523b3af5  0151-phy-fix-OTG-host-mode.patch
+de65ae85c073305774c024a7077abebbe212b2a246ba645af51874818ed0406f7d3d91279bb5c24f4167b9842012684ae7f93f0d4f9de7a4a68d6d2c0df0f298  0152-rg35xx-2024-enable-usb-otg.patch
+99e51ac0a064a7b7ee2d46f5905a822dc69e8375129e9d61b2676713d628b18b732fd67023f8f91d651b1c88140b5d657f1972c064b606d7debfa14cc0f3795c  0155-sun4i-set-rgb-connector-as-DSI.patch
+a79a46262d83172411076c09298facadc7a3c6067db6da78b9e19fb61f7aefcc4c03086d69548bdfc476e5a739ddc8990b89401fb889dce950b131cd509e8ab4  0200-h700-update-opps.patch
+6ab6de367eff2291eae0a8588e6edfe12cea982a5ca165e32a8bbc3450999d0a9bda012815d7a46a9a67bae04d52dd290a47e6544d718535fd16eded0e7d91b6  0201-drm-sun4i-add-TCON-global-control-reg-for-pad-select.patch
+8227341c1a4aadb13aa4e376f4c8e90f32df605ffd7b638eb902477184686f3d338dd5bffedd9c0c6450ce383f450564a31239c4005b602c22d47ebff8904539  0901-dts-rg35xx-2024-fix-led-1-color.patch"

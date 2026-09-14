@@ -1,0 +1,30 @@
+pkgname=firmware-anbernic-rg35xx
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for Anbernic RG35XX series devices"
+url="https://github.com/ROCKNIX/distribution"
+_repository="distribution"
+_commit="9f1fab30f6bbbc22c859b0cc5097b488466efefd"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !spdx !tracedeps pmb:cross-native"
+
+source="
+	$_repository-$_commit.tar.gz::https://github.com/ROCKNIX/$_repository/archive/$_commit.tar.gz
+	panel.files
+"
+
+package() {
+	cd "$srcdir/$_repository-$_commit/"
+	while IFS="" read -r _i || [ -n "$_i" ]; do
+		_filename=$(basename "$_i")
+		_destdir="$pkgdir/lib/firmware/panels"
+		[ ! -d "$_destdir" ] && mkdir -p "$_destdir"
+		install -Dm644 "$_i" "$_destdir/$_filename"
+	done < "$srcdir/panel.files"
+}
+
+sha512sums="
+ac054e461346b98696b6318ea8d0a1af25cc63e28318c6d9c5dd7ba1b88f73b35e5d005949ee0842ab2fb31a99b1731ec6d869ede9fafc681a15816ace007dbc  distribution-9f1fab30f6bbbc22c859b0cc5097b488466efefd.tar.gz
+49404570ef92ca49001dd140c1507b60cd064e1fd23e0e8e98d37d220a57972b3d277ed0310fb4983eb67a31f2054be84cc2ef20137009ee56b86343210d9e00  panel.files
+"

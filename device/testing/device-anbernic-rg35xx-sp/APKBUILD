@@ -1,0 +1,85 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Contributor: Seshan Ravikumar <seshan@sineware.ca>
+# Maintainer: Seshan Ravikumar <seshan@sineware.ca>
+pkgname=device-anbernic-rg35xx-sp
+pkgdesc="Anbernic RG35XX SP"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	u-boot-anbernic-rg35xx
+	u-boot-tools
+	py3-evdev
+	firmware-anbernic-rg35xx
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-panel_v1:kernel_panel_v1
+	$pkgname-kernel-panel_v2:kernel_panel_v2
+	$pkgname-systemd
+	$pkgname-openrc
+"
+source="
+	deviceinfo
+	30-device-firmware.files
+	50-rg35xx-kwin.sh
+	rg35xx-control-mapper.py
+	rg35xx-control-mapper.service
+	rg35xx-control-mapper.initd
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+kernel_panel_v1() {
+	pkgdesc="RG25XX SP v1 panel DTB"
+	depends="linux-anbernic-rg35xx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_panel_v2() {
+	pkgdesc="RG25XX SP v2 panel DTB"
+	depends="linux-anbernic-rg35xx linux-firmware"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -Dm644 "$srcdir"/30-device-firmware.files "$pkgdir/usr/share/mkinitfs/files/30-device-firmware.files"
+	install -Dm755 "$srcdir"/rg35xx-control-mapper.py \
+		"$pkgdir"/usr/bin/rg35xx-control-mapper
+	install -Dm644 "$srcdir"/50-rg35xx-kwin.sh \
+		"$pkgdir"/etc/profile.d/50-rg35xx-kwin.sh
+}
+
+systemd() {
+	install_if="$pkgname=$pkgver-r$pkgrel systemd"
+	install -Dm644 "$srcdir"/rg35xx-control-mapper.service \
+		"$subpkgdir"/usr/lib/systemd/system/rg35xx-control-mapper.service
+	mkdir -p "$subpkgdir"/usr/lib/systemd/system/multi-user.target.wants/
+	ln -sf /usr/lib/systemd/system/rg35xx-control-mapper.service \
+		"$subpkgdir"/usr/lib/systemd/system/multi-user.target.wants/rg35xx-control-mapper.service
+	default_systemd
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install"
+	install -Dm755 "$srcdir"/rg35xx-control-mapper.initd \
+		"$subpkgdir"/etc/init.d/rg35xx-control-mapper
+	default_openrc
+}
+
+sha512sums="
+28e5cc28742fe774fd936e23e4b37d3abe124d3707d4c5d401699c63718186af546efde5f051bfe21bd5e5a22c2caaf786ebfe735c26c6d2867db84646538d93  deviceinfo
+9b3529ed575c3361520a07ffffa4d45d1ba4b86e456294e47cd8a18158d5941ba8e2f030dfa1dbcf2fcf5456b31adcf6fb770f987764a7d170fe9cf0bfa16bba  30-device-firmware.files
+051afd687ba8e0e72b798c5077cb4d87f35fdea11436e17bc514a02c21a07cd4b18251b6288135453a70a9af17a62a581cc390dda84bfcc90d83352f9e5e2434  50-rg35xx-kwin.sh
+505d321d11000de7701eebdfa949513ff08dd772858840c52aa2e3d8f54f50146f1f079e4723297dd704782b84dcb5e292078767a3f428e966d9d05732263435  rg35xx-control-mapper.py
+3b2f2672b6b1c312e8d9dcbb8873c99623031f793315bbae774359e554236169fa2cd0efdf252eb356d127a621137307d81e801a92d92878848175a27c250179  rg35xx-control-mapper.service
+c27c891a840300d1c31f438ce61b77a0f3abaf09cb9018f6a2cd9be1c8a6a8dc3bd9cfea6ca01cf6ac5143882c6216e6d7e7dd2a4f1cfcfdc16f21c29bed2ec2  rg35xx-control-mapper.initd
+"

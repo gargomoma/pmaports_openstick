@@ -1,0 +1,2 @@
+#!/bin/sh
+rc-update add rg35xx-control-mapper default

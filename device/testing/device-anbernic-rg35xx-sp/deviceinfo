@@ -1,0 +1,27 @@
+# Reference: <https://postmarketos.org/deviceinfo>
+# Please use double quotes only. You can source this file in shell
+# scripts.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Anbernic RG35XX SP"
+deviceinfo_manufacturer="Anbernic"
+deviceinfo_codename="anbernic-rg35xx-sp"
+deviceinfo_year="2024"
+deviceinfo_dtb_panel_v1="sun50i-h700-anbernic-rg35xx-sp"
+deviceinfo_dtb_panel_v2="sun50i-h700-anbernic-rg35xx-sp-v2-panel"
+deviceinfo_arch="aarch64"
+
+# Device related
+deviceinfo_drm="true"
+deviceinfo_chassis="embedded"
+deviceinfo_external_storage="true"
+deviceinfo_screen_width="640"
+deviceinfo_screen_height="480"
+deviceinfo_swap_size_recommended="1024"
+
+# Bootloader related
+deviceinfo_flash_method="none"
+deviceinfo_boot_filesystem="fat16"
+deviceinfo_partition_type="msdos"
+deviceinfo_generate_extlinux_config="true"
+deviceinfo_sd_embed_firmware="u-boot/anbernic-rg35xx/u-boot-sunxi-with-spl.bin:8"
