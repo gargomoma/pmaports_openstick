@@ -678,6 +678,50 @@ SECURITY_DMESG_RESTRICT = "y"
 SECURITY_LOCKDOWN_LSM = "y"
 SECURITY_LOCKDOWN_LSM_EARLY = "y" # Ensure kernel lockdown starts early in boot
 SECURITY_YAMA = "y"
+# Randomize allocator freelists, harden metadata
+SLAB_FREELIST_RANDOM = "y"
+SLAB_FREELIST_HARDENED = "y"
+SHUFFLE_PAGE_ALLOCATOR = "y"
+# Basic stack frame overflow protection
+STACKPROTECTOR = "y"
+STACKPROTECTOR_STRONG = "y"
+# Basic buffer length bounds checking
+HARDENED_USERCOPY = "y"
+FORTIFY_SOURCE = "y"
+# Basic array index bounds checking
+UBSAN = "y"
+UBSAN_TRAP = "y"
+UBSAN_BOUNDS = "y"
+# Since UBSAN_TRAP makes all UBSAN reports fatal, disable the UBSAN
+# sanitizers that do not have security implications
+UBSAN_SHIFT = "n"
+UBSAN_DIV_ZERO = "n"
+UBSAN_UNREACHABLE = "n"
+UBSAN_INTEGER_WRAP = "n"
+UBSAN_BOOL = "n"
+UBSAN_ENUM = "n"
+UBSAN_ALIGNMENT = "n"
+# Sampling-based heap out-of-bounds and use-after-free detection
+KFENCE = "y"
+# Linked list integrity checking
+LIST_HARDENED = "y"
+# Initialize all heap variables to zero on allocation
+INIT_ON_ALLOC_DEFAULT_ON = "y"
+# Initialize all stack variables to zero on function entry
+INIT_STACK_ALL_ZERO = "y"
+# Force IOMMU TLB invalidation so devices will never be able to access stale data content
+IOMMU_SUPPORT = "y"
+IOMMU_DEFAULT_DMA_STRICT = "y"
+# Do not allow direct physical memory access
+DEVMEM = "n"
+# Attack surface reduction: do not autoload TTY line disciplines
+LDISC_AUTOLOAD = "n"
+# Dangerous; enabling this disables userspace brk ASLR
+COMPAT_BRK = "n"
+# Dangerous; exposes kernel text image layout
+PROC_KCORE = "n"
+# Attack surface reduction: Use the modern PTY interface (devpts) only
+LEGACY_PTYS = "n"
 
 # In 6.18+, CFI_CLANG is CFI
 ["category:hardening".">=6.18_rc1"."x86_64 aarch64 armv7 riscv64"]
@@ -706,6 +750,29 @@ CFI_ICALL_NORMALIZE_INTEGERS = "y" # Required for CFI with Rust
 SHADOW_CALL_STACK = "y"
 ["category:hardening".">=6.7.0"."riscv64"]
 SHADOW_CALL_STACK = "y"
+
+# Basic kernel memory permission enforcement
+["category:hardening".">=0.0.0"."aarch64 armv7 ppc64le riscv64 s390x x86 x86_64"]
+STRICT_KERNEL_RWX = "y"
+STRICT_MODULE_RWX = "y"
+
+# Kernel image and memory ASLR
+["category:hardening".">=0.0.0"."aarch64 loongarch64 riscv64 s390x x86 x86_64"]
+RANDOMIZE_BASE = "y"
+["category:hardening".">=0.0.0"."x86_64"]
+RANDOMIZE_MEMORY = "y"
+
+# Randomize kernel stack offset on syscall entry
+["category:hardening".">=0.0.0"."aarch64 loongarch64 ppc64le riscv64 s390x x86 x86_64"]
+RANDOMIZE_KSTACK_OFFSET_DEFAULT = "y"
+
+# Use a separate kmalloc bucket for user-controlled allocations
+["category:hardening".">=6.11_rc1"."all"]
+SLAB_BUCKETS = "y"
+
+# Dangerous; enabling this on x86 disables userspace VDSO ASLR
+["category:hardening".">=0.0.0"."x86 x86_64"]
+COMPAT_VDSO = "n"
 
 # Arches come from https://docs.kernel.org/rust/arch-support.html
 # riscv64 and armv7 do not set SanitizerSet::KCFI, so we cannot use them with
