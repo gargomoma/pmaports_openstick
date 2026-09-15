@@ -1,0 +1,89 @@
+# Linux kernel with patches for SM8350 devices
+maintainer="Alicja Michalska <ellyqw@mainlining.org>"
+_flavor="postmarketos-qcom-sm8350"
+pkgname=linux-$_flavor
+pkgver=7.3.0_rc1
+pkgrel=0
+pkgdesc="Mainline kernel fork for SM8350 SoCs"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.postmarketos.org/ellyq/sm8350-mainline"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-uefi
+"
+makedepends="
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+
+_commit="7a5e01b228657d1be2902ed2db131d9be44d3f9e"
+_config="config-$_flavor.$arch"
+
+# Source
+source="
+	linux-$_flavor.tar.gz::https://gitlab.postmarketos.org/ellyq/sm8350-mainline/-/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/sm8350-mainline-$_commit"
+
+prepare() {
+		default_prepare
+		cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+		        "$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+9a6d6b1e71afb1616224b7962b1819751b79ce0f4881d42a50bea8c3e94de67743163c9ca68763be942497c27a24df1610353fde7b41902d31e3440227abc714  linux-postmarketos-qcom-sm8350.tar.gz
+234b99a38d383cd7ad57e30c840bd5536924feb3d4c4661b2c6a5b80ac76acd0b4ac93fe999ea93d84a0845b7965489ed683cda0415fa09b158d32f9cf7f0615  config-postmarketos-qcom-sm8350.aarch64
+"
