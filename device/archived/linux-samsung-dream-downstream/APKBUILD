@@ -3,7 +3,7 @@
 # Kernel config based on: arch/arm64/configs/exynos8895-dreamlte_defconfig
 
 maintainer=""
-pkgname=linux-samsung-dream
+pkgname=linux-samsung-dream-downstream
 pkgver=4.4.111
 pkgrel=4
 pkgdesc="Meta package for Samsung Galaxy S8/S8+ kernel fork"

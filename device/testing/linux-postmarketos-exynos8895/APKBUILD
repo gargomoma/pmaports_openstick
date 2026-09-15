@@ -1,0 +1,90 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/defconfig
+maintainer="Jonas Heinrich <onny@project-insanity.org>"
+_flavor="postmarketos-exynos8895"
+pkgname=linux-$_flavor
+pkgver=7.0_rc1
+pkgrel=2
+pkgdesc="Close-to-mainline kernel for Samsung Exynos 8895 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="
+	!strip
+	!check
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+"
+makedepends="
+	bison
+	clang
+	clang-libclang
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	sed
+	zstd
+"
+
+_commit="6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f"
+_config="config-$_flavor.$arch"
+
+# Source
+source="
+	$pkgname-$_commit.tar.gz::https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/snapshot/linux-$_commit.tar.gz
+	$_config
+"
+
+
+builddir="$srcdir/linux-$_commit"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+	#cp -r "$builddir"/arch/arm64/boot/dts/qcom \
+	#	"$pkgdir"/boot/qcom
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+64b2672445e8cf8bdc927b236eac7ef34f6f11a8615a35636205f3026c64540ffe85afa2b74c4368b83518b56c42f5776fe4f0d57cfdb4df600fd856099c873e  linux-postmarketos-exynos8895-6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f.tar.gz
+8a21ffa3719be800f4228054b7e1074fb7dcf0d68b234c0818a875a6548b678b7dcdd31233bce9c046bce3388197dafcc0a68c807aa70675073eeae2e1662e06  config-postmarketos-exynos8895.aarch64
+"

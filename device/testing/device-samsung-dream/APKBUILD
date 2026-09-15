@@ -1,0 +1,29 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="Jonas Heinrich <onny@project-insanity.org>"
+pkgname=device-samsung-dream
+pkgdesc="Samsung Galaxy S8/S8+"
+pkgver=13
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+  uniloader-samsung-dream # wrapped kernel linux-postmarketos-exynos8895
+  mkbootimg
+  postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+8ccad52c2d089f553a8aed913131e199af18eb0ffcdd996fab6cf246eaf9fd3fad4e858b8b719b3a6e5c1b053e983dd2effc85f5ec0fb0e6a4d22d95ae197746  deviceinfo
+"

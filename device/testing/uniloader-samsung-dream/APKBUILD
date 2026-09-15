@@ -1,0 +1,35 @@
+maintainer="Jonas Heinrich <onny@project-insanity.org>"
+pkgname=uniloader-samsung-dream
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Samsung Dream AArch64 boot shim"
+url="https://github.com/ivoszbg/uniLoader/"
+arch="noarch"
+license="GPL-2.0-only"
+makedepends="gcc-aarch64 linux-postmarketos-exynos8895"
+options="!check pmb:cross-native"
+_commit="831c31bac9fc93f4787d6349006766844fdeb7b2"
+_kernpkg="linux-postmarketos-exynos8895"
+_dtb="exynos8895-dreamlte.dtb"
+source="uniLoader-$_commit.tar.gz::https://github.com/ivoszbg/uniLoader/archive/$_commit.tar.gz"
+builddir="$srcdir/uniLoader-$_commit"
+
+build() {
+	# Stage kernel Image and devicetree blob from the exynos8895 kernel
+	# package before invoking uniLoader's own make-based build
+	cp "/usr/share/kernel/$_kernpkg/Image" blob/Image
+	cp "/usr/share/dtb/$_kernpkg/$_dtb" blob/dtb
+
+	make ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- dreamlte_defconfig
+	make ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu-
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	install -Dm644 "$builddir/uniloader" \
+		"$pkgdir/boot/bootshim"
+}
+
+sha512sums="
+9496326f1561695f8279db8acf992aa8ba64212ede7e0ffd9e45e193cbea13c5c68eccb8f2a9fe9b35cf523d4e302df594d19119b63f5bdbce3b45732b3f457f  uniLoader-831c31bac9fc93f4787d6349006766844fdeb7b2.tar.gz
+"

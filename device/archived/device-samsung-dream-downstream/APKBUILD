@@ -1,7 +1,7 @@
 # Archived: unmaintained
 # Reference: <https://postmarketos.org/devicepkg>
 maintainer=""
-pkgname=device-samsung-dream
+pkgname=device-samsung-dream-downstream
 pkgdesc="Samsung Galaxy S8/S8+"
 pkgver=5
 pkgrel=0
