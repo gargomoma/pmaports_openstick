@@ -1,0 +1,51 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="sleirsgoevy <sleirsgoevy@gmail.com>"
+pkgname=device-sony-ps5
+pkgdesc="Sony PlayStation 5"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="x86_64"
+options="!check !archcheck"
+depends="
+	linux-sony-ps5
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	boot-PS5-Linux-path-override.txt
+	deviceinfo
+	modules-initfs
+	usr-lib-kernel-cmdline.d-99-ps5.conf
+	usr-share-boot-deploy-hooks-99-ps5.sh
+	usr-share-mkinitfs-files-extra-99-ps5-amdgpu-firmware.txt
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm755 "$srcdir/usr-share-boot-deploy-hooks-99-ps5.sh" "$pkgdir/usr/share/boot-deploy/hooks/99-ps5.sh"
+	install -Dm644 "$srcdir/usr-lib-kernel-cmdline.d-99-ps5.conf" "$pkgdir/usr/lib/kernel-cmdline.d/99-ps5.conf"
+	install -Dm644 "$srcdir/boot-PS5-Linux-path-override.txt" "$pkgdir/boot/PS5/Linux/path-override.txt"
+}
+
+nonfree_firmware() {
+	depends="linux-firmware-amdgpu"
+
+	install -Dm644 "$srcdir/usr-share-mkinitfs-files-extra-99-ps5-amdgpu-firmware.txt" "$subpkgdir/usr/share/mkinitfs/files-extra/99-ps5-amdgpu-firmware.txt"
+}
+
+sha512sums="
+722e4594fe9f250524c20d1b108318e6f9410c226583ac785ba537057368ceb33de7833db7aae0a9d1df6bb93c3df35d8ab178bc10517ebca817c07c370c392c  boot-PS5-Linux-path-override.txt
+bfcdd7840157f7d40c7ffa2bdb4bb900b2f5aabbb80f1376c9e294c53395746b384dc7c8317bb0afad4666d84ff530174938ed271a035b4dda5d914b5af0e784  deviceinfo
+f56b5293f88727bb4fcceb2a347527402dd0938e96403461b1e2a6821cc00a4e680f58770addd7ba1ded20a187f91ccfd6270bc8bd28c6eae75cc075952361ca  modules-initfs
+e2ea20f426d02913cf68d05904d7755ce999cfbd34bcddf11b0f45636e798e1ce8d76d6cb05b79a4191584af3c8506d7141514ccbd39b6a93deedae68ea25471  usr-lib-kernel-cmdline.d-99-ps5.conf
+cfa15744ed32013aa66dd0070fa0ba96d8a95a7c0d52792a6951ab3acf4f34869aab4a558ca105058a37def643009fc47491b857ec95521dd09f1a284b2902bb  usr-share-boot-deploy-hooks-99-ps5.sh
+681f534bdbaa3b086911c0d2e00d807aee5bd3e6ddf5755225b36232022db92577f8b79375e1a6d4e6b2fe0a8299f3795d06bf030bd2355407f1c8a558405945  usr-share-mkinitfs-files-extra-99-ps5-amdgpu-firmware.txt
+"

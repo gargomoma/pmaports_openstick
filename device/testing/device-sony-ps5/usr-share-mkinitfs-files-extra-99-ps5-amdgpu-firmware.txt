@@ -1,0 +1,8 @@
+/usr/lib/firmware/amdgpu/cyan_skillfish2_ce.bin.zst
+/usr/lib/firmware/amdgpu/cyan_skillfish2_me.bin.zst
+/usr/lib/firmware/amdgpu/cyan_skillfish2_mec.bin.zst
+/usr/lib/firmware/amdgpu/cyan_skillfish2_mec2.bin.zst
+/usr/lib/firmware/amdgpu/cyan_skillfish2_pfp.bin.zst
+/usr/lib/firmware/amdgpu/cyan_skillfish2_rlc.bin.zst
+/usr/lib/firmware/amdgpu/cyan_skillfish2_sdma.bin.zst
+/usr/lib/firmware/amdgpu/cyan_skillfish2_sdma1.bin.zst

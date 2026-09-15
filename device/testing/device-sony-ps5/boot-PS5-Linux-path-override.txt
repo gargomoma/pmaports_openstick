@@ -1,0 +1,2 @@
+bzImage=vmlinuz
+initrd.img=initramfs

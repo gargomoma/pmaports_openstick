@@ -1,0 +1,71 @@
+# Kernel config based on config provided by TheFlow
+maintainer="sleirsgoevy <sleirsgoevy@gmail.com>"
+pkgname=linux-sony-ps5
+pkgver=7.0.3
+pkgrel=0
+pkgdesc="Sony PlayStation 5 kernel fork"
+arch="x86_64"
+_carch="x86_64"
+_flavor="sony-ps5"
+url="https://github.com/TheOfficialFloW/ps5-linux-patches"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	gawk
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	perl
+	postmarketos-installkernel
+"
+
+# Source
+_commit=59bb64ec3475b4f47c5453923ee1fbc728c92291
+_config="config-$_flavor.$arch"
+source="
+	linux-$pkgver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-$pkgver.tar.xz
+	ps5-linux-$_commit.patch::https://github.com/ps5-linux/ps5-linux-patches/raw/$_commit/linux.patch
+	$_config
+"
+builddir="$srcdir/linux-$pkgver"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make install modules_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir/usr" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+}
+
+sha512sums="
+790451565141e072b383bbd305b171ea1b2235e691507d012a0abab80a9430f8f2a7263077411780c3aef627d1463c23f53e42bf4982cdefdf1e1b27ba770207  linux-7.0.3.tar.xz
+0f17dc69332486f1981c229a1adf486b50fdf1bcafee9418982083ac16c1d68c56f1c3cabc581bbdddd9c86ea94b68eea111963811add2828085ae21ea9ef036  ps5-linux-59bb64ec3475b4f47c5453923ee1fbc728c92291.patch
+1febe058570e2f143fe32c1a721dd74f9b6a205a5e657b914f204c1c9161b934a8cedee61da38283ab499bfba8833c99183ccb022be9dd8f103edfb467d93e72  config-sony-ps5.x86_64
+"
