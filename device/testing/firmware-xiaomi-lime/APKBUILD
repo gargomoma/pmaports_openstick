@@ -1,0 +1,52 @@
+pkgname=firmware-xiaomi-lime
+pkgdesc="Firmware for Xiaomi Redmi 9T (lime)"
+pkgver=1
+pkgrel=0
+maintainer="Heit0r <heitordrp@proton.me>"
+url="https://github.com/heit0r/firmware-xiaomi-lime"
+arch="aarch64"
+license="proprietary"
+source="https://github.com/heit0r/firmware-xiaomi-lime/releases/download/v14.0.3.0-sjqmixm/firmware-xiaomi-lime.tar.gz"
+options="!archcheck !check !strip !tracedeps pmb:cross-native"
+
+package() {
+	install -Dm644 -t "$pkgdir/usr/lib/firmware/qcom/sm6115/xiaomi/lime" \
+		"$srcdir/$pkgname"/a610_zap.*
+
+	ln -sf a610_zap.mdt "$pkgdir/usr/lib/firmware/qcom/sm6115/xiaomi/lime/a610_zap.mbn"
+
+	install -Dm644 -t "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime" \
+		"$srcdir/$pkgname"/adsp.* \
+		"$srcdir/$pkgname"/adspr.jsn \
+		"$srcdir/$pkgname"/adsps.jsn \
+		"$srcdir/$pkgname"/adspua.jsn \
+		"$srcdir/$pkgname"/cdsp.* \
+		"$srcdir/$pkgname"/cdspr.jsn \
+		"$srcdir/$pkgname"/ipa_fws.* \
+		"$srcdir/$pkgname"/modem.* \
+		"$srcdir/$pkgname"/modemr.jsn \
+		"$srcdir/$pkgname"/modemuw.jsn \
+		"$srcdir/$pkgname"/wlanmdsp.mbn \
+		"$srcdir/$pkgname"/regdb.bin \
+		"$srcdir/$pkgname"/bdwlan.* \
+		"$srcdir/$pkgname"/venus.*
+
+	ln -sf adsp.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/adsp.mbn"
+	ln -sf cdsp.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/cdsp.mbn"
+	ln -sf ipa_fws.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/ipa_fws.mbn"
+	ln -sf modem.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/modem.mbn"
+	ln -sf venus.mdt "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/venus.mbn"
+
+	install -Dm644 "$srcdir/$pkgname"/bdwlan.bin \
+		"$pkgdir/usr/lib/firmware/ath10k/WCN3990/hw1.0/board.bin"
+
+	if [ -d "$srcdir/$pkgname/modem_pr" ]; then
+		mkdir -p "$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/modem_pr"
+		cp -a "$srcdir/$pkgname"/modem_pr/* \
+			"$pkgdir/usr/lib/firmware/postmarketos/qcom/sm6115/xiaomi/lime/modem_pr/"
+	fi
+}
+
+sha512sums="
+4cb279f47c09ba5a5c0329b3a58f56e3e2e1ebf25dc03efeb01a0037beaee54656a642acbb77d85bf04d04982b83ef7a9c1442c94744d3a9bc73a563b724c866  firmware-xiaomi-lime.tar.gz
+"

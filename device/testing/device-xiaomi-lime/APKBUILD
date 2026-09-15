@@ -1,0 +1,42 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-lime
+pkgdesc="Xiaomi Redmi 9T (lime)"
+pkgver=1
+pkgrel=0
+maintainer="Heit0r <heitordrp@proton.me>"
+url="https://postmarketos.org"
+arch="aarch64"
+license="MIT"
+depends="
+	firmware-qcom-adreno-a630-sqe
+	firmware-xiaomi-lime
+	linux-postmarketos-qcom-sm6115
+	mkbootimg
+	pd-mapper
+	postmarketos-base
+	qrtr
+	rmtfs
+	tqftpserv
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	30-gpu-firmware.files
+"
+options="!archcheck !check"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/30-gpu-firmware.files \
+		"$pkgdir"/usr/share/mkinitfs/files/30-gpu-firmware.files
+}
+
+sha512sums="
+74d50787065ee8cd6f6bdbe26a7d0f26d94b038137a5210523052e489a7ee117158873b39ee7ad2664800ddbc2b21d00a7813b5ee4a3b7fdb3cda2bde1799ee7  deviceinfo
+8e1897cfdeb75b260bc8c9a23144ad1926468893f98ff93367a1cde03e2507bbc6fbfb6e8490502060ee0a4071ed658867ff667928c076a3a3fe33b990a42b74  30-gpu-firmware.files
+"
