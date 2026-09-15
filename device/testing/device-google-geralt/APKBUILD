@@ -1,0 +1,40 @@
+# Co-Maintainer: Alicja Michalska <ellyqw@mainlining.org>
+maintainer="Ingo Reitz <9l@9lo.re>"
+pkgname=device-google-geralt
+pkgdesc="Google Geralt Chromebooks"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	depthcharge-tools
+	linux-firmware-mediatek
+	linux-postmarketos-mediatek-mt81
+	postmarketos-base
+	postmarketos-cros-common
+	soc-mediatek-mt8183
+"
+makedepends="devicepkg-dev"
+_ucm_commit="b728563a07ebcd05545c60989412ae023b1dd06d"
+source="deviceinfo
+	kernel-cmdline.conf
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	# TODO: alsa ucm?
+}
+
+sha512sums="
+9cb3e616846fff1976132636ee26d39183de34ee7ed50eec7901161b1bfce0e1ed7c7092ec779126088dc72d8bc828b3694236f439658d11ac9a7329fb2e3742  deviceinfo
+f1d9aad30b2bb51e766c3f87a923c48839d002eb52aa04aa1ea75b9003c37513d94d4a0932bd25ab9365236bf22afff5d528b1986afba7106f7129532fd93612  kernel-cmdline.conf
+12a1fe8982e4e0c28fce46d0cb697227b3dcd8c6738a7fa3f965fc375ff0d22c44964be0d66a5fc7feec587499b57bb691cc32762723ed3bf942b05574c25f56  modules-initfs
+"
