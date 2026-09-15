@@ -416,6 +416,7 @@ MFD_MAX77705 = "m"
 POWERCAP = "y"
 REGULATOR = "y"
 SPMI = "y"
+CONFIG_ACPI_SBS = "m"
 ["category:power".">=0.0.0"."aarch64"]
 BATTERY_LENOVO_YOGA_C630 = "m"
 BATTERY_SURFACE = "m"
