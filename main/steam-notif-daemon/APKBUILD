@@ -1,0 +1,29 @@
+maintainer="Victoria Brekenfeld <github@drakulix.de>"
+pkgname=steam-notif-daemon
+pkgver=1.0.1
+pkgrel=0
+pkgdesc="Steam notification daemon"
+url="https://github.com/evlaV/steam_notif_daemon"
+arch="all"
+license="MIT"
+makedepends="meson systemd-dev curl-dev"
+source="
+	$pkgname-$pkgver.zip::https://github.com/evlaV/steam_notif_daemon/archive/refs/tags/v$pkgver.zip
+	0001-use-steam-from-PATH.patch
+"
+options="!check" # no tests
+builddir="$srcdir/steam_notif_daemon-$pkgver"
+
+build() {
+	abuild-meson . output
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+9a43c6930500930da05b63c753dcca04b87382880efb06c3014ecd72e3dd3adb28ad4dd3252c4960814e775841392f1c0cfbd9fcedfe7f484fb7362e9b1f1d4d  steam-notif-daemon-1.0.1.zip
+3dcee0d71e0f00e91f932af28806967d471d5f1202bc0d96a456c4ef9925dd960691e51ef8fbfb75247d8b162c1e87ba44134c758b33ce83c604e8d1e7d857c9  0001-use-steam-from-PATH.patch
+"

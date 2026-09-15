@@ -14,6 +14,8 @@ deviceinfo_arch="aarch64"
 deviceinfo_chassis="tablet"
 deviceinfo_external_storage="true"
 deviceinfo_drm="true"
+# Faster EDL and fastboot flashing
+deviceinfo_flash_sparse="true"
 
 # Bootloader related
 deviceinfo_boot_filesystem="fat16"

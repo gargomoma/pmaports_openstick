@@ -1,0 +1,34 @@
+From 93397ec7330c208419a824e0b383cab539e68e5a Mon Sep 17 00:00:00 2001
+From: Casey Connolly <casey.connolly@linaro.org>
+Date: Fri, 5 Jun 2026 15:36:14 +0200
+Subject: [PATCH] Add support for the Ayaneo Pocket S2
+
+Use device-tree to identify it since DMI may not be available
+---
+ usr/share/gamescope-session-plus/device-quirks | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/usr/share/gamescope-session-plus/device-quirks b/usr/share/gamescope-session-plus/device-quirks
+index 75e216a02e7d..2eb0c45b559f 100644
+--- a/usr/share/gamescope-session-plus/device-quirks
++++ b/usr/share/gamescope-session-plus/device-quirks
+@@ -240,4 +240,16 @@ if [ -f "$xg_mobile_file_path" ]; then
+       export VULKAN_ADAPTER="1002:249c"
+     fi
+   fi
+ fi
++
++# Ayaneo Pocket S2 (devicetree)
++MODEL_ID="$(cat /sys/firmware/devicetree/base/model)"
++if [[ "$MODEL_ID" == "AYANEO Pocket S2 (Pro)"*  ]]; then
++ OUTPUT_CONNECTOR='*,DSI-0'
++ PANEL_TYPE=internal
++ ORIENTATION=right
++ USE_ROTATION_SHADER=1
++
++ export STEAM_DISPLAY_REFRESH_LIMITS=60,60
++ export STEAM_ENABLE_STATUS_LED_BRIGHTNESS=1
++fi
+-- 
+2.54.0
+

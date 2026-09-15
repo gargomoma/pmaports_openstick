@@ -1,0 +1,10 @@
+[Unit]
+ConditionPathExists=!/etc/plasmalogin.conf.d/steamos.conf
+Before=display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'echo -e "[Autologin]\nUser=$(getent passwd 10000 | cut -d : -f 1)\nSession=gamescope-session-steam\nRelogin=true" > /etc/plasmalogin.conf.d/steamos.conf'
+
+[Install]
+WantedBy=graphical.target

@@ -1,0 +1,71 @@
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=decky-loader
+pkgver=3.2.6
+pkgrel=0
+pkgdesc="A plugin loader for the Steam Deck"
+url="https://github.com/SteamDeckHomebrew/decky-loader"
+arch="all"
+depends="
+	py3-aiohttp
+	py3-aiohttp-jinja2
+	py3-aiohttp-cors
+	py3-watchdog
+	py3-certifi
+	py3-packaging
+	py3-multidict
+	py3-setproctitle
+"
+makedepends="
+	nodejs
+	pnpm
+	python3-dev
+	py3-poetry-core
+	py3-gpep517
+"
+license="GPL-2"
+options="!check"
+
+source="
+	$pkgname-v$pkgver.tar.gz::https://github.com/SteamDeckHomebrew/decky-loader/archive/refs/tags/v$pkgver.tar.gz
+	decky-loader.service
+	0001-build-use-system-dependencies.patch
+	0002-frontend-Hide-updater.patch
+	0003-frontend-Add-pmos-warning.patch
+	91-decky-loader.preset
+"
+
+subpackages="
+	$pkgname-systemd
+	$pkgname-pyc
+"
+
+prepare() {
+	default_prepare
+
+	cd "$builddir"/frontend
+	pnpm i --frozen-lockfile --dangerously-allow-all-builds
+}
+
+build() {
+	cd "$builddir"/frontend
+	pnpm run build
+
+	cd "$builddir"/backend
+	export POETRY_DYNAMIC_VERSIONING_BYPASS="$pkgver"
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" "$builddir"/backend/.dist/*.whl
+	install -Dm644 "$srcdir"/decky-loader.service "$pkgdir"/usr/lib/systemd/user/decky-loader.service
+	install -Dm644 "$srcdir"/91-decky-loader.preset -t "$pkgdir"/usr/lib/systemd/user-preset/
+}
+
+sha512sums="
+c05a4988332040a97fe15666527fb6a56542d323c3b70d89d6cb61841710188ff747bb7aef44316734156d0b2e37c3d450f6d49e5af15da3f9caff4042985766  decky-loader-v3.2.6.tar.gz
+a661b3df1d99c3ee8b75676562791ec2d7ab9cd55022fd3334434102f741c23e2733de34c2f08a8b16d642afe3fa27f3b68411705444e825bb9d2a3d60b55220  decky-loader.service
+e0413a001bda30be7f770587fdf4d6ef0e73088df0e00bd999b2db386a845ea20c83310bb80e57fda5011430cb449a2dfa28cfd96b129b085a0d927359af4b6a  0001-build-use-system-dependencies.patch
+a536a78d8f07fc4087fc52e24cc4da92c9c0526d0235412d180418861d40a1a062d3587a6f26672fa38da993d1129381649339cb5521e301656fd5b0b4d06d0f  0002-frontend-Hide-updater.patch
+dab11d90d624c1443d8379f1cef80e4a286318416908aa944614a3af7316bd0dfd8f62ed7f9f2485f29cef50d8ba884e6aafe3f5858cab7e400981223454eddb  0003-frontend-Add-pmos-warning.patch
+7e43797f0d3804026388ad20a3e9f2148ca4d5bbd188b5fa0583abcb87c261d65f543eb1f969683a14b3c4502e700b6c22bb454916f93c38c2dc2016a1ff64ce  91-decky-loader.preset
+"

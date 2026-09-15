@@ -1,0 +1,43 @@
+version: 1
+kind: CompositeDevice
+name: AYANEO Pocket S2 (Pro)
+
+maximum_sources: 0
+options:
+    auto_manage: true
+
+matches:
+    - udev:
+          sys_path: /sys/firmware/devicetree/base
+          attributes:
+              - name: compatible
+                value: ayaneo,pocket-s2
+
+source_devices:
+    - group: gamepad
+      capability_map_id: aya9
+      evdev:
+          name: AYANEO Controller
+          vendor_id: 4001
+          product_id: 0428
+          handler: event*
+    - group: keyboard
+      capability_map_id: aya10
+      evdev:
+          name: AYANEO DEVICE
+          vendor_id: 1c4f
+          product_id: 0002
+          handler: event*
+    - group: gamepad
+      hidraw:
+          vendor_id: 0x4001
+          product_id: 0x0428
+    - group: keyboard
+      hidraw:
+          vendor_id: 0x1c4f
+          product_id: 0x0002
+
+target_devices:
+    - deck-uhid
+    - keyboard
+    - mouse

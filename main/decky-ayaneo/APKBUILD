@@ -1,0 +1,44 @@
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=decky-ayaneo
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="A plugin for decky to control ayaneo-platformd"
+url="https://gitlab.postmarketos.org/condenser/decky-ayaneo"
+arch="noarch"
+depends="
+	decky-loader
+	ayaneo-platformd
+"
+makedepends="
+	nodejs
+	pnpm
+"
+license="BSD-3"
+options="!check"
+_tag="v$pkgver"
+
+source="$pkgname-v$pkgver.tar.gz::https://gitlab.postmarketos.org/condenser/decky-ayaneo/-/archive/$_tag/decky-ayaneo-$_tag.tar.gz"
+builddir="$srcdir/$pkgname-v$pkgver"
+
+prepare() {
+	default_prepare
+	pnpm i
+}
+
+build() {
+	pnpm run build
+}
+
+package() {
+	install -Dm644 "$builddir"/main.py -t "$pkgdir"/usr/share/decky-loader/plugins/ayaneo/
+	install -Dm644 "$builddir"/plugin.json -t "$pkgdir"/usr/share/decky-loader/plugins/ayaneo/
+	install -Dm644 "$builddir"/package.json -t "$pkgdir"/usr/share/decky-loader/plugins/ayaneo/
+	install -Dm644 "$builddir"/decky.pyi -t "$pkgdir"/usr/share/decky-loader/plugins/ayaneo/
+	install -Dm644 "$builddir"/LICENSE -t "$pkgdir"/usr/share/decky-loader/plugins/ayaneo/
+	cp -R "$builddir"/dist "$pkgdir"/usr/share/decky-loader/plugins/ayaneo/
+	cp -R "$builddir"/py_modules "$pkgdir"/usr/share/decky-loader/plugins/ayaneo/
+}
+
+sha512sums="
+0edcc0b3a3828b76e1c1a48da7e17b6e93f1bac5f4a85138f724d8b9b651f952ec9eae3ee612361ed8245baaf9b8210492e316ab0490ed68d0f80cecdc73f8c7  decky-ayaneo-v1.0.0.tar.gz
+"

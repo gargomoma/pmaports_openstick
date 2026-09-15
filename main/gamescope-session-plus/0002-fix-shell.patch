@@ -1,0 +1,10 @@
+diff --git a/usr/bin/gamescope-session-plus b/usr/bin/gamescope-session-plus
+index cf2a7a8..6a7ae86 100755
+--- a/usr/bin/gamescope-session-plus
++++ b/usr/bin/gamescope-session-plus
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/bin/bash
+ 
+ declare -r CLIENT=$1
+ 

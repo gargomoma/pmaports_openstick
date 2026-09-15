@@ -1,0 +1,71 @@
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=inputplumber
+pkgver=0.73.0
+pkgrel=0
+pkgdesc="Open source input router and remapper daemon for Linux"
+url="https://github.com/ShadowBlip/InputPlumber"
+arch="aarch64 x86_64"
+license="GPL-3.0"
+options="!pmb:crossdirect !check"
+makedepends="
+	sccache
+	cargo
+	rust
+	clang21-dev
+	eudev-dev
+	libiio-dev
+	linux-headers
+	"
+checkdepends="rust-clippy"
+source="
+    $pkgname-$pkgver.zip::https://github.com/ShadowBlip/InputPlumber/archive/refs/tags/v$pkgver.zip
+    91-inputplumber.preset
+"
+builddir="$srcdir/InputPlumber-$pkgver"
+
+subpackages="
+	$pkgname-udev:udev:noarch
+	$pkgname-systemd:systemd:noarch
+	$pkgname-polkit:polkit:noarch
+	$pkgname-dbus:dbus:noarch
+	"
+
+check() {
+	cd $builddir
+	make test
+}
+
+build() {
+	cd $builddir
+	cargo build --release --target $CHOST --locked
+}
+
+package() {
+    make install PREFIX="$pkgdir"/usr
+}
+
+udev() {
+    default_udev
+}
+
+systemd() {
+	default_systemd
+	install -Dm644 "$srcdir"/91-inputplumber.preset -t "$pkgdir"/usr/lib/systemd/system-preset/
+}
+
+polkit() {
+	pkgdesc="$pkgname (polkit policies)"
+	install_if="$pkgname=$pkgver-r$pkgrel polkit"
+	amove usr/share/polkit-1
+}
+
+dbus() {
+	pkgdesc="$pkgname (dbus files)"
+	install_if="$pkgname=$pkgver-r$pkgrel dbus"
+	amove usr/share/dbus-1
+}
+
+sha512sums="
+210e5f8214d9110591a0703c87ab7adf8de9f412329876cd8a8095a3d87ba32568854ce7fc40888d7c14e59794283194a66466f19507e36396c901778665ce2a  inputplumber-0.73.0.zip
+8188e18e216feca10abb272af815d77a9f68a21208959dd3b30da3907c0273009e52220ed466b27672d22254d297e2177acdf05bf0c6fff9805e213b34789b58  91-inputplumber.preset
+"

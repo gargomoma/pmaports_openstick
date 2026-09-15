@@ -1,0 +1,59 @@
+
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=steamos-manager
+pkgver=26.0.0
+pkgrel=1
+pkgdesc="SteamOS Manager is a system daemon that aims to abstract Steam's interactions with the operating system."
+url="https://gitlab.steamos.cloud/holo/steamos-manager"
+arch="all"
+license="MIT"
+options="!check !pmb:crossdirect"
+depends="orca"
+makedepends="
+	sccache
+	cargo
+	rust
+	clang21-dev
+	eudev-dev
+	glib-dev
+	speech-dispatcher-dev
+	"
+depends="pipewire-tools"
+source="
+	https://gitlab.steamos.cloud/holo/steamos-manager/-/archive/v$pkgver/steamos-manager-v$pkgver.tar.gz
+	0001-use-gamescope-session-plus.patch
+	0002-use-plasmalogin.patch
+	91-steamos-manager.preset
+	"
+builddir="$srcdir/$pkgname-v$pkgver"
+
+subpackages="
+	$pkgname-systemd
+	$pkgname-dbus:dbus:noarch
+"
+
+build() {
+	make
+}
+
+package() {
+	make install DESTDIR="$pkgdir"
+	# conflicts with alpines orca package
+	rm $pkgdir/usr/lib/systemd/user/orca.service
+
+	install -Dm644 "$srcdir"/91-steamos-manager.preset -t "$pkgdir"/usr/lib/systemd/system-preset/
+	install -Dm644 "$srcdir"/91-steamos-manager.preset -t "$pkgdir"/usr/lib/systemd/user-preset/
+}
+
+dbus() {
+	pkgdesc="DBus configs for $pkgname"
+	install_if="$pkgname=$pkgver-r$pkgrel dbus"
+	amove usr/share/dbus-1
+}
+
+sha512sums="
+aec86ba61a9c388813375f854df813b87fc587a982f5bfcef651d46df7193237c0cbe174920f5f3ed3e796634f91a9009ba4b1848f3d4c2571f6e1e85558263f  steamos-manager-v26.0.0.tar.gz
+f8c3cee2fb566bd1a86803b661c84569e480bc415b59adcfe8f3c708403e1a4158ab5cc579549ca4e60b96faaffd0f1df96d7c271a9dd3693a99ee90039855f3  0001-use-gamescope-session-plus.patch
+5e5ce67db53f6444c7b8480722f59879e0a8451c986c90013a8828782f1e306fc2210b9725fd3159cf6893962e10d9ef421180bfc2a08898918d58a4fbcec874  0002-use-plasmalogin.patch
+cdd210dcccc0a317ce0166d666bb8fda15bfb5da87c5271f1e3c6c2c38a58776347f698c3b874032545954c84093a6655e68407907f7f049863d59a8e0d76889  91-steamos-manager.preset
+"

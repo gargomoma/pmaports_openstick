@@ -52,6 +52,11 @@ source="
 	linux7.0-resolve_btfids-preserve-tag-and-parameter-names-when.patch
 	misc.config
 	$_config
+	0004-fex-32-bit-input.patch
+	0005-fan-node.patch
+	0007-fix-touchscreen-misconfig.patch
+	0001-WIP-try-to-avoid-panic-on-adsp-crash.patch
+	0001-linux7.0-resolve_btfids-preserve-tag-and-parameter-names-when.patch
 "
 builddir="$srcdir/$_repository-$_commit"
 
@@ -90,4 +95,9 @@ sha512sums="
 4e705e038a91466a86fc5317b0028c2220aa1e7a4807e5d86db2f9ac815a927c59666a8f21ed50c4632147d3ce183d8042378a76f95341dbcd3db1047faf39e3  linux7.0-resolve_btfids-preserve-tag-and-parameter-names-when.patch
 f7712cb52ab2abae02deb3f90d0bdba83bcdf1af9b5f4fdb97963d729d1a0161301ecb3b5948dcd7a7f182c14e52d3863ec48f22a00276008d3bb0615d29ba68  misc.config
 8903dff83b2c82d278d96c6e154ab8e0e3f1ccc671992ccbf6169e4c6ec8ae4ff5d20ee6ba1ef526ef7c322a0b5cd77a1f8fa2f0353ce2b1786bce32d017e4b8  config-ayaneo-pocket-s2.aarch64
+5d232b7102c079fa78cee04119f612973dfd07fa295e5ee330dc93a830edfecf418627dfd1a417f58fa7251cd9eba1d968cc8593efe8037148ad7e1e52259796  0004-fex-32-bit-input.patch
+8c5f4da8f4c69aa427864729797a1b3168d1ef38c055d6b9d69638483be61bf0d86ccb0f347c8fc937c88fcf3eefb06203e611b11fa675f2528ffbc7417c9452  0005-fan-node.patch
+fc1e7dd6cc5be46825d0a3a42aae4a751c4fa5c194855df396881ba10b2fc7255917ec45fb2d61702b34f8b64b79a0d4450904ebcd93777494f2f4fc34c83602  0007-fix-touchscreen-misconfig.patch
+0d8b71e593c8164d5c5437fc56e956bea88f7ba5e28b3d889bb5ea561b48a73e2a52ad9539a3ccd19838b3ff4da05e0285d44a81b51a0ac278552a6468e89340  0001-WIP-try-to-avoid-panic-on-adsp-crash.patch
+4e705e038a91466a86fc5317b0028c2220aa1e7a4807e5d86db2f9ac815a927c59666a8f21ed50c4632147d3ce183d8042378a76f95341dbcd3db1047faf39e3  0001-linux7.0-resolve_btfids-preserve-tag-and-parameter-names-when.patch
 "

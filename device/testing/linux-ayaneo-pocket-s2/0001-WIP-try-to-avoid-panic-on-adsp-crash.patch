@@ -1,0 +1,126 @@
+From e2a269821cb354e8bcf8af9768790d263ed909a2 Mon Sep 17 00:00:00 2001
+From: Casey Connolly <casey.connolly@linaro.org>
+Date: Sat, 6 Jun 2026 19:58:25 +0200
+Subject: [PATCH] WIP: try to avoid panic on adsp crash
+
+The adsp can crash causing APR cmds to timeout but then we somehow get a
+response (maybe after adsp reset??), or it's just really slow to respond
+for some reason, it might trigger a null ptr in graph_callback(), so try
+to avoid that by stashing the error and avoiding processing callbacks
+while in the error state.
+
+This probably doesn't work and hasn't been tested since it's hard to
+reproduce the issue :)
+
+Signed-off-by: Casey Connolly <casey.connolly@linaro.org>
+---
+ drivers/soc/qcom/apr.c            |  1 +
+ include/linux/soc/qcom/apr.h      |  1 +
+ sound/soc/qcom/qdsp6/audioreach.c |  5 +++++
+ sound/soc/qcom/qdsp6/q6apm.c      | 15 +++++++++++----
+ 4 files changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/soc/qcom/apr.c b/drivers/soc/qcom/apr.c
+index 78e72379a6e0..1b2bdf517b71 100644
+--- a/drivers/soc/qcom/apr.c
++++ b/drivers/soc/qcom/apr.c
+@@ -116,8 +116,9 @@ gpr_port_t *gpr_alloc_port(struct apr_device *gdev, struct device *dev,
+ 		return ERR_PTR(id);
+ 	}
+ 
+ 	svc->id = id;
++	svc->err = 0;
+ 	spin_unlock(&pr->svcs_lock);
+ 
+ 	return port;
+ }
+diff --git a/include/linux/soc/qcom/apr.h b/include/linux/soc/qcom/apr.h
+index 6e1b1202e818..59636b209dd6 100644
+--- a/include/linux/soc/qcom/apr.h
++++ b/include/linux/soc/qcom/apr.h
+@@ -129,8 +129,9 @@ struct pkt_router_svc {
+ 	gpr_port_cb callback;
+ 	struct packet_router *pr;
+ 	spinlock_t lock;
+ 	int id;
++	int err;
+ 	void *priv;
+ };
+ 
+ typedef struct pkt_router_svc gpr_port_t;
+diff --git a/sound/soc/qcom/qdsp6/audioreach.c b/sound/soc/qcom/qdsp6/audioreach.c
+index 0a8ee3c2a473..bf2a977eb492 100644
+--- a/sound/soc/qcom/qdsp6/audioreach.c
++++ b/sound/soc/qcom/qdsp6/audioreach.c
+@@ -584,8 +584,11 @@ int audioreach_send_cmd_sync(struct device *dev, gpr_device_t *gdev,
+ 
+ 	struct gpr_hdr *hdr = &pkt->hdr;
+ 	int rc;
+ 
++	if (hdr)
++		dev_info(dev, "%s: CMD [%x] (rsp [%x])\n", __func__, hdr->opcode, rsp_opcode);
++
+ 	mutex_lock(cmd_lock);
+ 	result->opcode = 0;
+ 	result->status = 0;
+ 
+@@ -616,8 +619,10 @@ int audioreach_send_cmd_sync(struct device *dev, gpr_device_t *gdev,
+ 		rc = 0;
+ 	}
+ 
+ err:
++	if (port)
++		port->err = rc;
+ 	mutex_unlock(cmd_lock);
+ 	return rc;
+ }
+ EXPORT_SYMBOL_GPL(audioreach_send_cmd_sync);
+diff --git a/sound/soc/qcom/qdsp6/q6apm.c b/sound/soc/qcom/qdsp6/q6apm.c
+index 970b08c89bb3..30cd42265dde 100644
+--- a/sound/soc/qcom/qdsp6/q6apm.c
++++ b/sound/soc/qcom/qdsp6/q6apm.c
+@@ -192,11 +192,9 @@ int q6apm_graph_media_format_shmem(struct q6apm_graph *graph,
+ 
+ 	if (!module)
+ 		return -ENODEV;
+ 
+-	audioreach_set_media_format(graph, module, cfg);
+-
+-	return 0;
++	return audioreach_set_media_format(graph, module, cfg);
+ 
+ }
+ EXPORT_SYMBOL_GPL(q6apm_graph_media_format_shmem);
+ 
+@@ -504,8 +502,17 @@ static int graph_callback(const struct gpr_resp_pkt *data, void *priv, int op)
+ 	int token;
+ 
+ 	result = data->payload;
+ 
++	if (hdr->opcode != DATA_CMD_RSP_WR_SH_MEM_EP_DATA_BUFFER_DONE_V2)
++		dev_info(dev, "%s: CMD [%x] resp [%x] status %u\n", __func__, hdr->opcode, result->opcode, result->status);
++
++	if (graph->port->err) {
++		dev_err(dev, "%s in error state %d. CMD [%x] resp [%x] status %u\n", __func__,
++			graph->port->err, hdr->opcode, result->opcode, result->status);
++		return graph->port->err;
++	}
++
+ 	switch (hdr->opcode) {
+ 	case DATA_CMD_RSP_WR_SH_MEM_EP_DATA_BUFFER_DONE_V2:
+ 		if (!graph->ar_graph)
+ 			break;
+@@ -542,9 +549,9 @@ static int graph_callback(const struct gpr_resp_pkt *data, void *priv, int op)
+ 
+ 		wake_up(&graph->cmd_wait);
+ 		break;
+ 	case DATA_CMD_RSP_RD_SH_MEM_EP_DATA_BUFFER_V2:
+-		if (!graph->ar_graph)
++		if (!graph->ar_graph || !graph->tx_data.buf)
+ 			break;
+ 		client_event = APM_CLIENT_EVENT_DATA_READ_DONE;
+ 		mutex_lock(&graph->lock);
+ 		rd_done = data->payload;
+-- 
+2.54.0
+

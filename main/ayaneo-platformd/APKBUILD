@@ -1,0 +1,46 @@
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=ayaneo-platformd
+pkgver=1.0.6
+pkgrel=0
+pkgdesc="Ayaneo platform daemon"
+url="https://gitlab.postmarketos.org/condenser/ayaneo-platformd"
+arch="all"
+depends="
+	elogind
+	upower
+"
+makedepends="
+	sccache
+	rust
+	cargo
+"
+license="GPL-3"
+options="!check !pmb:crossdirect"
+
+source="https://gitlab.postmarketos.org/condenser/ayaneo-platformd/-/archive/v$pkgver/ayaneo-platformd-v$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-v$pkgver"
+
+subpackages="
+	$pkgname-systemd:systemd:noarch
+"
+
+prepare() {
+	default_prepare
+	cargo fetch --locked
+}
+
+build() {
+	make build
+}
+
+package() {
+	make install PREFIX="$pkgdir"/usr
+}
+
+systemd() {
+	default_systemd
+}
+
+sha512sums="
+93f1573d39a757a03d9974f2563f673e6141bb77a7e1614bda1c9d86c2139322fae59b5c216ed74fb2690196ccc74d16c927a429645d08d3a52bfcbdcce195f5  ayaneo-platformd-v1.0.6.tar.gz
+"

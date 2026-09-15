@@ -1,0 +1,52 @@
+# Reference: https://postmarketos.org/uipkg
+maintainer="Victoria Brekenfeld <pkg@drakulix.de>"
+pkgname=postmarketos-ui-steamos
+pkgver=1
+pkgrel=0
+pkgdesc="SteamOS like gamescope session"
+arch="noarch"
+license="GPL-3.0-or-later"
+url="https://postmarketos.org"
+depends="
+	postmarketos-ui-plasma-desktop
+	postmarketos-ui-plasma-desktop-systemd
+	postmarketos-base-ui-audio-backend-pipewire
+	postmarketos-base-ui-networkmanager
+	gamescope-session-steam
+	steamos-manager
+	steamos-powerbuttond
+	steam-notif-daemon
+	"
+_pmb_recommends="
+	decky-loader
+	"
+
+source="
+	firstboot-autologin.service
+	firstboot-autologin.conf
+	91-postmarketos-ui-steamos.preset
+	gaming-return.svg
+	Return.desktop
+	Steam.desktop
+	"
+subpackages="$pkgname-systemd"
+options="!check pmb:systemd" # No tests for a metapkg
+
+package() {
+	install -Dm644 firstboot-autologin.service -t "$pkgdir"/usr/lib/systemd/system/
+	install -Dm644 firstboot-autologin.conf -t "$pkgdir"/usr/lib/tmpfiles.d/
+	install -Dm644 91-postmarketos-ui-steamos.preset -t "$pkgdir"/usr/lib/systemd/system-preset/
+	install -Dm644 gaming-return.svg -t "$pkgdir"/usr/share/icons/hicolor/scalable/actions/
+	install -Dm644 Return.desktop -t "$pkgdir"/etc/skel/Desktop/
+	install -Dm644 Steam.desktop -t "$pkgdir"/etc/skel/Desktop/
+	install -Dm644 Steam.desktop -t "$pkgdir"/etc/skel/.local/share/applications/
+}
+
+sha512sums="
+a9d1ddcdb73d8c531310bf69ce27f286360dcc3fca14dff736ff893e070f0262abdb9bf360c02400a6e96726c72df597b0ae00de063f38414a984f5134fdd359  firstboot-autologin.service
+bc477152c115c67a7dfecf8e9ec0460d4ed982907ae55f61c622ddf29e511100ebf0db158d41a8f32086049db6169c85481ca0fad9e1df574137bc5fe5e621a4  firstboot-autologin.conf
+654a8d573652d3e049c6daffc1e79a306c47ae6f6adb659a5c36c7b5f426be35159cdbbe9caa3c2d31f57dfc4ab6064844fb6f0eacc1ebd57b2c763175aecab5  91-postmarketos-ui-steamos.preset
+b909bf2b39d8b58e3da96e3a8b680f87cd92a03c1264c1c42530524d14f17ef35c3c22f652a42104bb89e08f823491bdb06735dd9b8b6711d2a0a4cc2073a155  gaming-return.svg
+e1295262e248a1f2e90d6a5428f08b3f9908f03ec6d673ca583696c4857a04503127c6c17cb597c963f6737497ead2be216ab4e8b9dcde26838802b86d31a2b8  Return.desktop
+7b2cfc6da77393b8c291e2e7ee9464577e5320a91840eb4488feb3a25eccec837d20ba427cf935be64676525ffbe5e0e4de57eca3f7e69776ba095dc9f46d477  Steam.desktop
+"

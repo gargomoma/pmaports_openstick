@@ -1,0 +1,88 @@
+version: 2
+kind: CapabilityMap
+name: AYANEO Type 9
+id: aya9
+
+mapping:
+  - name: DPad Left
+    source_events:
+      - evdev:
+          event_type: ABS
+          event_code: ABS_HAT0X
+          value_type: button
+          axis_direction: negative
+    target_event:
+      gamepad:
+        button: DPadLeft
+  - name: DPad Right
+    source_events:
+      - evdev:
+          event_type: ABS
+          event_code: ABS_HAT0X
+          value_type: button
+          axis_direction: positive
+    target_event:
+      gamepad:
+        button: DPadRight
+  - name: DPad Up
+    source_events:
+      - evdev:
+          event_type: ABS
+          event_code: ABS_HAT0Y
+          value_type: button
+          axis_direction: negative
+    target_event:
+      gamepad:
+        button: DPadUp
+  - name: DPad Down
+    source_events:
+      - evdev:
+          event_type: ABS
+          event_code: ABS_HAT0Y
+          value_type: button
+          axis_direction: positive
+    target_event:
+      gamepad:
+        button: DPadDown
+  - name: Right Stick Hori
+    source_events:
+      - evdev:
+          event_type: ABS
+          event_code: ABS_Z
+          value_type: joystick_x
+    target_event:
+      gamepad:
+        axis:
+          name: RightStick
+          direction: horizontal
+  - name: Right Stick Vert
+    source_events:
+      - evdev:
+          event_type: ABS
+          event_code: ABS_RZ
+          value_type: joystick_y
+    target_event:
+      gamepad:
+        axis:
+          name: RightStick
+          direction: vertical
+  - name: Left Trigger
+    source_events:
+      - evdev:
+          event_type: ABS
+          event_code: ABS_BRAKE
+          value_type: trigger
+    target_event:
+      gamepad:
+        trigger:
+          name: LeftTrigger
+  - name: Right Trigger
+    source_events:
+      - evdev:
+          event_type: ABS
+          event_code: ABS_GAS
+          value_type: trigger
+    target_event:
+      gamepad:
+        trigger:
+          name: RightTrigger
