@@ -36,11 +36,11 @@ makedepends="
 	zstd
 "
 
-_tag="sdm845-7.1-rc1-r0"
+_tag="702dfabdd0ac21f03f7087811a775b8a9ec4c65e"
 
 # Source
 source="
-	linux-$_tag.tar.gz::https://gitlab.com/sdm845-mainline/linux/-/archive/$_tag/linux-$_tag.tar.gz
+	linux-$_tag.tar.gz::https://gitlab.com/mcarr823/linux-sdm-845/-/archive/$_tag/linux-$_tag.tar.gz
 	config-postmarketos-qcom-sdm845.aarch64
 	libbpf-Fix-UAF-in-strset__add_str.patch
 	enable-dynamic-ftrace.patch

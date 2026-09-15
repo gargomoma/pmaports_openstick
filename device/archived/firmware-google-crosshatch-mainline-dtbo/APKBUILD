@@ -20,7 +20,7 @@ build() {
 
 package() {
 	install -D -m644 dtbo.img \
-		"$pkgdir"/boot/dtbo-google-crosshatch-mainline.img
+		"$pkgdir"/boot/dtbo.img
 }
 
 sha512sums="620bc391a82a427bf91c394bbf300451ad7cf452144a27f9fe40322459e6ac473ba85be5cf7e7ebab49d439d3b84b5c1c224883094c1bad5c8f5246abb6db71f  20324c21169622e7c68eb36524c74fb1da8837d5.tar.gz"
