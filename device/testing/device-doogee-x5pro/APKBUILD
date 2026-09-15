@@ -1,0 +1,30 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer="cristian_ci <cristian_ci@protonmail.com>"
+pkgname=device-doogee-x5pro
+pkgdesc="Doogee X5 Pro"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-mediatek-mt6735
+	mkbootimg
+	postmarketos-base
+	zimage64
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+2f2b380c475b2cfef61f9089c403b9f0297de4be46cd32091dff86415aa544c135b5f18c7e8f0932b0735241bceceed2a5f4fa1f673e6f518699b10d64e5cb35  deviceinfo
+"
