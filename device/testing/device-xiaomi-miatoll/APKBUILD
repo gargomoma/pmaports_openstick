@@ -3,12 +3,13 @@ maintainer="Barnabas Czeman <barnabas.czeman@postmarketos.org>"
 pkgname=device-xiaomi-miatoll
 pkgdesc="Xiaomi Redmi Note 9 Pro / Redmi Note 9S"
 pkgver=12
-pkgrel=1
+pkgrel=3
 url="https://postmarketos.org"
 license="MIT"
 arch="aarch64"
 options="!check !archcheck"
 depends="
+	alsa-ucm-conf-qcom-sm7125
 	firmware-qcom-adreno-a630
 	firmware-qcom-adreno-a630-sqe
 	firmware-xiaomi-miatoll
@@ -19,8 +20,8 @@ depends="
 	make-dynpart-mappings
 	mkbootimg
 	postmarketos-base
-	soc-qcom-sm7125
-	soc-qcom-sm7125-ucm
+	soc-qcom
+	soc-qcom-modem
 	swclock-offset
 	systemd-boot
 "
