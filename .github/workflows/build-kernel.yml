@@ -3,10 +3,15 @@
 # El aporte en device/testing/linux-postmarketos-qcom-msm8916 lleva el parche que
 # habilita CONFIG_USB_ACM=m (driver CDC-ACM, para el ProMicro nRF52840).
 #
-# La receta sigue la de la propia CI de pmaports (.ci/lib/build_changed_aports.py):
-# se llama a `build_init` y luego a `build --arch <arch>`.
-#
-# El .apk resultante se publica como artifact del workflow.
+# NOTA (2026-09-17, Hermes): el set "cdc" #7 no arrancaba en el device. Verificado
+# sobre la config embebida de los dos kernels y sobre el .apk del build:
+# el kernel que arranca (#3, gcc) NO lleva CFI_CLANG ni SHADOW_CALL_STACK; el que
+# no arranca (#7) se compilo con clang 23.1.1 + CONFIG_CFI_CLANG=y +
+# CONFIG_SHADOW_CALL_STACK=y (LTO estaba en NONE, no era el problema). Esas dos
+# protecciones cuelgan el arranque en este msm8916 antes de enumerar USB. Los
+# config-*.aarch64/.armv7 de este repo ya llevan CFI_CLANG y SHADOW_CALL_STACK
+# desactivados y USB_ACM=m; el paso de abajo lo reafirma y arregla sha512sums por
+# si alguien vuelve a tocar la config. Ver informes/cdc_failure_report.md.
 name: build-kernel-msm8916
 
 on:
@@ -21,16 +26,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # El enlazado del kernel con ThinLTO solo ya pasa de 30 min en los runners
-    # de postmarketOS; aqui damos margen de sobra.
     timeout-minutes: 240
 
     env:
-      # pmbootstrap lee channels.cfg del remote de upstream; aqui se lo damos
-      # explicitamente desde este fork, que ya lo trae.
       PMB_CHANNELS_CFG: ${{ github.workspace }}/channels.cfg
-      # Fuera del repo, para no ensuciar el arbol de trabajo.
-      # (Ruta literal: `runner.*` no está disponible en un env de job.)
       PMB_CFG: /tmp/pmbootstrap.cfg
 
     steps:
@@ -39,10 +38,7 @@ jobs:
       - name: Dependencias del host
         run: |
           sudo apt-get update -qq
-          # kpartx es el unico programa obligatorio que no trae el runner
           sudo apt-get install -y -qq kpartx
-          # Un kernel + los chroots de pmbootstrap no caben en el disco por
-          # defecto del runner; se libera lo que no se va a usar.
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
                       /usr/local/.ghcup /usr/share/swift
           df -h /
@@ -56,19 +52,53 @@ jobs:
 
       - name: Configurar pmbootstrap (no interactivo)
         run: |
-          # pmbootstrap exige un remote que apunte a upstream pmaports
-          # (get_upstream_remote lo busca por URL, no por nombre).
           git remote add origin-original \
             https://gitlab.postmarketos.org/postmarketOS/pmaports.git
           git fetch -q --depth 1 origin-original main
-
-          # `yes ''` acepta los valores por defecto de todas las preguntas.
           yes '' | pmbootstrap --aports="$GITHUB_WORKSPACE" --config="$PMB_CFG" init
-
-          # Ojo: la UI 'console' implica systemd por defecto, y eso dejaria el
-          # canal en 'systemd-edge'. Con openrc el canal es 'edge' (el del equipo).
           pmbootstrap --config="$PMB_CFG" config service_manager openrc
           pmbootstrap --config="$PMB_CFG" config device qcom-msm8916
+
+      - name: Reafirmar config booteable (sin CFI/SCS, con USB_ACM=m)
+        run: |
+          # Red de seguridad: aunque los config del repo ya lo llevan, se
+          # reafirma por si un merge/olddefconfig los reactiva, y se recalcula
+          # sha512sums para que el APKBUILD no falle.
+          set -euxo pipefail
+          PKG="$GITHUB_WORKSPACE/device/testing/linux-postmarketos-qcom-msm8916"
+          force_off() {
+            local f=$1 sym=$2
+            if grep -qE "^${sym}=" "$f"; then
+              sed -i "s|^${sym}=.*|# ${sym} is not set|" "$f"
+            elif ! grep -qE "^# ${sym} is not set" "$f"; then
+              echo "# ${sym} is not set" >> "$f"
+            fi
+          }
+          force_on_m() {
+            local f=$1 sym=$2
+            if grep -qE "^# ${sym} is not set" "$f"; then
+              sed -i "s|^# ${sym} is not set|${sym}=m|" "$f"
+            elif ! grep -qE "^${sym}=m" "$f"; then
+              echo "${sym}=m" >> "$f"
+            fi
+          }
+          for arch in aarch64 armv7; do
+            CFG="$PKG/config-postmarketos-qcom-msm8916.$arch"
+            [ -f "$CFG" ] || { echo "FALTA $CFG"; exit 1; }
+            force_off "$CFG" CONFIG_CFI_CLANG
+            force_off "$CFG" CONFIG_CFI_ICALL_NORMALIZE_INTEGERS
+            force_off "$CFG" CONFIG_SHADOW_CALL_STACK
+            force_on_m "$CFG" CONFIG_USB_ACM
+          done
+          pmbootstrap --config="$PMB_CFG" --details-to-stdout \
+            kconfig migrate linux-postmarketos-qcom-msm8916 || true
+          pmbootstrap --config="$PMB_CFG" --details-to-stdout \
+            checksum linux-postmarketos-qcom-msm8916
+          for arch in aarch64 armv7; do
+            echo "== $arch =="
+            grep -E '^(# )?CONFIG_(CFI_CLANG|SHADOW_CALL_STACK|USB_ACM)\b' \
+              "$PKG/config-postmarketos-qcom-msm8916.$arch" || true
+          done
 
       - name: Compilar el kernel
         run: |
